@@ -7,6 +7,7 @@ TARGET_BACKEND="$TARGET_ROOT/backend"
 TARGET_FRONTEND="/var/www/neurasense"
 BACKEND_SRC="$WORKSPACE_DIR/backend"
 FRONTEND_SRC="$WORKSPACE_DIR/frontend"
+FRONTEND_DIST_DIR="${FRONTEND_DIST_DIR:-$FRONTEND_SRC/dist}"
 STATIC_DATA_SRC="$BACKEND_SRC/data"
 BACKEND_VENV="$TARGET_BACKEND/.venv"
 
@@ -24,7 +25,7 @@ require_file() {
 
 log "Verifying source tree"
 require_file "$BACKEND_SRC/requirements.txt"
-require_file "$FRONTEND_SRC/dist/index.html"
+require_file "$FRONTEND_DIST_DIR/index.html"
 
 log "Preparing target directories"
 mkdir -p "$TARGET_ROOT" "$TARGET_BACKEND" "$TARGET_BACKEND/data" "$TARGET_FRONTEND"
@@ -36,7 +37,7 @@ log "Syncing bundled backend data files without touching runtime-generated data"
 rsync -a   --include '*/'   --include '*.json'   --exclude '*'   "$STATIC_DATA_SRC/" "$TARGET_BACKEND/data/"
 
 log "Syncing frontend static files"
-rsync -a --delete "$FRONTEND_SRC/dist/" "$TARGET_FRONTEND/"
+rsync -a --delete "$FRONTEND_DIST_DIR/" "$TARGET_FRONTEND/"
 
 if [ ! -x "$BACKEND_VENV/bin/python" ]; then
   log "Creating backend virtual environment"

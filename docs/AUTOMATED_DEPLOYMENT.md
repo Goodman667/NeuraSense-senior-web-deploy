@@ -9,6 +9,7 @@
 - GitHub 仓库：`Goodman667/NeuraSense-senior-web-deploy`
 - GitHub Actions workflow：`.github/workflows/deploy.yml`
 - 服务器侧 self-hosted runner：`neurasense-server-runner`
+- GitHub Hosted Runner：负责前端构建与基础检查
 - 目标部署目录：
   - 后端：`/opt/neurasense-senior-web-deploy/backend`
   - 前端：`/var/www/neurasense`
@@ -24,15 +25,17 @@
 
 每次触发后，GitHub Actions 会自动：
 
-1. checkout 最新仓库代码
+1. 在 **GitHub Hosted Runner** 上 checkout 最新仓库代码
 2. 编译检查后端源码
 3. 安装前端依赖并执行 `npm run build`
-4. 将前端 `dist` 同步到 `/var/www/neurasense`
-5. 将后端代码同步到 `/opt/neurasense-senior-web-deploy/backend`
-6. 保留线上 `.env`、`.venv` 与运行期生成数据
-7. 安装/更新后端依赖
-8. 重启 `neurasense-backend.service`
-9. 自动执行健康检查
+4. 上传前端 `dist` 作为 workflow artifact
+5. 在 **服务器 self-hosted runner** 上下载构建产物
+6. 将前端 `dist` 同步到 `/var/www/neurasense`
+7. 将后端代码同步到 `/opt/neurasense-senior-web-deploy/backend`
+8. 保留线上 `.env`、`.venv` 与运行期生成数据
+9. 安装/更新后端依赖
+10. 重启 `neurasense-backend.service`
+11. 自动执行健康检查
 
 ---
 
@@ -43,8 +46,14 @@
 - 可以主动访问 GitHub
 - 但不适合依赖公网 SSH 入站部署
 - 同时已有 Tailscale / Cloudflare Tunnel 结构
+- 并且服务器可用内存较小，不适合承担大体积前端打包
 
-所以 self-hosted runner 是最稳妥的自动化方案。
+所以最终采用：
+
+- **Hosted Runner 构建**
+- **Self-hosted Runner 部署**
+
+这是当前最稳妥的自动化方案。
 
 ---
 

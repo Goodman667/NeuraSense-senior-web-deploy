@@ -6,18 +6,20 @@
 
 ## Chosen Approach
 
-采用 **GitHub Actions + server-side self-hosted runner**。
+采用 **GitHub Actions（Hosted build）+ server-side self-hosted runner（deploy）**。
 
 ### Why this approach
 
 - 服务器可以主动访问 GitHub，但不适合依赖公网入站 SSH。
 - 现有服务已经在服务器本机通过 nginx + uvicorn + systemd 稳定运行。
-- 让 workflow 直接在服务器本机执行部署，可以避免额外的穿透和凭据管理复杂度。
+- 前端生产构建体积较大，而服务器只有约 2GB 内存，不适合把 Vite build 放在 self-hosted runner 上。
+- 让 Hosted Runner 负责构建，self-hosted runner 只负责部署，可以避免额外的穿透和凭据管理复杂度，同时规避服务器 OOM。
 
 ## Deployment Behavior
 
 - Workflow 在 `main` 分支 push 或手动触发时运行。
-- 前端在 runner 工作目录内 build，然后同步到 `/var/www/neurasense`。
+- Hosted Runner 完成前端 build 并上传 artifact。
+- self-hosted runner 下载 artifact 后同步到 `/var/www/neurasense`。
 - 后端代码同步到 `/opt/neurasense-senior-web-deploy/backend`。
 - `.env`、`.venv`、以及运行时生成数据默认保留，不被删除。
 - 同步完成后自动重启 `neurasense-backend.service` 并做健康检查。

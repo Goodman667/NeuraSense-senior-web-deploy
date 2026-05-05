@@ -4,7 +4,7 @@
 
 **Goal:** Add push-to-deploy automation for the NeuraSense deployment snapshot repository using a self-hosted GitHub Actions runner on the production server.
 
-**Architecture:** GitHub Actions runs on the production server via a self-hosted runner. The workflow checks out code, builds the frontend, syncs frontend and backend files into the live deployment directories, preserves live secrets/runtime data, restarts the backend service, and verifies health.
+**Architecture:** GitHub Actions builds and checks code on a GitHub-hosted runner, uploads the frontend artifact, then a self-hosted runner on the production server downloads that artifact, syncs frontend and backend files into the live deployment directories, preserves live secrets/runtime data, restarts the backend service, and verifies health.
 
 **Tech Stack:** GitHub Actions, self-hosted runner, bash, rsync, Python venv, systemd, nginx
 

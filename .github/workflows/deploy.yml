@@ -11,13 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    runs-on:
-      - self-hosted
-      - linux
-      - x64
-      - neurasense
-      - deploy
+  build-and-check:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -49,5 +44,33 @@ jobs:
           VITE_API_BASE: /api/v1
         run: npm run build
 
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
+
+  deploy:
+    needs: build-and-check
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - neurasense
+      - deploy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: .artifacts/frontend-dist
+
       - name: Deploy to production directories
+        env:
+          FRONTEND_DIST_DIR: ${{ github.workspace }}/.artifacts/frontend-dist
         run: bash scripts/deploy_self_hosted.sh
