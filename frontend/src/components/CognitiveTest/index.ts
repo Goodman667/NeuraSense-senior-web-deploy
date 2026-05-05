@@ -1,0 +1,1 @@
+export { CognitiveTestPanel } from './CognitiveTestPanel';

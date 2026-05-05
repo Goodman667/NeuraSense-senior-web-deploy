@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <!-- PWA: viewport-fit=cover 启用安全区域 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#a855f7" />
+  <meta name="description" content="NeuraSense - 基于AI的智能心理健康评估与干预平台" />
+  <meta name="keywords" content="心理测评,心理健康,认知评估,画钟测验,PHQ-9,GAD-7" />
+  <title>NeuraSense - AI 心理健康平台</title>
+
+  <!-- PWA: Favicon & Icons -->
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+  <!-- PWA: iOS specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="NeuraSense" />
+
+  <!-- PWA: Android / Chrome -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="NeuraSense" />
+  <meta name="msapplication-TileColor" content="#a855f7" />
+
+  <!-- PWA: Disable tap highlight on mobile -->
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Cubism 4 SDK for Live2D (Required by pixi-live2d-display) -->
+  <!-- Must be loaded before any Live2D code runs -->
+  <script src="/lib/live2dcubismcore.min.js"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

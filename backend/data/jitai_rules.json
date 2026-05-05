@@ -1,0 +1,292 @@
+{
+  "version": "2.0.0",
+  "description": "JITAI v2 决策规则配置 — 决策点/候选干预/个性化变量/规则/近端结果",
+  "rules": [
+    {
+      "rule_id": "R001_crisis_high_stress_low_mood",
+      "enabled": true,
+      "name_zh": "高压力+低情绪 → DBT 急救",
+      "tier": "ACUTE",
+      "priority": 900,
+      "condition": {
+        "AND": [
+          {"field": "checkin.stress", "op": ">", "value": 7},
+          {"field": "checkin.mood", "op": "<", "value": 4}
+        ]
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "dbt_stop",
+          "reason_zh": "你现在压力较大且情绪低落，STOP 四步急刹车可以快速帮你稳住"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "dbt_tipp",
+          "reason_zh": "TIPP 冷水急救能迅速降低情绪温度，帮身体回到安全状态"
+        }
+      ],
+      "task": {
+        "text": "写一条「此刻我的感受」心情日记，哪怕只有一句话",
+        "reason_zh": "把感受写下来本身就是一种情绪释放"
+      }
+    },
+    {
+      "rule_id": "R002_high_stress",
+      "enabled": true,
+      "name_zh": "高压力 → 呼吸放松",
+      "tier": "ACUTE",
+      "priority": 800,
+      "condition": {
+        "field": "checkin.stress", "op": ">", "value": 7
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "breathing_478",
+          "reason_zh": "你的压力偏高，4-7-8 呼吸法能在 5 分钟内激活副交感神经"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "sleep_pmr",
+          "reason_zh": "渐进式肌肉放松可以释放身体里积累的紧张感"
+        }
+      ],
+      "task": {
+        "text": "做一次 4-7-8 呼吸练习（至少 3 个循环）",
+        "reason_zh": "规律的呼吸练习能训练身体更快回到平静"
+      }
+    },
+    {
+      "rule_id": "R003_low_mood",
+      "enabled": true,
+      "name_zh": "低情绪 → 认知重构",
+      "tier": "ACUTE",
+      "priority": 750,
+      "condition": {
+        "field": "checkin.mood", "op": "<", "value": 4
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "cbt_thought_record",
+          "reason_zh": "心情低落时容易陷入消极思维，思维记录帮你找到更平衡的视角"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "cbt_three_good",
+          "reason_zh": "写下三件好事——研究证实这个简单练习能持续改善情绪"
+        }
+      ],
+      "task": {
+        "text": "完成一次「三件好事」记录",
+        "reason_zh": "训练大脑发现生活中的积极面"
+      }
+    },
+    {
+      "rule_id": "R004_poor_sleep",
+      "enabled": true,
+      "name_zh": "低睡眠质量 → 睡眠卫生",
+      "tier": "ACUTE",
+      "priority": 770,
+      "condition": {
+        "field": "checkin.sleep_quality", "op": "<", "value": 4
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "sleep_54321",
+          "reason_zh": "昨晚睡不好？54321 助眠法用感官着陆帮你安静大脑"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "breathing_478",
+          "reason_zh": "4-7-8 呼吸是经典助眠技术，今晚试试看"
+        }
+      ],
+      "task": {
+        "text": "今晚睡前做一次 54321 感官着陆练习",
+        "reason_zh": "用感官觉察替代睡前的反刍思维"
+      }
+    },
+    {
+      "rule_id": "R005_low_energy",
+      "enabled": true,
+      "name_zh": "低能量 → 行为激活",
+      "tier": "PREVENTIVE",
+      "priority": 600,
+      "condition": {
+        "field": "checkin.energy", "op": "<", "value": 4
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "mindfulness_1min",
+          "reason_zh": "精力不足？1 分钟正念帮你快速恢复觉察"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "mindfulness_body_scan",
+          "reason_zh": "身体扫描帮你觉察身体当前状态，温柔地与疲惫共处"
+        }
+      ],
+      "task": {
+        "text": "站起来做 10 个开合跳，或者去窗边深呼吸 1 分钟",
+        "reason_zh": "短暂的身体激活能打破低能量循环"
+      }
+    },
+    {
+      "rule_id": "R006_late_night",
+      "enabled": true,
+      "name_zh": "夜间活跃 → 睡眠提醒",
+      "tier": "PREVENTIVE",
+      "priority": 650,
+      "condition": {
+        "OR": [
+          {"field": "context.hour", "op": ">=", "value": 23},
+          {"field": "context.hour", "op": "<", "value": 5}
+        ]
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "sleep_54321",
+          "reason_zh": "已经很晚了，54321 助眠法帮你从屏幕过渡到睡眠"
+        }
+      ],
+      "task": {
+        "text": "放下手机，用 54321 法感受五种感官后入睡",
+        "reason_zh": "深夜大脑更容易产生消极想法，这是生理节律的正常现象"
+      }
+    },
+    {
+      "rule_id": "R007_trend_worsening",
+      "enabled": true,
+      "name_zh": "趋势恶化 → 升级建议",
+      "tier": "ACUTE",
+      "priority": 850,
+      "condition": {
+        "AND": [
+          {"field": "trend.direction", "op": "==", "value": "worsening"},
+          {"field": "trend.mood_avg_7d", "op": "<", "value": 5}
+        ]
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "dbt_stop",
+          "reason_zh": "最近几天状态有些波动，STOP 技能帮你在情绪起伏时稳住自己"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "cbt_thought_record",
+          "reason_zh": "记录一下最近反复出现的想法，找到更平衡的视角"
+        }
+      ],
+      "task": {
+        "text": "完成一次 PHQ-9 简短评估，了解近期的整体状态",
+        "reason_zh": "定期评估帮助你和咨询师更好地跟踪变化"
+      }
+    },
+    {
+      "rule_id": "R008_no_recent_tool",
+      "enabled": true,
+      "name_zh": "近期未使用工具 → 温和提醒",
+      "tier": "MAINTENANCE",
+      "priority": 300,
+      "condition": {
+        "field": "engagement.days_since_last_completion", "op": ">", "value": 3
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "mindfulness_1min",
+          "reason_zh": "好几天没练习了？1 分钟正念是最轻松的选择，随时可以开始"
+        }
+      ],
+      "task": {
+        "text": "今天完成任意一个工具练习",
+        "reason_zh": "哪怕只有 1 分钟，坚持练习本身就是进步"
+      }
+    },
+    {
+      "rule_id": "R009_moderate_anxiety",
+      "enabled": true,
+      "name_zh": "中高压力+中低心情 → 抗焦虑",
+      "tier": "PREVENTIVE",
+      "priority": 500,
+      "condition": {
+        "AND": [
+          {"field": "checkin.stress", "op": ">=", "value": 5},
+          {"field": "checkin.mood", "op": "<=", "value": 5}
+        ]
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "cbt_worry_time",
+          "reason_zh": "把担忧限制在固定时段，减少反刍思维的影响"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "breathing_box",
+          "reason_zh": "箱式呼吸帮你在焦虑时找到节奏感"
+        }
+      ],
+      "task": {
+        "text": "设定 10 分钟「担忧时间」，之后主动转移注意力",
+        "reason_zh": "给担忧设边界，而不是让它占满全天"
+      }
+    },
+    {
+      "rule_id": "R010_overall_good",
+      "enabled": true,
+      "name_zh": "综合良好 → 积极维护",
+      "tier": "MAINTENANCE",
+      "priority": 200,
+      "condition": {
+        "AND": [
+          {"field": "checkin.mood", "op": ">=", "value": 6},
+          {"field": "checkin.stress", "op": "<=", "value": 5},
+          {"field": "checkin.energy", "op": ">=", "value": 5},
+          {"field": "checkin.sleep_quality", "op": ">=", "value": 5}
+        ]
+      },
+      "actions": [
+        {
+          "type": "recommend_tool",
+          "tool_id": "cbt_three_good",
+          "reason_zh": "状态不错！趁状态好做三件好事练习，为内心积攒阳光储备"
+        },
+        {
+          "type": "recommend_tool",
+          "tool_id": "mindfulness_1min",
+          "reason_zh": "保持每天 1 分钟正念的习惯，巩固觉察力"
+        }
+      ],
+      "task": {
+        "text": "写下三件今天让你感到开心或感恩的事",
+        "reason_zh": "好状态时做积极练习，效果更持久"
+      }
+    }
+  ],
+
+  "default_actions": [
+    {
+      "type": "recommend_tool",
+      "tool_id": "mindfulness_1min",
+      "reason_zh": "每天花 1 分钟回到当下，保持觉察"
+    },
+    {
+      "type": "recommend_tool",
+      "tool_id": "breathing_box",
+      "reason_zh": "箱式呼吸帮你找到平静的起点"
+    }
+  ],
+  "default_task": {
+    "text": "完成一次 1 分钟正念练习",
+    "reason_zh": "开启觉察的第一步"
+  },
+
+  "tier_order": ["CRISIS", "ACUTE", "PREVENTIVE", "MAINTENANCE", "DEFAULT"]
+}

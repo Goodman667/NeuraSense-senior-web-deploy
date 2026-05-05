@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lora:wght@500;600;700&family=Raleway:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark Mode Support */
+:root {
+  --bg-primary: 249 250 251;
+  --bg-secondary: 255 255 255;
+  --text-primary: 17 24 39;
+  --text-secondary: 107 114 128;
+  --border-color: 229 231 235;
+  --shell-bg: 248 251 253;
+  --shell-panel: 255 255 255;
+  --shell-muted: 71 85 105;
+  --shell-strong: 15 23 42;
+  --ui-font-scale: 1;
+  /* 安全区变量 */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+.dark {
+  --bg-primary: 17 24 39;
+  --bg-secondary: 31 41 55;
+  --text-primary: 249 250 251;
+  --text-secondary: 156 163 175;
+  --border-color: 55 65 81;
+  --shell-bg: 2 6 23;
+  --shell-panel: 15 23 42;
+  --shell-muted: 148 163 184;
+  --shell-strong: 248 250 252;
+}
+
+html[data-ui-mode='senior'] {
+  --ui-font-scale: 1.12;
+  font-size: 18px;
+}
+
+html[data-ui-mode='senior'] body {
+  font-family: 'Atkinson Hyperlegible', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI Variable', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+/* Custom base styles for PsyAntigravity */
+@layer base {
+  html {
+    font-family: 'Raleway', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI Variable', system-ui, -apple-system, sans-serif;
+    /* 防止 iOS 弹性滚动导致背景露出 */
+    overscroll-behavior-y: none;
+    /* PWA standalone 模式下，禁止文本选择长按菜单 */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply antialiased transition-colors duration-300;
+    background-color: rgb(var(--bg-primary));
+    color: rgb(var(--text-primary));
+    font-size: calc(16px * var(--ui-font-scale));
+    /* 安全区内边距 — 顶部 + 左右 */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-cyan-300 focus:ring-offset-2 transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-calm-600 text-white font-medium rounded-lg hover:bg-calm-700 focus:outline-none focus:ring-2 focus:ring-calm-500 focus:ring-offset-2 transition-colors duration-200;
+  }
+
+  .card {
+    @apply rounded-xl shadow-sm p-6 transition-colors duration-300;
+    background-color: rgb(var(--bg-secondary));
+    border: 1px solid rgb(var(--border-color));
+  }
+
+  .app-shell-bg {
+    background:
+      radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 26%),
+      radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.12), transparent 24%),
+      linear-gradient(180deg, rgb(var(--shell-bg)) 0%, #eef5f7 48%, #f8fafc 100%);
+  }
+
+  .app-surface {
+    background-color: rgba(var(--shell-panel), 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 32px 120px -54px rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(24px);
+  }
+
+  .font-display {
+    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  }
+
+  .desktop-section {
+    @apply rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-[0_28px_90px_-46px_rgba(15,23,42,0.22)] backdrop-blur-xl;
+  }
+
+  .assessment-card {
+    @apply card hover:shadow-md transition-all duration-200 cursor-pointer;
+  }
+
+  /* Dark mode specific overrides */
+  .dark .bg-white {
+    background-color: rgb(var(--bg-secondary));
+  }
+
+  .dark .app-shell-bg {
+    background:
+      radial-gradient(circle at top left, rgba(34, 211, 238, 0.12), transparent 24%),
+      radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.1), transparent 22%),
+      linear-gradient(180deg, rgb(var(--shell-bg)) 0%, #020617 100%);
+  }
+
+  .dark .desktop-section,
+  .dark .app-surface {
+    background-color: rgba(15, 23, 42, 0.82);
+    border-color: rgba(51, 65, 85, 0.8);
+    box-shadow: 0 38px 120px -64px rgba(2, 6, 23, 0.8);
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-warm-50 {
+    background-color: rgb(var(--bg-primary));
+  }
+
+  .dark .text-gray-900,
+  .dark .text-warm-800 {
+    color: rgb(var(--text-primary));
+  }
+
+  .dark .text-gray-600,
+  .dark .text-warm-600 {
+    color: rgb(var(--text-secondary));
+  }
+
+  .dark .border-gray-100,
+  .dark .border-warm-100,
+  .dark .border-warm-200 {
+    border-color: rgb(var(--border-color));
+  }
+
+  html[data-ui-mode='senior'] .app-shell-bg {
+    background:
+      radial-gradient(circle at top left, rgba(34, 211, 238, 0.2), transparent 28%),
+      radial-gradient(circle at 85% 10%, rgba(5, 150, 105, 0.16), transparent 26%),
+      linear-gradient(180deg, #f6fbfb 0%, #eef8f8 46%, #f8fbfb 100%);
+  }
+
+  html[data-ui-mode='senior'] .desktop-section,
+  html[data-ui-mode='senior'] .app-surface {
+    border-color: rgba(8, 145, 178, 0.16);
+    box-shadow: 0 34px 110px -52px rgba(15, 23, 42, 0.28);
+  }
+
+  html[data-ui-mode='senior'] button,
+  html[data-ui-mode='senior'] [role='button'] {
+    min-height: 48px;
+  }
+
+  html[data-ui-mode='senior'] .senior-page {
+    color: #0f172a;
+  }
+
+  html[data-ui-mode='senior'] .senior-page button,
+  html[data-ui-mode='senior'] .senior-page textarea,
+  html[data-ui-mode='senior'] .senior-page a {
+    border-radius: 0.5rem;
+  }
+
+  html[data-ui-mode='senior'] .senior-page p,
+  html[data-ui-mode='senior'] .senior-page textarea {
+    line-height: 1.65;
+  }
+}
+
+/* Custom utility styles */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* 安全区工具类 */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* PWA Standalone: 键盘弹出时，避免底部 Tab 被顶上去 */
+@media (display-mode: standalone) {
+  /* iOS visual viewport 适配 */
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 骨架屏动画 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgb(var(--bg-secondary)) 25%,
+    rgb(var(--border-color) / 0.3) 50%,
+    rgb(var(--bg-secondary)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,134 @@
+[
+  {
+    "key": "phq9",
+    "title": "PHQ-9",
+    "subtitle": "患者健康问卷-9",
+    "description": "国际通用的抑郁筛查量表，9 道题快速评估过去两周的抑郁症状严重程度。被广泛应用于初级保健和心理健康筛查。",
+    "category": "emotion",
+    "estimated_minutes": 2,
+    "icon": "😔",
+    "gradient": "from-rose-500 to-pink-600",
+    "tags": [
+      "抑郁",
+      "情绪",
+      "筛查"
+    ],
+    "question_count": 9,
+    "score_range": "0-27",
+    "enabled": true,
+    "sort_order": 1
+  },
+  {
+    "key": "gad7",
+    "title": "GAD-7",
+    "subtitle": "广泛性焦虑量表-7",
+    "description": "7 道题评估过去两周的广泛性焦虑水平，是全球使用最广泛的焦虑筛查工具之一。",
+    "category": "anxiety",
+    "estimated_minutes": 2,
+    "icon": "😰",
+    "gradient": "from-blue-500 to-cyan-600",
+    "tags": [
+      "焦虑",
+      "紧张",
+      "筛查"
+    ],
+    "question_count": 7,
+    "score_range": "0-21",
+    "enabled": true,
+    "sort_order": 2
+  },
+  {
+    "key": "sds",
+    "title": "SDS",
+    "subtitle": "抑郁自评量表",
+    "description": "由 Zung 编制的 20 题抑郁自评量表，深度评估抑郁程度，包含正向和反向计分项目。",
+    "category": "emotion",
+    "estimated_minutes": 5,
+    "icon": "💜",
+    "gradient": "from-purple-500 to-violet-600",
+    "tags": [
+      "抑郁",
+      "自评",
+      "深度"
+    ],
+    "question_count": 20,
+    "score_range": "25-100",
+    "enabled": true,
+    "sort_order": 3
+  },
+  {
+    "key": "sas",
+    "title": "SAS",
+    "subtitle": "焦虑自评量表",
+    "description": "由 Zung 编制的 20 题焦虑自评量表，全面评估焦虑相关的身心症状，含标准分换算。",
+    "category": "anxiety",
+    "estimated_minutes": 5,
+    "icon": "🧡",
+    "gradient": "from-orange-500 to-amber-600",
+    "tags": [
+      "焦虑",
+      "自评",
+      "深度"
+    ],
+    "question_count": 20,
+    "score_range": "25-100",
+    "enabled": true,
+    "sort_order": 4
+  },
+  {
+    "key": "pss10",
+    "title": "PSS-10",
+    "subtitle": "压力感知量表",
+    "description": "由 Cohen 等人开发的 10 道题经典量表，评估过去一个月的压力感知水平。",
+    "category": "stress",
+    "estimated_minutes": 3,
+    "icon": "💪",
+    "gradient": "from-indigo-500 to-purple-600",
+    "tags": [
+      "压力",
+      "感知",
+      "月度"
+    ],
+    "question_count": 10,
+    "score_range": "0-40",
+    "enabled": true,
+    "sort_order": 5
+  },
+  {
+    "key": "isi",
+    "title": "ISI",
+    "subtitle": "失眠严重程度指数",
+    "description": "7 道题评估失眠严重程度，适用于睡眠问题筛查和疗效追踪。",
+    "category": "sleep",
+    "estimated_minutes": 3,
+    "icon": "🌙",
+    "gradient": "from-indigo-400 to-blue-500",
+    "tags": [
+      "失眠",
+      "睡眠"
+    ],
+    "question_count": 7,
+    "score_range": "0-28",
+    "enabled": false,
+    "sort_order": 10
+  },
+  {
+    "key": "asrs",
+    "title": "ASRS-v1.1",
+    "subtitle": "成人 ADHD 自评量表",
+    "description": "6 道题筛查成人注意力缺陷多动障碍（ADHD），世界卫生组织推荐工具。",
+    "category": "focus",
+    "estimated_minutes": 2,
+    "icon": "🎯",
+    "gradient": "from-amber-400 to-orange-500",
+    "tags": [
+      "注意力",
+      "ADHD",
+      "专注"
+    ],
+    "question_count": 6,
+    "score_range": "0-24",
+    "enabled": false,
+    "sort_order": 11
+  }
+]

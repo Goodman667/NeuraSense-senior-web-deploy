@@ -1,0 +1,54 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tsbuildinfo
+.DS_Store
+
+# env
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+!backend/.env.example
+
+# local caches / temp
+.claude/
+.mcp.json
+.vscode/
+.agents/
+.superpowers/
+.playwright-cli/
+.playwright-mcp/
+.codex-temp/
+output/
+tmp/
+video_demo/
+
+# backend runtime data
+backend/tts_cache/
+backend/data/users.json
+backend/data/sessions.json
+backend/data/private_messages.json
+backend/data/daily_checkins.json
+backend/data/assessment_history.json
+backend/data/community_posts.json
+backend/data/user_profiles.json
+backend/data/notifications.json
+backend/data/tool_completions.json
+backend/data/tool_favorites.json
+backend/data/recommendation_log.json
+backend/data/program_progress.json
+backend/data/assessment_results.json
+backend/data/senior_daily_summaries.json
+backend/data/senior_help_events.json
+backend/data/senior_memory.json
+backend/data/senior_support_contacts.json
+backend/data/senior_user_preferences.json
+backend/data/senior_voice_interviews.json
+
+# frontend local env
+frontend/.env.development
+frontend/.env.production

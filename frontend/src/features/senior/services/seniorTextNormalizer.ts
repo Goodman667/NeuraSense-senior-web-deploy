@@ -1,0 +1,20 @@
+export function cleanForSeniorTTS(text: string): string {
+  return (text || '')
+    .replace(/```[\w-]*\n?/g, '\n')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+|www\.\S+/g, ' ')
+    .replace(/^\s{0,3}#{1,6}\s*/gm, '')
+    .replace(/^\s{0,3}>\s*/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+[.)、]\s+/gm, '')
+    .replace(/[*_`~]+/g, '')
+    .replace(/\|/g, '，')
+    .replace(/[-—]{3,}/g, '。')
+    .replace(/[<>#]+/g, '')
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\s*\n\s*/g, '。')
+    .replace(/。{2,}/g, '。')
+    .trim();
+}

@@ -1,0 +1,1 @@
+export { EmotionDetector } from './EmotionDetector';

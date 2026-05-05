@@ -1,0 +1,313 @@
+[
+  {
+    "program_id": "stress-7",
+    "day_number": 1,
+    "title": "认识压力 — 身体信号觉察",
+    "learn_text": "压力并不总是坏事。适度的压力（良性压力 eustress）能激发潜能，但长期的慢性压力会损害身心健康。\n\n今天的目标是觉察压力在你身体上的表现：肩膀紧绷？胃部不适？呼吸变浅？\n\n了解自己的压力信号是管理压力的第一步。",
+    "tool_id": "mindfulness_body_scan",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念入门 — 身体扫描冥想引导",
+    "review_question": "完成身体扫描后，你注意到身体哪个部位最紧张？",
+    "tip": "不需要改变什么，只是观察和感受。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 2,
+    "title": "呼吸即药 — 激活副交感神经",
+    "learn_text": "当我们感到压力时，交感神经系统会被激活（战斗或逃跑反应），心率加快，呼吸变浅。\n\n好消息是，我们可以通过刻意控制呼吸来「反向操作」——延长呼气时间能激活副交感神经（休息与消化系统），快速降低生理唤醒水平。\n\n4-7-8 呼吸法正是基于这个原理。",
+    "tool_id": "breathing_478",
+    "video_url": "https://www.bilibili.com/video/BV1xQW1zUETr/",
+    "video_title": "4-7-8 呼吸法口令引导",
+    "review_question": "练习 4-7-8 呼吸后，你的身体感受有什么变化？",
+    "tip": "每天练习 2-3 次，效果会随时间累积。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 3,
+    "title": "箱式呼吸 — 任何场景都能用的减压工具",
+    "learn_text": "箱式呼吸（Box Breathing）最初由美国海豹突击队使用，用于在高压环境下快速恢复冷静。\n\n它的原理简单：吸气、屏息、呼气、屏息各 4 秒，形成一个「正方形」节奏。这种规律的呼吸模式能快速稳定心率变异性（HRV）。",
+    "tool_id": "breathing_box",
+    "video_url": "https://www.bilibili.com/video/BV1Rw4m1e7jD/",
+    "video_title": "呼吸减压 — 箱式呼吸练习",
+    "review_question": "你打算在什么日常场景中使用箱式呼吸？",
+    "tip": "想象一个正方形，沿着四条边呼吸。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 4,
+    "title": "认知重构 — 改变想法就能改变感受",
+    "learn_text": "CBT（认知行为疗法）的核心观点：不是事件本身让我们痛苦，而是我们对事件的「解读」导致了痛苦。\n\n今天我们学习用「自动化思维记录」来捕捉那些自动冒出来的消极想法，然后像侦探一样审视它们：有证据支持吗？有没有更平衡的看法？",
+    "tool_id": "cbt_thought_record",
+    "video_url": "https://www.bilibili.com/video/av253501476/",
+    "video_title": "Headspace 冥想正念指南 — 认知觉察",
+    "review_question": "你捕捉到了什么自动化消极想法？重新审视后有什么新的看法？",
+    "tip": "消极想法不是事实，只是想法。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 5,
+    "title": "肌肉放松 — 身体放松了，心也会跟着放松",
+    "learn_text": "渐进式肌肉放松（PMR）由 Edmund Jacobson 在 1930 年代发明。原理是：当你故意紧张一组肌肉再释放，大脑会更清晰地感受到「放松」的状态。\n\n研究表明，PMR 能有效降低皮质醇水平、改善睡眠质量、减轻焦虑症状。",
+    "tool_id": "sleep_pmr",
+    "video_url": "https://www.bilibili.com/video/BV1qh411y7Bc/",
+    "video_title": "渐进式肌肉放松练习 — 深度放松引导",
+    "review_question": "做完渐进式肌肉放松后，1-10 分你给自己的放松程度打几分？",
+    "tip": "睡前做效果特别好。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 6,
+    "title": "担忧管理 — 给担忧一个固定的「约会时间」",
+    "learn_text": "你是否发现自己总是在各种时候被担忧打扰？「担忧时间」是一种悖论式的干预技术：与其试图压制担忧（反而会适得其反），不如给它一个固定的时间段。\n\n规则：白天任何时候冒出担忧，告诉自己「我一会儿在担忧时间处理」。",
+    "tool_id": "cbt_worry_time",
+    "video_url": "https://www.bilibili.com/video/BV1n58AzvEH6/",
+    "video_title": "正念冥想 — 快速平复心绪",
+    "review_question": "你的担忧中，有多少是你能控制的？有多少需要放手？",
+    "tip": "大部分担忧的事情永远不会发生。"
+  },
+  {
+    "program_id": "stress-7",
+    "day_number": 7,
+    "title": "回顾与展望 — 你已经拥有了一套减压工具箱",
+    "learn_text": "恭喜你完成了 7 天减压训练营！让我们回顾这周学到的工具：\n\n- Day 1: 身体扫描 — 觉察压力信号\n- Day 2: 4-7-8 呼吸 — 激活副交感神经\n- Day 3: 箱式呼吸 — 随时随地可用\n- Day 4: 思维记录 — 认知重构\n- Day 5: 肌肉放松 — 身体层面释放\n- Day 6: 担忧时间 — 管理反刍思维\n\n今天的练习是「三件好事」——减压不仅是消除负面，更是增加正面体验。",
+    "tool_id": "cbt_three_good",
+    "video_url": "https://www.bilibili.com/video/BV1eHGyzFE57/",
+    "video_title": "温度觉知正念冥想 — 疗愈自己",
+    "review_question": "这 7 天里，哪个工具对你帮助最大？你打算如何在日常中继续使用它？",
+    "tip": "结束不是终点，而是新习惯的开始。"
+  },
+
+  {
+    "program_id": "sleep-7",
+    "day_number": 1,
+    "title": "了解你的睡眠 — 睡眠卫生基础",
+    "learn_text": "好的睡眠不是从上床那一刻开始的，而是从白天就在准备。\n\n睡眠卫生的基本原则：\n1. 固定起床时间（比入睡时间更重要）\n2. 卧室只用于睡眠\n3. 睡前 1 小时减少蓝光\n4. 下午 2 点后避免咖啡因\n\n今天的练习是 54321 助眠着陆，帮你把白天的纷扰留在卧室门外。",
+    "tool_id": "sleep_54321",
+    "video_url": "https://www.bilibili.com/video/BV15y4y1w7Bf/",
+    "video_title": "轻声耳语身体扫描 — 助眠冥想",
+    "review_question": "你目前的睡前习惯中，有哪些可能影响了你的睡眠质量？",
+    "tip": "今晚试试固定一个入睡仪式。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 2,
+    "title": "呼吸安眠 — 4-7-8 呼吸法",
+    "learn_text": "4-7-8 呼吸法由哈佛医学博士 Andrew Weil 推广，被称为「天然安眠药」。\n\n原理：延长的呼气（8 秒）能强力激活副交感神经，使心率降低、身体进入休息状态。屏息（7 秒）让氧气更充分地交换。\n\n很多人反馈做 2-3 轮就会感到困意。",
+    "tool_id": "breathing_478",
+    "video_url": "https://www.bilibili.com/video/BV1xQW1zUETr/",
+    "video_title": "4-7-8 呼吸法口令引导",
+    "review_question": "做完 4-7-8 呼吸后，你感觉困意增加了吗？",
+    "tip": "躺在床上做，做完不需要再做任何事。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 3,
+    "title": "全身放松 — 渐进式肌肉放松",
+    "learn_text": "很多人失眠是因为身体虽然累了，但肌肉还在紧绷——特别是肩颈、下颚和腹部。\n\n渐进式肌肉放松通过「先紧后松」的方式，让大脑更清楚地感受到放松的状态。从脚趾一直做到头顶，全身像被卸下盔甲。",
+    "tool_id": "sleep_pmr",
+    "video_url": "https://www.bilibili.com/video/BV1qh411y7Bc/",
+    "video_title": "深度放松 — 渐进式肌肉放松练习",
+    "review_question": "做肌肉放松时，你发现哪个部位积攒了最多的紧张？",
+    "tip": "灯关了再做，做完就睡。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 4,
+    "title": "安全基地 — 想象一个让你安心的地方",
+    "learn_text": "创伤知情疗法中的「安全基地」技术也是非常好的助眠工具。\n\n在脑海中构建一个你感到完全安全和放松的地方——可以是海边、森林、童年的房间。用五感去丰富它：看、听、摸、闻、感受温度。\n\n这个地方只属于你，任何时候你都可以回去。",
+    "tool_id": "sleep_safe_place",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "21天冥想入门 — 想象引导",
+    "review_question": "你的安全基地是什么样的？描述一下你看到和感受到的。",
+    "tip": "越具体越有效——想象具体的颜色、声音和温度。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 5,
+    "title": "身体变重 — 重力释放法",
+    "learn_text": "这个技术来自自生训练（Autogenic Training），核心指令是：「我的手臂变得很重……很温暖……」\n\n通过自我暗示让身体一个部位接一个部位地「沉」入床垫。大脑会把这种重力感解读为安全信号，进而降低警觉水平。",
+    "tool_id": "sleep_body_release",
+    "video_url": "https://www.bilibili.com/video/BV15y4y1w7Bf/",
+    "video_title": "身体扫描助眠 — 轻声耳语引导",
+    "review_question": "做重力释放法时，你最后是不是不知不觉就睡着了？",
+    "tip": "让身体沉入床垫，像融化的巧克力。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 6,
+    "title": "清醒的睡眠 — 瑜伽休息术",
+    "learn_text": "瑜伽休息术（Yoga Nidra）意为「有意识的睡眠」，介于清醒和睡眠之间的深度休息状态。\n\n研究表明 30 分钟的瑜伽休息术相当于 2-3 小时的普通睡眠。即使你没有睡着，身体也获得了深层恢复。\n\n今天我们做一个简版（15 分钟），非常适合入睡困难的夜晚。",
+    "tool_id": "sleep_yoga_nidra",
+    "video_url": "https://www.bilibili.com/video/av253501476/",
+    "video_title": "Headspace 冥想指南 — 放松意识",
+    "review_question": "做瑜伽休息术时你睡着了吗？如果没有，醒来后感觉怎样？",
+    "tip": "没有睡着也没关系，身体依然在休息。"
+  },
+  {
+    "program_id": "sleep-7",
+    "day_number": 7,
+    "title": "回顾与展望 — 你的助眠工具箱",
+    "learn_text": "恭喜你完成了 7 天睡眠改善计划！回顾这周：\n\n- Day 1: 睡眠卫生 + 54321 着陆\n- Day 2: 4-7-8 呼吸（天然安眠药）\n- Day 3: 渐进式肌肉放松\n- Day 4: 安全基地想象\n- Day 5: 重力释放法\n- Day 6: 瑜伽休息术\n\n今晚选一个你最喜欢的工具做为「入睡仪式」。持续使用，你的睡眠会越来越好。",
+    "tool_id": "sleep_story_breath",
+    "video_url": "https://www.bilibili.com/video/BV1eHGyzFE57/",
+    "video_title": "温度觉知冥想 — 在呼吸间疗愈",
+    "review_question": "这 7 天里哪个助眠工具对你最有效？你打算怎么坚持使用？",
+    "tip": "好的睡眠是练出来的，不是等出来的。"
+  },
+
+  {
+    "program_id": "focus-7",
+    "day_number": 1,
+    "title": "注意力是肌肉 — 觉察你的分心模式",
+    "learn_text": "注意力不是天赋，而是可以训练的「肌肉」。就像去健身房锻炼一样，每次你发现自己走神并主动拉回来，就等于做了一个「注意力仰卧起坐」。\n\n今天的练习是 1 分钟正念——最短的注意力训练。目标不是不走神，而是尽早发现走神。",
+    "tool_id": "mindfulness_1min",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念冥想入门 — 觉察呼吸练习",
+    "review_question": "1 分钟里你走神了几次？每次是什么把你拉走的？",
+    "tip": "发现走神的那个瞬间，才是真正的「训练」。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 2,
+    "title": "数息法 — 古老的注意力训练",
+    "learn_text": "数息法是最古老的冥想入门技术：每次呼气数一个数，从 1 到 10 再重来。听起来简单，但你很快会发现自己数到 3 就走神了。\n\n这不是失败——走神再回来的过程，就是在增强前额叶皮层（负责注意力控制的脑区）的连接。",
+    "tool_id": "breathing_counted",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念入门 — 数息与觉察",
+    "review_question": "你最长连续数到了几？什么让你的注意力跑掉了？",
+    "tip": "不是数到 10 就赢了，而是每次「回来」都赢了。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 3,
+    "title": "清除干扰 — 两分钟法则",
+    "learn_text": "大脑是很差的「待办清单管理器」——那些未完成的小事会不断占用你的注意力（心理学上叫蔡格尼克效应 Zeigarnik effect）。\n\n两分钟法则来自 GTD 方法：如果一件事 2 分钟内能做完，现在就做。把微小任务清掉，释放大脑空间给重要的事。",
+    "tool_id": "focus_two_minute_rule",
+    "video_url": "https://www.bilibili.com/video/BV1yt411h7Ht/",
+    "video_title": "番茄钟自习室 — 安静学习氛围",
+    "review_question": "你清掉了几件小事？感觉大脑「卸载」了吗？",
+    "tip": "花 10 分钟清小事，省下一整天的分心。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 4,
+    "title": "番茄钟 — 25 分钟的深度专注",
+    "learn_text": "番茄工作法由意大利人 Francesco Cirillo 在 1980 年代发明（用番茄形状的厨房计时器得名）。\n\n核心规则：\n1. 选一件任务\n2. 设定 25 分钟计时器\n3. 全力投入，中途不看手机\n4. 时间到了休息 5 分钟\n\n25 分钟恰好是大多数人能保持深度专注的上限。",
+    "tool_id": "focus_pomodoro",
+    "video_url": "https://www.bilibili.com/video/BV1ij41197tP/",
+    "video_title": "沉浸式番茄钟学习 — 白噪音陪伴",
+    "review_question": "25 分钟里你成功做到不看手机了吗？感觉如何？",
+    "tip": "关键是「只做一件事」。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 5,
+    "title": "注意力锚定 — 加长你的专注时间",
+    "learn_text": "如果 1 分钟正念你已经能做到，今天我们升级到 5 分钟。\n\n选一个锚点（呼吸、声音或视觉焦点），注意力跑了就拉回来。这次我们有意识地记录走神次数——不是为了自责，而是了解自己。\n\n随着练习，你会发现走神的间隔越来越长。",
+    "tool_id": "focus_attention_anchor",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念冥想 — 注意力锚定练习",
+    "review_question": "5 分钟里你走神了几次？比第一天的 1 分钟有进步吗？",
+    "tip": "就像举哑铃——每次拉回注意力都在增强「专注肌肉」。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 6,
+    "title": "心流触发 — 创造你的深度工作仪式",
+    "learn_text": "心流（Flow）不是运气，它是可以被设计的。研究者发现，心流状态的触发条件包括：\n\n1. 明确的目标\n2. 即时反馈\n3. 挑战与能力匹配\n4. 低干扰环境\n\n今天我们建立一套固定的「心流触发仪式」——整理桌面→倒水→戴耳机→3 次深呼吸→开始。重复使用，大脑会把这个仪式当成进入专注模式的信号。",
+    "tool_id": "focus_flow_trigger",
+    "video_url": "https://www.bilibili.com/video/BV1Fr2oByEJ9/",
+    "video_title": "4小时番茄钟 — lofi 深度学习",
+    "review_question": "你设计了怎样的心流仪式？做完后是否更容易进入专注状态？",
+    "tip": "同样的仪式重复 7 次，就会变成自动化的专注开关。"
+  },
+  {
+    "program_id": "focus-7",
+    "day_number": 7,
+    "title": "回顾与展望 — 你的专注力工具箱",
+    "learn_text": "7 天专注力提升计划完成！回顾：\n\n- Day 1: 1 分钟正念 — 觉察分心\n- Day 2: 数息法 — 古老的注意力训练\n- Day 3: 两分钟法则 — 清除干扰\n- Day 4: 番茄钟 — 25 分钟深度工作\n- Day 5: 注意力锚定 — 增强专注力\n- Day 6: 心流仪式 — 触发深度工作\n\n今天做一次 30 分钟数字排毒——放下手机，和自己独处。这是对你注意力最好的奖励。",
+    "tool_id": "focus_digital_detox",
+    "video_url": "https://www.bilibili.com/video/BV1M94y1B77G/",
+    "video_title": "3小时沉浸式学习 — 日落陪伴",
+    "review_question": "30 分钟不碰手机，你感觉如何？焦虑还是平静？",
+    "tip": "你和自己独处的能力，就是你最大的竞争力。"
+  },
+
+  {
+    "program_id": "emotion-7",
+    "day_number": 1,
+    "title": "认识情绪 — 情绪不是敌人",
+    "learn_text": "情绪是进化赋予我们的「快速反应系统」。恐惧帮我们躲避危险，愤怒帮我们设定边界，悲伤帮我们获得支持。\n\n问题不是有情绪，而是被情绪「劫持」——来不及思考就做出了后悔的反应。\n\n今天我们练习 STOP 技能：在情绪升起和行动之间插入一个「暂停键」。",
+    "tool_id": "dbt_stop",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念冥想入门 — 情绪觉察",
+    "review_question": "今天有没有一个时刻你成功在情绪和行动之间按下了暂停键？",
+    "tip": "暂停 3 秒就够了——这 3 秒能改变结果。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 2,
+    "title": "情绪灭火器 — TIPP 温度急救",
+    "learn_text": "当情绪像火山一样要爆发时，说理是没用的——大脑前额叶（理性区）已经被杏仁核（情绪区）劫持了。\n\n这时候需要用「物理方法」先降温：冰水刺激触发潜水反射、剧烈运动消耗肾上腺素、呼吸调节恢复理性。\n\nTIPP 是 DBT 中最实用的急救技术。",
+    "tool_id": "dbt_tipp",
+    "video_url": "https://www.bilibili.com/video/BV1n58AzvEH6/",
+    "video_title": "快速平复心绪 — 正念冥想",
+    "review_question": "如果你经历了一次强烈情绪，TIPP 的哪个步骤对你最有效？",
+    "tip": "冰水最快——潜水反射在 15 秒内就能降低心率。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 3,
+    "title": "五感着陆 — 把自己拉回此刻",
+    "learn_text": "当焦虑让你的大脑「时空穿越」到可怕的未来时，五感着陆技术能把你锚定在「此时此地」。\n\n5 样看到的、4 种听到的、3 种摸到的、2 种闻到的、1 种尝到的——感官只存在于当下，跟着感官走，你就回到了当下。",
+    "tool_id": "mindfulness_five_senses",
+    "video_url": "https://www.bilibili.com/video/av253501476/",
+    "video_title": "Headspace 正念指南 — 感官觉察",
+    "review_question": "做五感着陆时，哪个感官最容易把你带回当下？",
+    "tip": "恐慌发作时特别好用——跟着数就好。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 4,
+    "title": "智慧心 — 理性与情感的平衡",
+    "learn_text": "DBT 创始人 Marsha Linehan 提出了三种心的模式：\n\n- 情感心：被情绪驱动，冲动、热烈\n- 理性心：只看逻辑和事实，冷漠\n- 智慧心：两者的交汇点——既尊重感受，又保持清醒\n\n做重要决定时，问自己「智慧心会怎么选？」",
+    "tool_id": "dbt_wise_mind",
+    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
+    "video_title": "正念冥想 — 智慧觉察",
+    "review_question": "你能区分情感心和理性心吗？智慧心给了你什么答案？",
+    "tip": "智慧心的声音往往是平静的、温和的。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 5,
+    "title": "自我关怀 — 对自己温柔一点",
+    "learn_text": "我们总是对别人比对自己更宽容。当好朋友犯了错，你会安慰 TA；但当自己犯错时，你可能会严厉自责。\n\n自我关怀不是自恋，而是承认「我也是一个正在努力的人类」。Kristin Neff 的研究表明，自我关怀能降低焦虑和抑郁，提高心理弹性。",
+    "tool_id": "cbt_self_compassion",
+    "video_url": "https://www.bilibili.com/video/av253501476/",
+    "video_title": "Headspace 冥想指南 — 慈爱冥想",
+    "review_question": "你对自己说的那些安慰的话，说出口时是什么感觉？",
+    "tip": "你会对好朋友说那种刻薄的话吗？那也别对自己说。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 6,
+    "title": "慈悲冥想 — 向世界发送善意",
+    "learn_text": "慈悲冥想（Loving-Kindness Meditation）是最古老的冥想传统之一，现代研究证实它能：\n\n- 增加正面情绪\n- 减少社交焦虑\n- 提高同理心\n- 增强人际连接感\n\n从对自己说「愿我快乐」开始，逐渐扩展到亲人、陌生人、甚至有矛盾的人。善意会像涟漪一样扩散。",
+    "tool_id": "mindfulness_loving_kindness",
+    "video_url": "https://www.bilibili.com/video/av253501476/",
+    "video_title": "Headspace — 慈悲冥想引导",
+    "review_question": "对困难的人发送善意时，你有什么感受？做不到也没关系。",
+    "tip": "这份善意首先温暖的是你自己。"
+  },
+  {
+    "program_id": "emotion-7",
+    "day_number": 7,
+    "title": "回顾与展望 — 你的情绪调节工具箱",
+    "learn_text": "7 天情绪管理课程完成！回顾：\n\n- Day 1: STOP 技能 — 情绪暂停键\n- Day 2: TIPP 急救 — 物理降温\n- Day 3: 五感着陆 — 回到当下\n- Day 4: 智慧心 — 理性+情感的平衡\n- Day 5: 自我关怀 — 对自己温柔\n- Day 6: 慈悲冥想 — 向世界发送善意\n\n今天做一个「三件好事」练习——情绪管理的终极目标不只是减少痛苦，更是增加幸福。",
+    "tool_id": "cbt_three_good",
+    "video_url": "https://www.bilibili.com/video/BV1eHGyzFE57/",
+    "video_title": "正念冥想 — 在呼吸间疗愈自己",
+    "review_question": "这 7 天里你最大的收获是什么？哪个工具你会继续使用？",
+    "tip": "情绪不是要被消灭的，而是要被理解的。"
+  }
+]

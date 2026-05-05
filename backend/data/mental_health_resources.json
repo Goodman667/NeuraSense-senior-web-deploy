@@ -1,0 +1,180 @@
+{
+  "version": "2026-05-01",
+  "project": "NeuraSense",
+  "resources": [
+    {
+      "topic": "self_care_boundaries",
+      "label": "自我照顾与非诊断边界",
+      "audience": ["standard", "senior"],
+      "source": "NIMH Caring for Your Mental Health; WHO Self-care for health and well-being",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.who.int/health-topics/self-care"
+      ],
+      "principles": [
+        "把心理健康支持写成日常可执行的自我照顾，不把平台说成医生或诊断工具。",
+        "优先给用户一两个今天能做的小步骤，而不是泛泛鼓励。",
+        "如果症状严重、持续或影响日常功能，建议联系专业人员或可信任的人。"
+      ]
+    },
+    {
+      "topic": "sleep",
+      "label": "睡眠支持",
+      "audience": ["standard", "senior"],
+      "source": "NIMH self-care sleep priority; NHS Every Mind Matters sleep hygiene",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.nhs.uk/every-mind-matters/mental-wellbeing-tips/how-to-fall-asleep-faster-and-sleep-better/"
+      ],
+      "principles": [
+        "睡眠差时先降低当天任务负荷，建议固定起床和睡前放松。",
+        "提醒减少睡前屏幕刺激和蓝光暴露。",
+        "不要强迫自己立刻睡着，可以先做放松、离开屏幕、保持规律作息。"
+      ]
+    },
+    {
+      "topic": "stress_breathing",
+      "label": "压力与呼吸放松",
+      "audience": ["standard", "senior"],
+      "source": "NHS breathing exercises for stress; NHS inform controlled breathing",
+      "source_urls": [
+        "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/breathing-exercises-for-stress/",
+        "https://www.nhsinform.scot/healthy-living/mental-wellbeing/breathing-and-relaxation-exercises/controlled-breathing-exercise/"
+      ],
+      "principles": [
+        "压力、焦虑或慌乱时，先让用户坐稳、放慢呼吸，再处理问题。",
+        "可以建议 3-5 分钟的呼吸练习，强调不用做得完美。",
+        "呼吸练习是稳定当下状态的工具，不替代专业治疗。"
+      ]
+    },
+    {
+      "topic": "social_connection",
+      "label": "社会连接与支持",
+      "audience": ["standard", "senior"],
+      "source": "NIMH stay connected; Devon Partnership NHS Trust Five Ways to Wellbeing",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.dpt.nhs.uk/five-ways-to-wellbeing"
+      ],
+      "principles": [
+        "当用户表达孤单、想聊天或需要陪伴时，建议一个具体联系人和一句可发送的话。",
+        "把连接写成低门槛动作：发消息、通话 10 分钟、一起散步、告诉家人今天需要陪伴。",
+        "不要把社交建议写成任务压力，强调短一点也有效。"
+      ]
+    },
+    {
+      "topic": "older_adult_loneliness",
+      "label": "老年孤独与关怀",
+      "audience": ["senior"],
+      "source": "WHO reducing social isolation and loneliness among older people; CDC older adult social connection",
+      "source_urls": [
+        "https://www.who.int/activities/reducing-social-isolation-and-loneliness-among-older-people",
+        "https://www.cdc.gov/still-going-strong/older-adults/index.html"
+      ],
+      "principles": [
+        "老年版回答要更慢、更短、更像真人在旁边陪着，不堆概念。",
+        "把陪伴建议拆成小动作：现在坐稳、喝水、闭眼休息、联系一个人。",
+        "社会隔离和孤独会影响身心健康，所以要主动识别“没人陪、想聊、一个人扛”等线索。"
+      ]
+    },
+    {
+      "topic": "body_discomfort",
+      "label": "身体不适线索",
+      "audience": ["senior"],
+      "source": "NIMH professional help guidance; SAMHSA warning signs include physical pain and serious health conditions",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.samhsa.gov/mental-health/suicidal-behavior/warning-signs"
+      ],
+      "principles": [
+        "老年用户提到眼痛、头痛、胸闷、持续疼痛时，先建议减少刺激、休息、让家人知道。",
+        "身体症状持续或加重时，建议咨询医生或联系当地医疗资源。",
+        "不要把身体不适直接解释成心理问题。"
+      ]
+    },
+    {
+      "topic": "young_pressure",
+      "label": "年轻/普通用户压力场景",
+      "audience": ["standard"],
+      "source": "NIMH self-care priorities; NHS Five Ways to Wellbeing",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.dpt.nhs.uk/five-ways-to-wellbeing"
+      ],
+      "principles": [
+        "完整版可以承接学习、考试、工作、拖延、关系和自我评价压力。",
+        "回复要更有分析深度：先指出压力循环，再给一个 10-25 分钟可执行计划。",
+        "可以用 CBT、行为激活、担忧时间等方法，但要解释成人话。"
+      ]
+    },
+    {
+      "topic": "low_mood_activation",
+      "label": "低落与行为激活",
+      "audience": ["standard", "senior"],
+      "source": "NIMH self-care goals and priorities; NHS Five Ways to Wellbeing",
+      "source_urls": [
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+        "https://www.dpt.nhs.uk/five-ways-to-wellbeing"
+      ],
+      "principles": [
+        "低落时不要要求用户振作，先降低难度。",
+        "建议一件微小行动：洗脸、开窗、走 5-10 分钟、给一个人发消息。",
+        "把完成小事作为恢复掌控感，而不是评价用户好坏。"
+      ]
+    },
+    {
+      "topic": "crisis_safety",
+      "label": "危机与安全",
+      "audience": ["standard", "senior"],
+      "source": "SAMHSA suicide warning signs and prevention guidance; NIMH 988 guidance",
+      "source_urls": [
+        "https://www.samhsa.gov/mental-health/suicidal-behavior/warning-signs",
+        "https://www.samhsa.gov/mental-health/suicidal-behavior/prevention",
+        "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health"
+      ],
+      "principles": [
+        "如果出现自杀、自伤、活着没意思、无法保证安全等内容，先处理安全，不继续普通建议。",
+        "询问用户现在是否安全、身边是否有人，建议立刻联系可信任的人、当地急救或心理援助。",
+        "危机内容要清楚、温和、直接，不能只说泛泛安慰。"
+      ]
+    },
+    {
+      "topic": "embedded_assessment",
+      "label": "嵌入式对话评估",
+      "audience": ["standard", "senior"],
+      "source": "NeuraSense project innovation",
+      "source_urls": [],
+      "principles": [
+        "在自然对话中整合用户文字、问题答案、历史上下文和状态线索。",
+        "不要把用户体验做成量表答题，输出要像陪伴式反馈。",
+        "建议必须能解释为什么此刻出现，而不是只给结论。"
+      ]
+    },
+    {
+      "topic": "cross_modal_discordance",
+      "label": "跨模态不一致与隐性痛苦",
+      "audience": ["standard"],
+      "source": "NeuraSense project innovation",
+      "source_urls": [],
+      "principles": [
+        "当文字说还好，但语音、眼动、表情或生理线索显示压力时，温和指出可能存在没说出口的负担。",
+        "不要把不一致解释成用户说谎，而是给出更安全的表达空间。",
+        "弹窗或建议要说明触发原因：表达内容与状态线索不完全一致。"
+      ]
+    },
+    {
+      "topic": "caregiver_communication",
+      "label": "家属沟通",
+      "audience": ["senior"],
+      "source": "NeuraSense senior care design; SAMHSA support guidance",
+      "source_urls": [
+        "https://www.samhsa.gov/mental-health/suicidal-behavior/prevention"
+      ],
+      "principles": [
+        "给家属看的内容要短，不写诊断和评分。",
+        "只说明今天用户需要怎样被陪伴，以及一件家属能做的事。",
+        "风险升高时，建议家属陪在身边、移除危险物品、联系专业或急救资源。"
+      ]
+    }
+  ]
+}

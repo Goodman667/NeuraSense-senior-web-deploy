@@ -1,0 +1,1 @@
+export { StroopTest } from './StroopTest';
