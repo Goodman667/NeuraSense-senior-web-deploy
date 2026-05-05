@@ -52,3 +52,9 @@ backend/data/senior_voice_interviews.json
 # frontend local env
 frontend/.env.development
 frontend/.env.production
+
+# deployment artifacts / local secrets
+.deploy-backend.env
+.deploy-root.env
+frontend-dist.zip
+*.tar.gz
