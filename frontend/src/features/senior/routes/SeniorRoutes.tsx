@@ -88,6 +88,7 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
   const [chatSeed, setChatSeed] = useState<string>('');
   const [latestSummary, setLatestSummary] = useState<SeniorSummary | null>(() => readStoredSummary(storageUserId));
   const skipNextPersistRef = useRef(false);
+  const syncUrlRef = useRef(true);
   const lastUserIdRef = useRef(storageUserId);
   const { speak } = useSeniorTTS();
   const stopAndClearAudio = useCallback(() => {
@@ -105,7 +106,7 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
     const nextPage = readStoredPage(storageUserId) || 'home';
     setPage(nextPage);
     localStorage.setItem(storageUserKey(STORAGE_ROUTE, storageUserId), nextPage);
-    replaceSeniorUrl(nextPage);
+    if (syncUrlRef.current) replaceSeniorUrl(nextPage);
   }, [stopAndClearAudio, storageUserId]);
   useEffect(() => {
     if (skipNextPersistRef.current) {
@@ -113,7 +114,7 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
       return;
     }
     localStorage.setItem(storageUserKey(STORAGE_ROUTE, storageUserId), page);
-    replaceSeniorUrl(page);
+    if (syncUrlRef.current) replaceSeniorUrl(page);
   }, [page, storageUserId]);
   useEffect(() => {
     if (page === 'companion') return;
@@ -126,6 +127,12 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
   const goTop = () => window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
   const handleNavigate = (next: SeniorPage) => { stopAndClearAudio(); setPage(next); goTop(); };
   const handleStartTopic = (prompt: string) => { stopAndClearAudio(); setChatSeed(prompt); setPage('chat'); goTop(); };
+  const handleSwitchToStandard = useCallback(() => {
+    syncUrlRef.current = false;
+    skipNextPersistRef.current = true;
+    stopAndClearAudio();
+    onSwitchToStandard();
+  }, [onSwitchToStandard, stopAndClearAudio]);
   const handleSummary = (summary: SeniorSummary) => {
     setLatestSummary(summary);
     localStorage.setItem(storageUserKey(STORAGE_SUMMARY, storageUserId), JSON.stringify(summary));
@@ -142,5 +149,5 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
       default: return <SeniorHome userId={storageUserId} currentUserName={currentUserName} latestSummary={latestSummary} onNavigate={handleNavigate} onStartTopic={handleStartTopic} />;
     }
   })();
-  return <SeniorShell page={page} onNavigate={handleNavigate} onSwitchToStandard={onSwitchToStandard} currentUserName={currentUserName}>{content}</SeniorShell>;
+  return <SeniorShell page={page} onNavigate={handleNavigate} onSwitchToStandard={handleSwitchToStandard} currentUserName={currentUserName}>{content}</SeniorShell>;
 }
