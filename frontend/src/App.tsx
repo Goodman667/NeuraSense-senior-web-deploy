@@ -715,6 +715,11 @@ function App() {
 
     const switchToStandardMode = useCallback(() => {
         hasManualModeSelectionRef.current = true;
+        try {
+            localStorage.setItem('psy-ui-mode', JSON.stringify({ state: { mode: 'standard' }, version: 0 }));
+        } catch (err) {
+            console.warn('Failed to persist standard UI mode:', err);
+        }
         stopAllSpeech();
         setMode('standard');
         setActiveTab('today');
