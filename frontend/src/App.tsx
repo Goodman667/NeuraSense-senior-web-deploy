@@ -693,11 +693,20 @@ function App() {
     const forceAppPath = useCallback((path: string) => {
         const apply = () => {
             if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
-            window.history.replaceState(null, document.title, path);
+            try {
+                window.history.replaceState(null, document.title, path);
+            } catch (err) {
+                console.warn('History path cleanup failed, falling back to location.replace:', err);
+                window.location.replace(path);
+            }
+            if (window.location.pathname !== path) {
+                window.location.replace(path);
+            }
         };
         apply();
         window.setTimeout(apply, 0);
         window.setTimeout(apply, 150);
+        window.setTimeout(apply, 500);
     }, []);
 
     const replaceAppPath = useCallback((path: string) => {
