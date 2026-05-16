@@ -74,6 +74,9 @@ export default defineConfig({
                 ],
             },
             workbox: {
+                clientsClaim: true,
+                skipWaiting: true,
+                navigateFallback: 'index.html',
                 // 预缓存：静态资源（JS/CSS/HTML/字体）
                 globPatterns: ['**/*.{js,css,html,woff2,woff,ttf}'],
                 // 运行时缓存策略

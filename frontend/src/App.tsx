@@ -690,7 +690,7 @@ function App() {
         window.speechSynthesis?.cancel();
     }, []);
 
-    const replaceAppPath = useCallback((path: string) => {
+    const forceAppPath = useCallback((path: string) => {
         const apply = () => {
             if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
             window.history.replaceState(null, document.title, path);
@@ -700,6 +700,10 @@ function App() {
         window.setTimeout(apply, 150);
     }, []);
 
+    const replaceAppPath = useCallback((path: string) => {
+        window.history.replaceState(null, document.title, path);
+    }, []);
+
     const switchToStandardMode = useCallback(() => {
         hasManualModeSelectionRef.current = true;
         stopAllSpeech();
@@ -707,8 +711,8 @@ function App() {
         setActiveTab('today');
         setSubView(null);
         setShowMonitors(false);
-        replaceAppPath('/');
-    }, [replaceAppPath, setMode, stopAllSpeech]);
+        forceAppPath('/');
+    }, [forceAppPath, setMode, stopAllSpeech]);
 
     const switchToSeniorMode = useCallback(() => {
         hasManualModeSelectionRef.current = true;
