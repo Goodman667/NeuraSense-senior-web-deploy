@@ -691,8 +691,13 @@ function App() {
     }, []);
 
     const replaceAppPath = useCallback((path: string) => {
-        if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
-        window.history.replaceState(null, document.title, path);
+        const apply = () => {
+            if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
+            window.history.replaceState(null, document.title, path);
+        };
+        apply();
+        window.setTimeout(apply, 0);
+        window.setTimeout(apply, 150);
     }, []);
 
     const switchToStandardMode = useCallback(() => {
