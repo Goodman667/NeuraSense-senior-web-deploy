@@ -24,10 +24,14 @@ check() {
   return 1
 }
 
-check "http://127.0.0.1:8000/health" 20 2
-check "http://127.0.0.1/api/v1/health" 10 2
-check "http://127.0.0.1/" 10 2
+if [ "${CHECK_LOCAL:-0}" = "1" ]; then
+  check "http://127.0.0.1:8000/health" 20 2
+  check "http://127.0.0.1/api/v1/health" 10 2
+  check "http://127.0.0.1/" 10 2
+fi
+
 check "https://neura.ha7e.com/" 10 2
 check "https://neura.ha7e.com/senior" 10 2
+check "https://neura.ha7e.com/api/v1/health" 10 2
 
 echo "[healthcheck] All checks passed"

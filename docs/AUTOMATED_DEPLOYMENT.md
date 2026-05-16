@@ -67,7 +67,7 @@ GitHub Secrets：
 - `.github/workflows/deploy.yml`：push 到 `main` 或手动 `workflow_dispatch` 触发。
 - `scripts/deploy_ssh.sh`：GitHub Actions 使用的正式 SSH/rsync 部署脚本。
 - `scripts/deploy_paramiko.py`：本地 Windows 临时验证脚本，只从环境变量读取密码，不用于 CI。
-- `scripts/healthcheck.sh`：部署后的健康检查。
+- `scripts/healthcheck.sh`：部署后的公网健康检查；在服务器本机可设置 `CHECK_LOCAL=1` 同时检查 `127.0.0.1`。
 
 日常使用：
 
