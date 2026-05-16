@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import DecryptedText from '../components/ReactBits/DecryptedText';
+import GradientText from '../components/ReactBits/GradientText';
+import NeuralAurora from '../components/ReactBits/NeuralAurora';
+import SignalOrbit from '../components/ReactBits/SignalOrbit';
+import SpotlightCard from '../components/ReactBits/SpotlightCard';
 
 const revealContainer = {
     hidden: {},
@@ -59,43 +64,43 @@ interface JourneyStep {
 
 const heroSignals: HeroSignal[] = [
     {
-        label: '评估',
-        title: '结构化评估入口',
-        detail: 'PHQ-9、GAD-7 与多维心理测量解释集中呈现。',
+        label: '记录',
+        title: '先看看今天过得怎么样',
+        detail: '用几个简单问题了解心情、压力和睡眠，不需要懂专业术语。',
     },
     {
-        label: '陪伴',
-        title: '连续式 AI 聊愈',
-        detail: '从陪伴式对话到危机识别，始终保持温和但清晰。',
+        label: '聊聊',
+        title: '把说不出口的先说出来',
+        detail: 'AI 会陪你整理想法，给出温和回应和下一步建议。',
     },
     {
-        label: '进展',
-        title: '训练与趋势回看',
-        detail: '把呼吸、睡眠、认知训练和报告归入一个持续节律。',
+        label: '练习',
+        title: '做一个现在就能开始的小练习',
+        detail: '呼吸、放松、睡眠和专注练习，按你的状态慢慢来。',
     },
 ];
 
 const principles: Principle[] = [
     {
-        title: '连续支持',
-        detail: '从签到、评估到 AI 对话和训练计划，核心能力可以连续使用。',
+        title: '每天都能用',
+        detail: '记录、聊天和练习都在同一处，不用来回寻找入口。',
     },
     {
-        title: '清晰易用',
-        detail: '重要信息与主要入口优先展示，首次访问也能快速开始。',
+        title: '不需要懂术语',
+        detail: '页面会把要做的事说清楚，第一次打开也知道从哪开始。',
     },
     {
-        title: '长期陪伴',
-        detail: '支持记录、趋势回看和课程跟进，方便长期关注自己的变化。',
+        title: '看见自己的变化',
+        detail: '记录会留下来，方便回头看看哪段时间轻松一点、哪些方法有帮助。',
     },
 ];
 
 const featureCards: FeatureCard[] = [
     {
-        eyebrow: '评估',
-        title: '专业心理评估',
-        description: '将量表、风险信号和 AI 解读整合为一个清晰的起点，让首次进入也不迷失。',
-        tags: ['PHQ-9', 'GAD-7', '画钟测验'],
+        eyebrow: '记录',
+        title: '心情与睡眠记录',
+        description: '用几个简单问题整理今天的感受、压力和睡眠，帮你先看清自己正处在什么状态。',
+        tags: ['心情', '压力', '睡眠'],
         accent: 'from-teal-500 via-cyan-400 to-sky-400',
         surface: 'from-teal-50 via-white to-cyan-50',
         tint: 'text-teal-700',
@@ -110,9 +115,9 @@ const featureCards: FeatureCard[] = [
     },
     {
         eyebrow: '对话',
-        title: 'AI 聊愈师',
-        description: '对话不是一个弹窗功能，而是一条可延续、可理解、可追踪的支持流。',
-        tags: ['情绪识别', '危机干预', '持续陪伴'],
+        title: 'AI 陪你聊聊',
+        description: '当你不知道该和谁说时，可以先在这里把事情讲出来，得到温和回应和可执行的小建议。',
+        tags: ['倾听', '整理想法', '下一步建议'],
         accent: 'from-slate-700 via-slate-500 to-teal-500',
         surface: 'from-slate-50 via-white to-teal-50',
         tint: 'text-slate-700',
@@ -124,9 +129,9 @@ const featureCards: FeatureCard[] = [
     },
     {
         eyebrow: '工具',
-        title: '自助工具箱',
-        description: '呼吸、正念、认知训练与沉浸式调节统一进一个操作面板，降低行动门槛。',
-        tags: ['呼吸训练', '正念冥想', '认知训练'],
+        title: '放松练习',
+        description: '呼吸、正念、专注和沉浸放松放在一起，状态不太好时也能直接开始。',
+        tags: ['呼吸', '放松', '专注'],
         accent: 'from-emerald-500 via-teal-500 to-cyan-400',
         surface: 'from-emerald-50 via-white to-teal-50',
         tint: 'text-emerald-700',
@@ -140,10 +145,10 @@ const featureCards: FeatureCard[] = [
         ),
     },
     {
-        eyebrow: '课程',
-        title: '结构化课程',
-        description: '围绕焦虑缓解、睡眠改善、情绪管理等主题提供连续课程安排。',
-        tags: ['7~21 天计划', '主题路线', '习惯建立'],
+        eyebrow: '计划',
+        title: '连续小计划',
+        description: '围绕焦虑、睡眠和情绪管理等主题，每天完成一点点，更容易坚持。',
+        tags: ['7天开始', '睡眠', '情绪'],
         accent: 'from-amber-500 via-orange-400 to-rose-400',
         surface: 'from-amber-50 via-white to-orange-50',
         tint: 'text-amber-700',
@@ -155,10 +160,10 @@ const featureCards: FeatureCard[] = [
         ),
     },
     {
-        eyebrow: '信号',
-        title: '生物信号分析',
-        description: '眼动、语音与行为数据被解释为辅助洞察，而不是堆砌冷冰冰的技术名词。',
-        tags: ['眼动追踪', '语音情感', '键盘动力学'],
+        eyebrow: '观察',
+        title: '从身体信号看状态',
+        description: '结合眼动、声音和使用行为等线索，帮助你从另一个角度理解疲惫、紧张或注意力变化。',
+        tags: ['眼动', '声音', '行为线索'],
         accent: 'from-sky-500 via-cyan-400 to-teal-400',
         surface: 'from-sky-50 via-white to-cyan-50',
         tint: 'text-sky-700',
@@ -169,10 +174,10 @@ const featureCards: FeatureCard[] = [
         ),
     },
     {
-        eyebrow: '报告',
-        title: 'AI 报告与趋势',
-        description: '评估结论、阶段性变化与个性化建议，用更接近专业摘要的方式交付。',
-        tags: ['PDF 报告', '趋势预测', '个性建议'],
+        eyebrow: '回顾',
+        title: '变化回顾',
+        description: '把一段时间里的心情、练习和睡眠变化整理成清楚的回顾，方便继续照顾自己。',
+        tags: ['每周回顾', '变化', '建议'],
         accent: 'from-slate-800 via-slate-600 to-sky-500',
         surface: 'from-slate-100 via-white to-sky-50',
         tint: 'text-slate-700',
@@ -189,44 +194,43 @@ const featureCards: FeatureCard[] = [
 
 const journeySteps: JourneyStep[] = [
     {
-        title: '了解当前状态',
-        detail: '通过签到与量表快速掌握情绪、压力、睡眠等信息。',
-        signal: '从记录开始',
+        title: '先记录今天',
+        detail: '回答几个简单问题，留下心情、压力、睡眠和身体感受。',
+        signal: '从一两分钟开始',
     },
     {
-        title: '获得 AI 支持',
-        detail: '在对话中继续表达困扰，获取温和陪伴与风险提醒。',
-        signal: '从理解到回应',
+        title: '和 AI 聊一聊',
+        detail: '把想说的话写下来或说出来，先获得一个温和的回应。',
+        signal: '把事情理顺',
     },
     {
-        title: '开始合适的练习',
-        detail: '根据状态选择呼吸、正念、认知训练或沉浸式调节。',
-        signal: '把建议变成行动',
+        title: '选择一个小练习',
+        detail: '根据当下状态，做呼吸、放松、专注或睡前练习。',
+        signal: '马上能做',
     },
     {
-        title: '持续回顾变化',
-        detail: '通过报告、趋势和课程进度观察自己的变化。',
-        signal: '看见每一步进展',
+        title: '过几天再回看',
+        detail: '看看哪些时刻轻松一点，哪些方法对你有帮助。',
+        signal: '看见变化',
     },
 ];
 
 const assuranceNotes = [
-    '支持量表评估、AI 对话、自助练习、课程计划与趋势回看。',
-    '记录会持续保存，方便后续查看变化与继续练习。',
-    '从首次使用到日常陪伴，都能快速找到下一步。',
+    '不用一次做完，先记录、先聊聊或先做一个练习都可以。',
+    '你的记录会保存在账号里，方便下次接着看。',
+    '如果你状态很差，页面会提醒你及时寻求现实中的帮助。',
 ];
 
 const trendBars = ['34%', '46%', '42%', '55%', '61%', '58%', '72%'];
 
 export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps) {
     return (
-        <div className="min-h-screen bg-[#f4f6f1] text-slate-900">
+        <div className="min-h-screen bg-[#eef7f5] text-slate-900">
             <div className="relative isolate overflow-hidden">
-                <div className="absolute inset-0 -z-30 bg-[#f4f6f1]" />
-                <div className="absolute left-[-10rem] top-[-8rem] -z-20 h-[24rem] w-[24rem] rounded-full bg-cyan-200/45 blur-3xl" />
-                <div className="absolute right-[-6rem] top-20 -z-20 h-[28rem] w-[28rem] rounded-full bg-slate-300/45 blur-3xl" />
-                <div className="absolute left-1/2 top-[18rem] -z-20 h-[20rem] w-[44rem] -translate-x-1/2 rounded-full bg-white/80 blur-3xl" />
-                <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(148,163,184,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.09)_1px,transparent_1px)] bg-[size:120px_120px] opacity-40" />
+                <div className="absolute inset-0 -z-30 bg-[radial-gradient(circle_at_50%_-10%,rgba(224,255,250,0.95),transparent_36%),linear-gradient(180deg,#eef7f5_0%,#f8fbf7_46%,#eef5f8_100%)]" />
+                <NeuralAurora />
+                <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(15,23,42,0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.055)_1px,transparent_1px)] bg-[size:96px_96px] opacity-50 [mask-image:linear-gradient(to_bottom,black,transparent_82%)]" />
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.74),transparent_34%)]" />
                 <div className="absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-slate-300/80 to-transparent" />
 
                 <div className="mx-auto max-w-7xl px-6 pb-16 sm:pb-20 lg:px-10 lg:pb-24">
@@ -247,13 +251,13 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                             </div>
                             <div>
                                 <p className="font-serif text-2xl tracking-tight text-slate-950">NeuraSense</p>
-                                <p className="mt-1 text-[10px] uppercase tracking-[0.34em] text-slate-500">心理健康支持平台</p>
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.34em] text-slate-500">情绪与睡眠陪伴</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3">
                             <div className="hidden rounded-full border border-white/80 bg-white/60 px-4 py-2 text-[11px] uppercase tracking-[0.28em] text-slate-500 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.3)] backdrop-blur lg:block">
-                                评估 · 陪伴 · 训练
+                                记录 · 聊聊 · 练习
                             </div>
                             <button
                                 onClick={onLogin}
@@ -274,22 +278,26 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                             >
                                 <motion.div variants={revealItem} className="inline-flex items-center gap-3 rounded-full border border-white/80 bg-white/72 px-4 py-2 text-[11px] uppercase tracking-[0.3em] text-teal-700 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl">
                                     <span className="h-2 w-2 rounded-full bg-teal-500" />
-                                    AI 心理健康支持平台
+                                    <DecryptedText text="AI 情绪与睡眠陪伴" />
                                 </motion.div>
 
                                 <motion.h1
                                     variants={revealItem}
                                     className="mt-7 max-w-4xl font-serif text-[3.3rem] leading-[0.95] tracking-[-0.05em] text-slate-950 sm:text-[4.4rem] lg:text-[5.6rem] xl:text-[6.35rem]"
                                 >
-                                    让心理支持，
-                                    <span className="block text-slate-600">更容易开始，也更值得长期使用。</span>
+                                    当你有些累的时候，
+                                    <span className="block text-slate-600">
+                                        <GradientText colors={['#475569', '#0891b2', '#14b8a6', '#475569']} animationSpeed={9}>
+                                            这里可以先陪你停一停。
+                                        </GradientText>
+                                    </span>
                                 </motion.h1>
 
                                 <motion.p
                                     variants={revealItem}
                                     className="mt-7 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg"
                                 >
-                                    NeuraSense 将心理评估、AI 聊愈、自助训练与趋势报告整合在同一平台，帮助用户从了解状态到持续练习，再到回顾变化。
+                                    NeuraSense 陪你把今天的感受写下来，整理压力和睡眠变化，也会推荐适合当下的小练习。它不替代医生或咨询师，但可以成为日常自我照顾的起点。
                                 </motion.p>
 
                                 <motion.div variants={revealItem} className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -312,14 +320,14 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                     className="mt-12 grid gap-4 sm:grid-cols-3"
                                 >
                                     {heroSignals.map((signal) => (
-                                        <div
+                                        <SpotlightCard
                                             key={signal.label}
                                             className="rounded-[1.6rem] border border-white/80 bg-white/70 p-5 shadow-[0_24px_70px_-34px_rgba(15,23,42,0.35)] backdrop-blur-xl"
                                         >
                                             <p className="text-[11px] uppercase tracking-[0.26em] text-slate-400">{signal.label}</p>
                                             <h2 className="mt-3 text-base font-semibold text-slate-900">{signal.title}</h2>
                                             <p className="mt-2 text-sm leading-7 text-slate-600">{signal.detail}</p>
-                                        </div>
+                                        </SpotlightCard>
                                     ))}
                                 </motion.div>
                             </motion.div>
@@ -333,31 +341,35 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                 <div className="absolute -left-10 top-20 hidden h-24 w-24 rounded-full border border-white/70 bg-white/30 blur-[2px] lg:block" />
                                 <div className="absolute -right-8 bottom-10 hidden h-28 w-28 rounded-full bg-teal-100/70 blur-2xl lg:block" />
 
-                                <div className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/76 p-6 shadow-[0_40px_120px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl sm:p-7">
+                                <SpotlightCard className="landing-card-sheen landing-hologram-panel relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/76 p-6 shadow-[0_40px_120px_-42px_rgba(15,23,42,0.42)] backdrop-blur-2xl sm:p-7" spotlightColor="rgba(8, 145, 178, 0.16)" radius={560}>
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/85 via-white/55 to-slate-100/55" />
+                                    <div className="landing-scan-layer absolute inset-0" aria-hidden="true" />
                                     <div className="relative">
                                         <div className="flex flex-col gap-4 border-b border-slate-200/80 pb-6 sm:flex-row sm:items-start sm:justify-between">
                                             <div>
-                                                <p className="text-[11px] uppercase tracking-[0.34em] text-teal-700">今日支持概览</p>
+                                                <p className="text-[11px] uppercase tracking-[0.34em] text-teal-700">今日照顾清单</p>
                                                 <h2 className="mt-3 max-w-md font-serif text-3xl leading-tight tracking-[-0.03em] text-slate-950 sm:text-[2.2rem]">
-                                                    从状态了解、支持对话到训练计划，一处完成。
+                                                    先看看今天的状态，再决定做什么。
                                                 </h2>
                                             </div>
                                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">
                                                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                                服务已就绪
+                                                可以开始
                                             </div>
                                         </div>
 
                                         <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(220px,0.92fr)]">
-                                            <div className="rounded-[1.7rem] bg-slate-950 p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-6">
+                                            <div className="relative overflow-hidden rounded-[1.7rem] bg-slate-950 p-5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:p-6">
+                                                <div className="landing-data-rain absolute inset-0 opacity-45" aria-hidden="true" />
+                                                <SignalOrbit className="absolute right-[-3.8rem] top-[-3.5rem] h-44 w-44" />
+                                                <div className="relative">
                                                 <div className="flex items-center justify-between gap-4">
                                                     <div>
-                                                        <p className="text-[11px] uppercase tracking-[0.32em] text-slate-400">近7天趋势</p>
-                                                        <p className="mt-3 text-2xl font-semibold text-white">最近状态概览</p>
+                                                        <p className="text-[11px] uppercase tracking-[0.32em] text-slate-400">最近7天</p>
+                                                        <p className="mt-3 text-2xl font-semibold text-white">最近的我</p>
                                                     </div>
                                                     <div className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300">
-                                                        持续记录
+                                                        慢慢记录
                                                     </div>
                                                 </div>
 
@@ -372,7 +384,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                                         >
                                                             <div
                                                                 style={{ height }}
-                                                                className={`w-full rounded-t-[999px] ${index === trendBars.length - 1 ? 'bg-gradient-to-t from-cyan-400 via-teal-300 to-white' : 'bg-gradient-to-t from-slate-600 to-slate-300'}`}
+                                                                className={`landing-bar-glow w-full rounded-t-[999px] ${index === trendBars.length - 1 ? 'bg-gradient-to-t from-cyan-400 via-teal-300 to-white' : 'bg-gradient-to-t from-slate-600 to-slate-300'}`}
                                                             />
                                                         </motion.div>
                                                     ))}
@@ -380,25 +392,26 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
 
                                                 <div className="mt-6 grid grid-cols-3 gap-3 text-sm text-slate-300">
                                                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">当前状态</p>
-                                                        <p className="mt-2 font-medium text-white">稳定回升</p>
+                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">现在感觉</p>
+                                                        <p className="mt-2 font-medium text-white">有些起伏</p>
                                                     </div>
                                                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">支持方式</p>
-                                                        <p className="mt-2 font-medium text-white">持续陪伴</p>
+                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">适合现在</p>
+                                                        <p className="mt-2 font-medium text-white">聊聊再决定</p>
                                                     </div>
                                                     <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">今日重点</p>
-                                                        <p className="mt-2 font-medium text-white">睡眠优先</p>
+                                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">今晚重点</p>
+                                                        <p className="mt-2 font-medium text-white">早点休息</p>
                                                     </div>
+                                                </div>
                                                 </div>
                                             </div>
 
                                             <div className="space-y-4">
                                                 <div className="rounded-[1.4rem] border border-slate-200/80 bg-stone-50/95 p-5">
-                                                    <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">评估项目</p>
+                                                    <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">今天可以先做什么</p>
                                                     <div className="mt-4 flex flex-wrap gap-2">
-                                                        {['PHQ-9', 'GAD-7', 'CBT 策略', '风险标记'].map((tag) => (
+                                                        {['心情', '压力', '睡眠', '放松'].map((tag) => (
                                                             <span
                                                                 key={tag}
                                                                 className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600"
@@ -408,17 +421,17 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                                         ))}
                                                     </div>
                                                     <p className="mt-4 text-sm leading-7 text-slate-600">
-                                                        量表结果、风险提示与建议会集中展示，方便快速了解当前状态。
+                                                        几个简单问题会帮你整理今天的感受，然后给出更适合的下一步。
                                                     </p>
                                                 </div>
 
                                                 <div className="rounded-[1.4rem] border border-slate-200/80 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)]">
                                                     <div className="flex items-center justify-between gap-3">
-                                                        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">使用流程</p>
+                                                        <p className="text-[11px] uppercase tracking-[0.3em] text-slate-500">开始方式</p>
                                                         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">已开启</span>
                                                     </div>
                                                     <div className="mt-4 space-y-3">
-                                                        {['完成签到或评估', '进入 AI 陪伴', '开始今日练习'].map((step, index) => (
+                                                        {['记录今天感受', '和 AI 聊一聊', '做一个小练习'].map((step, index) => (
                                                             <div key={step} className="flex items-center gap-3 rounded-2xl border border-slate-200/70 bg-slate-50/70 px-3 py-3">
                                                                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
                                                                     0{index + 1}
@@ -433,9 +446,9 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
 
                                         <div className="mt-4 grid gap-4 sm:grid-cols-3">
                                             {[
-                                                { label: '核心入口', value: '评估与签到' },
-                                                { label: '记录方式', value: '趋势与报告' },
-                                                { label: '下一步', value: '课程与练习' },
+                                                { label: '先从这里', value: '记录今天' },
+                                                { label: '看看变化', value: '近期回顾' },
+                                                { label: '继续照顾自己', value: '练习计划' },
                                             ].map((item) => (
                                                 <div key={item.label} className="rounded-[1.2rem] border border-slate-200/80 bg-white/80 px-4 py-4 text-sm shadow-[0_18px_40px_-34px_rgba(15,23,42,0.28)]">
                                                     <p className="text-[11px] uppercase tracking-[0.26em] text-slate-400">{item.label}</p>
@@ -444,7 +457,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                             ))}
                                         </div>
                                     </div>
-                                </div>
+                                </SpotlightCard>
                             </motion.div>
                         </div>
                     </section>
@@ -459,14 +472,14 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                 className="rounded-[2rem] border border-white/80 bg-white/72 p-7 shadow-[0_34px_90px_-42px_rgba(15,23,42,0.35)] backdrop-blur-xl lg:sticky lg:top-8 lg:h-fit"
                             >
                                 <motion.p variants={revealItem} className="text-[11px] uppercase tracking-[0.34em] text-teal-700">
-                                    平台亮点
+                                    你可以这样开始
                                 </motion.p>
                                 <motion.h2 variants={revealItem} className="mt-4 font-serif text-4xl leading-tight tracking-[-0.04em] text-slate-950">
-                                    把核心能力放在
-                                    <span className="block text-slate-600">真正需要的位置。</span>
+                                    给自己一个
+                                    <span className="block text-slate-600">容易开始的入口。</span>
                                 </motion.h2>
                                 <motion.p variants={revealItem} className="mt-6 text-base leading-8 text-slate-600">
-                                    首页优先呈现评估、对话、练习和课程四个核心入口，让首次访问与日常使用都能快速找到下一步。
+                                    首页把记录、聊天、放松练习和回顾放在前面。心里乱的时候，不需要先想清楚要用哪个功能。
                                 </motion.p>
 
                                 <div className="mt-8 space-y-5 border-t border-slate-200/80 pt-6">
@@ -490,42 +503,42 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                 className="grid gap-5 md:grid-cols-2"
                             >
                                 {featureCards.map((feature) => (
-                                    <motion.article
+                                    <SpotlightCard
                                         key={feature.title}
-                                        variants={revealItem}
-                                        whileHover={{ y: -6 }}
                                         className={`group relative overflow-hidden rounded-[1.8rem] border border-white/80 bg-white/78 p-6 shadow-[0_28px_80px_-38px_rgba(15,23,42,0.32)] backdrop-blur-xl transition duration-300 ${feature.featured ? 'md:col-span-2 md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-end md:gap-6' : ''}`}
                                     >
-                                        <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${feature.accent}`} />
-                                        <div>
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.surface} ${feature.tint} shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)]`}>
-                                                    {feature.icon}
+                                        <motion.article variants={revealItem} whileHover={{ y: -6 }} className="relative">
+                                            <div className={`absolute inset-x-0 top-[-1.5rem] h-1 bg-gradient-to-r ${feature.accent}`} />
+                                            <div>
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.surface} ${feature.tint} shadow-[0_18px_40px_-30px_rgba(15,23,42,0.35)]`}>
+                                                        {feature.icon}
+                                                    </div>
+                                                    <span className="rounded-full border border-slate-200/80 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-slate-500">
+                                                        {feature.eyebrow}
+                                                    </span>
                                                 </div>
-                                                <span className="rounded-full border border-slate-200/80 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-slate-500">
-                                                    {feature.eyebrow}
-                                                </span>
+
+                                                <h3 className="mt-7 font-serif text-[1.9rem] leading-tight tracking-[-0.03em] text-slate-950">
+                                                    {feature.title}
+                                                </h3>
+                                                <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-[15px]">
+                                                    {feature.description}
+                                                </p>
                                             </div>
 
-                                            <h3 className="mt-7 font-serif text-[1.9rem] leading-tight tracking-[-0.03em] text-slate-950">
-                                                {feature.title}
-                                            </h3>
-                                            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-[15px]">
-                                                {feature.description}
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-6 flex flex-wrap gap-2 md:mt-0 md:justify-end">
-                                            {feature.tags.map((tag) => (
-                                                <span
-                                                    key={tag}
-                                                    className="rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
-                                                >
-                                                    {tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </motion.article>
+                                            <div className="mt-6 flex flex-wrap gap-2 md:mt-0 md:justify-end">
+                                                {feature.tags.map((tag) => (
+                                                    <span
+                                                        key={tag}
+                                                        className="rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </motion.article>
+                                    </SpotlightCard>
                                 ))}
                             </motion.div>
                         </div>
@@ -541,13 +554,13 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                 className="rounded-[2rem] border border-slate-200/80 bg-slate-950 p-7 text-white shadow-[0_38px_100px_-42px_rgba(15,23,42,0.75)] sm:p-8"
                             >
                                 <motion.p variants={revealItem} className="text-[11px] uppercase tracking-[0.34em] text-cyan-300">
-                                    使用路径
+                                    怎么开始
                                 </motion.p>
                                 <motion.h2 variants={revealItem} className="mt-4 max-w-2xl font-serif text-4xl leading-tight tracking-[-0.04em] text-white">
-                                    从初次接触到持续改善，平台会把路径说清楚。
+                                    不用准备好，也可以先从今天开始。
                                 </motion.h2>
                                 <motion.p variants={revealItem} className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                                    用户可以从签到或量表开始，在 AI 陪伴、自助练习和课程计划之间顺畅切换，并通过趋势记录持续回顾。
+                                    先回答几个问题，或者直接找 AI 聊聊。之后可以根据状态做一个小练习，过几天再回来看看变化。
                                 </motion.p>
 
                                 <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -578,9 +591,9 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                     transition={{ duration: 0.7, ease: 'easeOut' }}
                                     className="rounded-[2rem] border border-white/80 bg-white/76 p-7 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.34)] backdrop-blur-xl"
                                 >
-                                    <p className="text-[11px] uppercase tracking-[0.34em] text-slate-500">平台能力</p>
+                                    <p className="text-[11px] uppercase tracking-[0.34em] text-slate-500">我们会帮你</p>
                                     <h2 className="mt-4 font-serif text-3xl leading-tight tracking-[-0.04em] text-slate-950">
-                                        把专业支持做得更清楚，也更容易开始。
+                                        把复杂的感受，整理成看得懂的下一步。
                                     </h2>
                                     <div className="mt-6 space-y-4">
                                         {assuranceNotes.map((note) => (
@@ -601,12 +614,12 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                 >
                                     <div className="absolute right-[-3rem] top-[-3rem] h-32 w-32 rounded-full bg-cyan-200/60 blur-3xl" />
                                     <div className="relative">
-                                        <p className="text-[11px] uppercase tracking-[0.34em] text-teal-700">立即开始</p>
+                                        <p className="text-[11px] uppercase tracking-[0.34em] text-teal-700">现在开始</p>
                                         <h2 className="mt-4 max-w-sm font-serif text-3xl leading-tight tracking-[-0.04em] text-slate-950">
-                                            现在开始了解你的状态
+                                            现在就给自己几分钟
                                         </h2>
                                         <p className="mt-5 max-w-md text-sm leading-7 text-slate-600">
-                                            创建账号后可同步记录、课程进度与个性化设置，后续继续使用更方便。
+                                            先记录一下今天的感受，或者直接和 AI 聊聊。后面想继续看变化，也可以登录账号保存记录。
                                         </p>
 
                                         <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -614,7 +627,7 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
                                                 onClick={onGetStarted}
                                                 className="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3.5 text-sm font-medium text-white shadow-[0_24px_50px_-30px_rgba(15,23,42,0.7)] transition duration-300 hover:-translate-y-0.5 hover:bg-slate-900"
                                             >
-                                                立即开始
+                                                现在开始
                                             </button>
                                             <button
                                                 onClick={onLogin}
@@ -631,14 +644,14 @@ export default function LandingPage({ onGetStarted, onLogin }: LandingPageProps)
 
                     <footer className="mt-12 flex flex-col gap-4 border-t border-slate-200/80 py-8 text-sm text-slate-500 lg:mt-16 lg:flex-row lg:items-center lg:justify-between">
                         <p className="max-w-2xl leading-7">
-                            NeuraSense 提供心理评估、AI 陪伴、自助训练、课程计划与趋势回顾的一体化支持服务。
+                            NeuraSense 陪你记录情绪、整理压力、练习放松，并回看一段时间里的变化。
                         </p>
                         <div className="flex items-center gap-4 text-xs uppercase tracking-[0.24em] text-slate-400">
-                            <span>心理评估</span>
+                            <span>记录今天</span>
                             <span className="h-1 w-1 rounded-full bg-slate-300" />
-                            <span>AI陪伴</span>
+                            <span>聊一聊</span>
                             <span className="h-1 w-1 rounded-full bg-slate-300" />
-                            <span>自助训练</span>
+                            <span>放松练习</span>
                         </div>
                     </footer>
                 </div>
