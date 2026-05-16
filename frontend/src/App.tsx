@@ -432,6 +432,8 @@ function App() {
     const { error, setError } = useAppStore();
     const avatarRef = useRef<VirtualAvatarRef>(null);
     const embodiedAvatarRef = useRef<EmbodiedAvatarRef>(null);
+    const hasManualModeSelectionRef = useRef(false);
+    const skipInitialSeniorPathCleanupRef = useRef(window.location.pathname.startsWith('/senior'));
     const { bindToUser, loadFromServer } = useOnboardingStore();
     const { hasCheckedIn } = useCheckinStore();
 
@@ -498,6 +500,7 @@ function App() {
     }, [currentUser?.id, currentUser, loadProfile]);
 
     useEffect(() => {
+        if (hasManualModeSelectionRef.current || window.location.pathname.startsWith('/senior')) return;
         hydrateFromProfile(profile?.ui_mode);
     }, [profile?.ui_mode, hydrateFromProfile]);
 
@@ -618,7 +621,7 @@ function App() {
         if (health.data) {
             phenotyping.computeFeatures(health.data, bioAggregator.getLatestSignals(), { moodAvg: 7, stressCount: 1, activityLevel: 'moderate' });
         }
-    }, [health.data, bioAggregator.latestAggregation]);
+    }, [health.data, bioAggregator.latestAggregation, bioAggregator, phenotyping]);
 
     useEffect(() => {
         if (showMonitors && oculometricSensor.metrics) bioAggregator.addSample({ blinkRate: oculometricSensor.metrics.blinkRate, fatigue: oculometricSensor.metrics.drowsinessIndex });
@@ -635,7 +638,7 @@ function App() {
         } else {
             if (keystrokeDynamics.isActive) keystrokeDynamics.stopTracking();
         }
-    }, [activeTab]);
+    }, [activeTab, keystrokeDynamics]);
 
     // Helper: build full bio_signals payload
     const buildBioSignals = () => {
@@ -686,6 +689,42 @@ function App() {
         }
         window.speechSynthesis?.cancel();
     }, []);
+
+    const replaceAppPath = useCallback((path: string) => {
+        if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
+        window.history.replaceState(null, document.title, path);
+    }, []);
+
+    const switchToStandardMode = useCallback(() => {
+        hasManualModeSelectionRef.current = true;
+        stopAllSpeech();
+        setMode('standard');
+        setActiveTab('today');
+        setSubView(null);
+        setShowMonitors(false);
+        replaceAppPath('/');
+    }, [replaceAppPath, setMode, stopAllSpeech]);
+
+    const switchToSeniorMode = useCallback(() => {
+        hasManualModeSelectionRef.current = true;
+        stopAllSpeech();
+        setSubView(null);
+        setShowMonitors(false);
+        setActiveTab('today');
+        setMode('senior');
+        replaceAppPath('/senior');
+    }, [replaceAppPath, setMode, stopAllSpeech]);
+
+    useEffect(() => {
+        if (mode === 'senior' || !window.location.pathname.startsWith('/senior')) {
+            skipInitialSeniorPathCleanupRef.current = false;
+            return;
+        }
+        if (skipInitialSeniorPathCleanupRef.current) return;
+        if (mode !== 'senior') {
+            replaceAppPath('/');
+        }
+    }, [mode, replaceAppPath]);
 
     const handleAvatarSpeak = async (text: string, emotion: 'happy' | 'sad' | 'neutral' = 'neutral') => {
         stopAllSpeech();
@@ -898,12 +937,7 @@ function App() {
                 <SeniorRoutes
                     userId={currentUser?.id || userId}
                     currentUserName={currentUser?.nickname || currentUser?.username}
-                    onSwitchToStandard={() => {
-                        stopAllSpeech();
-                        setMode('standard');
-                        setActiveTab('today');
-                        setSubView(null);
-                    }}
+                    onSwitchToStandard={switchToStandardMode}
                 />
                 <PWAInstallPrompt />
             </>
@@ -999,15 +1033,10 @@ function App() {
                 }}
                 onOpenMessages={() => setSubView('messages')}
                 onOpenSettings={() => setSubView('settings')}
-                onSwitchToSenior={() => {
-                    setSubView(null);
-                    setShowMonitors(false);
-                    setActiveTab('today');
-                    setMode('senior');
-                }}
+                onSwitchToSenior={switchToSeniorMode}
                 onSwitchToStandard={() => {
                     if (window.confirm('完整功能会显示更多菜单和页面。确定要切换吗？')) {
-                        setMode('standard');
+                        switchToStandardMode();
                     }
                 }}
             >

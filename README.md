@@ -244,3 +244,30 @@ curl http://127.0.0.1/api/v1/health
 - `deploy/` 目录（nginx 与 systemd 模板）
 - 一键部署脚本
 - 服务器迁移 SOP
+
+---
+
+## 13. 2026-05-16 新服务器当前状态
+
+当前线上部署已迁移到新公网服务器：
+
+- 服务器 IP：`85.113.71.61`
+- 正式域名：`https://neura.ha7e.com/`
+- 老年版：`https://neura.ha7e.com/senior`
+- 后端健康检查：`https://neura.ha7e.com/api/v1/health`
+
+当前不再依赖 Cloudflare Tunnel；Cloudflare DNS 使用：
+
+- `A neura -> 85.113.71.61`
+- Proxy：橙云 Proxied
+- SSL/TLS：Full
+
+当前生产运行方式：
+
+- Nginx 托管 `/var/www/neurasense`
+- Nginx 将 `/api/` 反代到 `127.0.0.1:8000/api/`
+- FastAPI 后端由 `neurasense-backend.service` 托管
+- 后端位于 `/opt/neurasense-senior-web-deploy/backend`
+- Python 运行时使用 `uv` 管理的独立 Python 3.11 venv
+
+旧 README 中提到的 Tailscale 内网地址、Cloudflare Tunnel 和旧 self-hosted runner 只作为历史记录，不代表当前生产链路。

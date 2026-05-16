@@ -23,7 +23,9 @@ __pycache__/
 .playwright-cli/
 .playwright-mcp/
 .codex-temp/
+.codex-deploy/
 output/
+test-results/
 tmp/
 video_demo/
 

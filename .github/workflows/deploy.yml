@@ -53,12 +53,7 @@ jobs:
 
   deploy:
     needs: build-and-check
-    runs-on:
-      - self-hosted
-      - linux
-      - x64
-      - neurasense
-      - deploy
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -70,7 +65,21 @@ jobs:
           name: frontend-dist
           path: .artifacts/frontend-dist
 
-      - name: Deploy to production directories
+      - name: Setup SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY"
+          test -n "$DEPLOY_HOST"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/neurasense_deploy_key
+          chmod 600 ~/.ssh/neurasense_deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy over SSH/rsync
         env:
           FRONTEND_DIST_DIR: ${{ github.workspace }}/.artifacts/frontend-dist
-        run: bash scripts/deploy_self_hosted.sh
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: bash scripts/deploy_ssh.sh

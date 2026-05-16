@@ -1,115 +1,130 @@
 # NeuraSense 自动部署说明
 
-更新时间：2026-05-05
+更新时间：2026-05-16
 
-## 1. 当前自动部署架构
+## 1. 当前状态
 
-本项目当前采用：
+当前线上服务已经迁移到新服务器，自动部署也已从旧 self-hosted runner 更新为 GitHub Actions + SSH/rsync：
 
-- GitHub 仓库：`Goodman667/NeuraSense-senior-web-deploy`
-- GitHub Actions workflow：`.github/workflows/deploy.yml`
-- 服务器侧 self-hosted runner：`neurasense-server-runner`
-- GitHub Hosted Runner：负责前端构建与基础检查
-- 目标部署目录：
-  - 后端：`/opt/neurasense-senior-web-deploy/backend`
-  - 前端：`/var/www/neurasense`
+- 正式域名：`https://neura.ha7e.com/`
+- 老年版：`https://neura.ha7e.com/senior`
+- API 健康检查：`https://neura.ha7e.com/api/v1/health`
+- 新服务器 IP：`85.113.71.61`
+- 后端服务：`neurasense-backend.service`
+- 静态托管与反代：`nginx`
 
-触发方式：
+旧自动部署曾依赖旧服务器上的 self-hosted runner。旧服务器已过期，因此当前 `.github/workflows/deploy.yml` 不再使用 self-hosted runner，而是在 GitHub Hosted Runner 完成构建后通过 `scripts/deploy_ssh.sh` 发布到新服务器。
 
-- push 到 `main`
-- 手动点击 GitHub Actions 的 `Run workflow`
+## 2. 当前生产部署方式
 
----
+当前生产运行方式是：
 
-## 2. 自动部署流程
+- 前端：本地或 CI 执行 `VITE_API_BASE=/api/v1 npm run build`，产物同步到 `/var/www/neurasense`
+- 后端：`/opt/neurasense-senior-web-deploy/backend`
+- Python：通过 `uv` 管理的独立 Python 3.11 venv
+- Uvicorn：监听 `127.0.0.1:8000`
+- Nginx：监听 `80/443`，并将 `/api/` 反代到后端
+- Cloudflare：`A neura -> 85.113.71.61`，橙云 Proxied，SSL/TLS 模式 `Full`
 
-每次触发后，GitHub Actions 会自动：
+## 3. 不再使用的旧方式
 
-1. 在 **GitHub Hosted Runner** 上 checkout 最新仓库代码
-2. 编译检查后端源码
-3. 安装前端依赖并执行 `npm run build`
-4. 上传前端 `dist` 作为 workflow artifact
-5. 在 **服务器 self-hosted runner** 上下载构建产物
-6. 将前端 `dist` 同步到 `/var/www/neurasense`
-7. 将后端代码同步到 `/opt/neurasense-senior-web-deploy/backend`
-8. 保留线上 `.env`、`.venv` 与运行期生成数据
-9. 安装/更新后端依赖
-10. 重启 `neurasense-backend.service`
-11. 自动执行健康检查
+旧部署中的以下内容需要视为失效或待清理：
 
----
+- 旧服务器 self-hosted runner：`neurasense-server-runner`
+- 旧 Cloudflare Tunnel：`neurasense` / `37f4fba6-645f-463c-8380-ffaec6a2f247`
+- 旧 `neura.ha7e.com` Tunnel CNAME
 
-## 3. 为什么使用 self-hosted runner
+如果 GitHub Actions 页面仍显示旧 runner 离线，应在 GitHub 仓库：
 
-因为当前服务器：
+`Settings → Actions → Runners`
 
-- 可以主动访问 GitHub
-- 但不适合依赖公网 SSH 入站部署
-- 同时已有 Tailscale / Cloudflare Tunnel 结构
-- 并且服务器可用内存较小，不适合承担大体积前端打包
+删除旧 runner 记录。
 
-所以最终采用：
+## 4. 当前自动部署方案
 
-- **Hosted Runner 构建**
-- **Self-hosted Runner 部署**
+当前采用 GitHub Actions + SSH/rsync：
 
-这是当前最稳妥的自动化方案。
+1. GitHub Hosted Runner checkout 仓库。
+2. 安装 Node.js 22。
+3. 在 `frontend/` 执行 `npm ci` 与 `VITE_API_BASE=/api/v1 npm run build`。
+4. 可选：在 `backend/` 执行 `python -m compileall app`。
+5. 通过 SSH/rsync 将：
+   - `frontend/dist/` 同步到 `/var/www/neurasense/`
+   - `backend/` 同步到 `/opt/neurasense-senior-web-deploy/backend/`，但排除 `.env`、`.venv`、`__pycache__`、运行期数据
+6. 在服务器执行：
+   - 安装/更新后端依赖
+   - `systemctl restart neurasense-backend.service`
+   - `curl https://neura.ha7e.com/api/v1/health`
 
----
+GitHub Secrets：
 
-## 4. 日常使用方法
+- `DEPLOY_HOST=85.113.71.61`
+- `DEPLOY_USER=root` 或后续新建的专用 deploy 用户
+- `DEPLOY_SSH_KEY=<部署私钥>`
 
-以后你只需要：
+相关文件：
+
+- `.github/workflows/deploy.yml`：push 到 `main` 或手动 `workflow_dispatch` 触发。
+- `scripts/deploy_ssh.sh`：GitHub Actions 使用的正式 SSH/rsync 部署脚本。
+- `scripts/deploy_paramiko.py`：本地 Windows 临时验证脚本，只从环境变量读取密码，不用于 CI。
+- `scripts/healthcheck.sh`：部署后的健康检查。
+
+日常使用：
 
 ```bash
 git add .
-git commit -m "feat: your change"
+git commit -m "fix: ..."
 git push origin main
 ```
 
-然后等待 GitHub Actions 跑完即可。
+或在 GitHub Actions 页面手动点击 `Deploy NeuraSense` → `Run workflow`。
 
-成功后线上会自动更新：
+## 5. 手动部署/排障常用命令
 
-- `https://neura.ha7e.com/`
-- `https://neura.ha7e.com/senior`
-
----
-
-## 5. 重要注意事项
-
-### 5.1 前端改动
-
-前端页面、样式、交互、老年版卡片等改动，push 后会自动 build 并上线。
-
-### 5.2 后端改动
-
-后端接口、AI 逻辑、问答分析、建议生成等改动，push 后会自动同步并重启服务。
-
-### 5.3 不会被自动覆盖的内容
-
-自动部署已刻意保留：
-
-- 服务器上的 `backend/.env`
-- 服务器上的 `backend/.venv`
-- 服务器运行期间生成的数据文件
-
-因此线上用户数据和密钥不会因为一次代码部署被清空。
-
----
-
-## 6. 故障排查
-
-如果自动部署失败，优先看：
-
-1. GitHub 仓库 → Actions → 对应 workflow 日志
-2. 服务器 runner 服务状态
-3. 后端服务状态
-
-服务器常用命令：
+服务器上常用命令：
 
 ```bash
-systemctl status actions.runner.Goodman667-NeuraSense-senior-web-deploy.neurasense-server-runner.service
-systemctl status neurasense-backend.service
-journalctl -u neurasense-backend -n 100 --no-pager
+systemctl status neurasense-backend.service --no-pager
+journalctl -u neurasense-backend.service -n 100 --no-pager
+systemctl status nginx --no-pager
+nginx -t
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/api/v1/health
+curl https://neura.ha7e.com/api/v1/health
 ```
+
+当前关键路径：
+
+```text
+/opt/neurasense-senior-web-deploy/backend
+/opt/neurasense-senior-web-deploy/backend/.env
+/opt/neurasense-senior-web-deploy/backend/.venv
+/var/www/neurasense
+/etc/nginx/sites-available/neurasense
+/etc/systemd/system/neurasense-backend.service
+/etc/ssl/neurasense
+```
+
+## 6. 当前验证结果
+
+2026-05-16 23:02 CST 已验证：
+
+- `neurasense-backend`：active
+- `nginx`：active
+- `https://neura.ha7e.com/`：HTTP 200
+- `https://neura.ha7e.com/senior`：HTTP 200
+- `https://neura.ha7e.com/api/v1/health`：`{"status":"healthy","layer":"api"}`
+- `/api/v1/tools`、`/api/v1/tts/voices`、`/api/v1/senior/support-resources` 可返回数据
+
+2026-05-16 23:51 CST 已本地验证：
+
+- `frontend`：`npm run build` 成功。
+- `scripts/route_mode_smoke.mjs`：在 Vite preview 上通过；验证 `/senior/companion` 切换完整功能后 URL 清理为 `/`，再进入“个人中心/工具箱”不会回到老年版。
+
+## 7. 后续建议
+
+自动部署已更新。后续建议：
+
+1. 删除 GitHub 旧离线 self-hosted runner 记录。
+2. 后续新建非 root 的专用 deploy 用户，并限制其 sudo 权限到部署所需命令。
+3. 定期轮换 `DEPLOY_SSH_KEY`。
