@@ -19,6 +19,11 @@ from pydantic import BaseModel
 from app.services.auth import auth_service
 from app.services.database.supabase_client import get_supabase_client, is_supabase_available
 from app.api.notifications_router import push_notification
+from app.services.program_assessment_service import (
+    build_day_assessment_questions,
+    build_pre_assessment_questions,
+    generate_program_assessment_feedback,
+)
 
 router = APIRouter(prefix="/programs", tags=["programs"])
 
@@ -27,6 +32,7 @@ DATA_DIR = Path("./data")
 PROGRAMS_FILE = DATA_DIR / "programs.json"
 PROGRAM_DAYS_FILE = DATA_DIR / "program_days.json"
 PROGRAM_PROGRESS_FILE = DATA_DIR / "program_progress.json"
+PROGRAM_ASSESSMENTS_FILE = DATA_DIR / "program_assessments.json"
 
 
 def _ensure_data():
@@ -48,6 +54,8 @@ def _ensure_data():
         PROGRAM_DAYS_FILE.write_text(json.dumps(SEED_DAYS, ensure_ascii=False, indent=2), encoding="utf-8")
     if not PROGRAM_PROGRESS_FILE.exists():
         PROGRAM_PROGRESS_FILE.write_text("[]", encoding="utf-8")
+    if not PROGRAM_ASSESSMENTS_FILE.exists():
+        PROGRAM_ASSESSMENTS_FILE.write_text("[]", encoding="utf-8")
 
 
 def _read_json(path: Path) -> list:
@@ -62,6 +70,89 @@ def _write_json(path: Path, data: list):
 class CompleteDayRequest(BaseModel):
     review_answer: Optional[str] = None
     tool_completed: bool = False
+
+
+class ProgramAssessmentSubmitRequest(BaseModel):
+    phase: str
+    day_number: Optional[int] = None
+    responses: list[dict] = []
+    user_id: Optional[str] = None
+
+
+def _resolve_user_id_from_token(token: Optional[str], fallback_user_id: Optional[str] = None) -> str:
+    if token:
+        user = auth_service.validate_token(token)
+        if user:
+            return str(user["id"])
+    return fallback_user_id or "anonymous"
+
+
+def _get_program_local(program_id: str) -> Optional[dict]:
+    _ensure_data()
+    return next((p for p in _read_json(PROGRAMS_FILE) if p["id"] == program_id), None)
+
+
+def _get_day_local(program_id: str, day_number: int) -> Optional[dict]:
+    _ensure_data()
+    return next(
+        (
+            d for d in _read_json(PROGRAM_DAYS_FILE)
+            if d["program_id"] == program_id and int(d["day_number"]) == int(day_number)
+        ),
+        None,
+    )
+
+
+def _get_program_and_day(program_id: str, day_number: Optional[int] = None) -> tuple[dict, Optional[dict]]:
+    program = None
+    day = None
+    if is_supabase_available():
+        try:
+            sb = get_supabase_client()
+            p_res = sb.table("programs").select("*").eq("id", program_id).limit(1).execute()
+            if p_res.data:
+                program = p_res.data[0]
+            if day_number is not None:
+                d_res = (
+                    sb.table("program_days")
+                    .select("*")
+                    .eq("program_id", program_id)
+                    .eq("day_number", day_number)
+                    .limit(1)
+                    .execute()
+                )
+                if d_res.data:
+                    day = d_res.data[0]
+        except Exception as exc:
+            print(f"[program-assessment] Supabase read fallback: {exc}")
+    if not program:
+        program = _get_program_local(program_id)
+    if day_number is not None and not day:
+        day = _get_day_local(program_id, day_number)
+    if not program:
+        raise HTTPException(status_code=404, detail="项目不存在")
+    if day_number is not None and not day:
+        raise HTTPException(status_code=404, detail="课程章节不存在")
+    return program, day
+
+
+def _save_program_assessment(record: dict) -> dict:
+    now = datetime.utcnow().isoformat()
+    record.setdefault("id", str(uuid4()))
+    record.setdefault("created_at", now)
+    record["updated_at"] = now
+    if is_supabase_available():
+        try:
+            res = get_supabase_client().table("program_assessments").insert(record).execute()
+            if res.data:
+                return res.data[0]
+        except Exception as exc:
+            print(f"[program-assessment] Supabase insert fallback: {exc}")
+    _ensure_data()
+    rows = _read_json(PROGRAM_ASSESSMENTS_FILE)
+    rows.append(record)
+    _write_json(PROGRAM_ASSESSMENTS_FILE, rows)
+    return record
 
 
 # ---- 种子数据 ----
@@ -122,9 +213,14 @@ SEED_DAYS = [
 async def list_programs():
     """获取项目列表"""
     if is_supabase_available():
-        sb = get_supabase_client()
-        result = sb.table("programs").select("*").eq("is_active", True).order("sort_order").execute()
-        programs = result.data or []
+        try:
+            sb = get_supabase_client()
+            result = sb.table("programs").select("*").eq("is_active", True).order("sort_order").execute()
+            programs = result.data or []
+        except Exception as exc:
+            print(f"[programs] Supabase list fallback: {exc}")
+            _ensure_data()
+            programs = _read_json(PROGRAMS_FILE)
     else:
         _ensure_data()
         programs = _read_json(PROGRAMS_FILE)
@@ -139,13 +235,18 @@ async def get_program(program_id: str, token: Optional[str] = None):
     days = []
 
     if is_supabase_available():
-        sb = get_supabase_client()
-        p_res = sb.table("programs").select("*").eq("id", program_id).execute()
-        if p_res.data:
-            program = p_res.data[0]
-        d_res = sb.table("program_days").select("*").eq("program_id", program_id).order("day_number").execute()
-        days = d_res.data or []
-    else:
+        try:
+            sb = get_supabase_client()
+            p_res = sb.table("programs").select("*").eq("id", program_id).execute()
+            if p_res.data:
+                program = p_res.data[0]
+            d_res = sb.table("program_days").select("*").eq("program_id", program_id).order("day_number").execute()
+            days = d_res.data or []
+        except Exception as exc:
+            print(f"[programs] Supabase detail fallback: {exc}")
+            program = None
+            days = []
+    if not program:
         _ensure_data()
         programs = _read_json(PROGRAMS_FILE)
         program = next((p for p in programs if p["id"] == program_id), None)
@@ -165,17 +266,20 @@ async def get_program(program_id: str, token: Optional[str] = None):
         if user:
             user_id = user["id"]
             if is_supabase_available():
-                sb = get_supabase_client()
-                pr_res = (
-                    sb.table("program_progress")
-                    .select("*")
-                    .eq("user_id", user_id)
-                    .eq("program_id", program_id)
-                    .execute()
-                )
-                if pr_res.data:
-                    progress = pr_res.data[0]
-            else:
+                try:
+                    sb = get_supabase_client()
+                    pr_res = (
+                        sb.table("program_progress")
+                        .select("*")
+                        .eq("user_id", user_id)
+                        .eq("program_id", program_id)
+                        .execute()
+                    )
+                    if pr_res.data:
+                        progress = pr_res.data[0]
+                except Exception as exc:
+                    print(f"[programs] Supabase progress fallback: {exc}")
+            if progress is None:
                 all_progress = _read_json(PROGRAM_PROGRESS_FILE)
                 progress = next(
                     (p for p in all_progress if p["user_id"] == user_id and p["program_id"] == program_id),
@@ -183,6 +287,40 @@ async def get_program(program_id: str, token: Optional[str] = None):
                 )
 
     return {"success": True, "program": program, "days": days, "progress": progress}
+
+
+@router.get("/{program_id}/assessment")
+async def get_program_assessment(program_id: str, phase: str = Query(default="pre"), day_number: Optional[int] = None):
+    """获取课程前测或章节后测题目。"""
+    if phase not in {"pre", "post_day"}:
+        raise HTTPException(status_code=400, detail="phase 只能是 pre 或 post_day")
+    program, day = _get_program_and_day(program_id, day_number if phase == "post_day" else None)
+    questions = build_pre_assessment_questions(program) if phase == "pre" else build_day_assessment_questions(program, day or {})
+    return {"success": True, "phase": phase, "program_id": program_id, "day_number": day_number, "questions": questions}
+
+
+@router.post("/{program_id}/assessment")
+async def submit_program_assessment(program_id: str, body: ProgramAssessmentSubmitRequest, token: Optional[str] = None):
+    """提交课程前测或章节后测，并用现有 LLM 配置生成反馈。"""
+    if body.phase not in {"pre", "post_day"}:
+        raise HTTPException(status_code=400, detail="phase 只能是 pre 或 post_day")
+    program, day = _get_program_and_day(program_id, body.day_number if body.phase == "post_day" else None)
+    user_id = _resolve_user_id_from_token(token, body.user_id)
+    feedback = await generate_program_assessment_feedback(
+        phase=body.phase,  # type: ignore[arg-type]
+        program=program,
+        day=day,
+        responses=body.responses,
+    )
+    record = _save_program_assessment({
+        "user_id": user_id,
+        "program_id": program_id,
+        "phase": body.phase,
+        "day_number": body.day_number,
+        "responses": body.responses,
+        "feedback": feedback,
+    })
+    return {"success": True, "record": record, "feedback": feedback}
 
 
 @router.post("/{program_id}/start")
@@ -196,59 +334,67 @@ async def start_program(program_id: str, token: str):
 
     # 检查项目是否存在
     if is_supabase_available():
-        sb = get_supabase_client()
-        p_res = sb.table("programs").select("id").eq("id", program_id).execute()
-        if not p_res.data:
-            raise HTTPException(status_code=404, detail="项目不存在")
+        try:
+            sb = get_supabase_client()
+            p_res = sb.table("programs").select("id").eq("id", program_id).execute()
+            if not p_res.data:
+                raise HTTPException(status_code=404, detail="项目不存在")
 
-        # 检查是否已开始
-        existing = (
-            sb.table("program_progress")
-            .select("id")
-            .eq("user_id", user_id)
-            .eq("program_id", program_id)
-            .execute()
-        )
-        if existing.data:
-            return {"success": True, "message": "已在进行中", "progress": existing.data[0]}
+            # 检查是否已开始
+            existing = (
+                sb.table("program_progress")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("program_id", program_id)
+                .execute()
+            )
+            if existing.data:
+                return {"success": True, "message": "已在进行中", "progress": existing.data[0]}
 
-        record = {
-            "id": str(uuid4()),
-            "user_id": user_id,
-            "program_id": program_id,
-            "current_day": 1,
-            "completed_days": [],
-            "review_answers": {},
-            "started_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat(),
-        }
-        sb.table("program_progress").insert(record).execute()
-    else:
-        _ensure_data()
-        programs = _read_json(PROGRAMS_FILE)
-        if not any(p["id"] == program_id for p in programs):
-            raise HTTPException(status_code=404, detail="项目不存在")
+            record = {
+                "id": str(uuid4()),
+                "user_id": user_id,
+                "program_id": program_id,
+                "current_day": 1,
+                "completed_days": [],
+                "review_answers": {},
+                "pre_assessment_done": True,
+                "started_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat(),
+            }
+            sb.table("program_progress").insert(record).execute()
+            return {"success": True, "progress": record}
+        except HTTPException:
+            raise
+        except Exception as exc:
+            print(f"[programs] Supabase start fallback: {exc}")
 
-        all_progress = _read_json(PROGRAM_PROGRESS_FILE)
-        existing = next(
-            (p for p in all_progress if p["user_id"] == user_id and p["program_id"] == program_id),
-            None,
-        )
-        if existing:
-            return {"success": True, "message": "已在进行中", "progress": existing}
+    _ensure_data()
+    programs = _read_json(PROGRAMS_FILE)
+    if not any(p["id"] == program_id for p in programs):
+        raise HTTPException(status_code=404, detail="项目不存在")
 
-        record = {
-            "id": str(uuid4()),
-            "user_id": user_id,
-            "program_id": program_id,
-            "current_day": 1,
-            "completed_days": [],
-            "review_answers": {},
-            "started_at": datetime.utcnow().isoformat(),
-            "updated_at": datetime.utcnow().isoformat(),
-        }
-        all_progress.append(record)
-        _write_json(PROGRAM_PROGRESS_FILE, all_progress)
+    all_progress = _read_json(PROGRAM_PROGRESS_FILE)
+    existing = next(
+        (p for p in all_progress if p["user_id"] == user_id and p["program_id"] == program_id),
+        None,
+    )
+    if existing:
+        return {"success": True, "message": "已在进行中", "progress": existing}
+
+    record = {
+        "id": str(uuid4()),
+        "user_id": user_id,
+        "program_id": program_id,
+        "current_day": 1,
+        "completed_days": [],
+        "review_answers": {},
+        "pre_assessment_done": True,
+        "started_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+    all_progress.append(record)
+    _write_json(PROGRAM_PROGRESS_FILE, all_progress)
 
     return {"success": True, "progress": record}
 
@@ -262,44 +408,52 @@ async def complete_day(program_id: str, day: int, body: CompleteDayRequest, toke
 
     user_id = user["id"]
 
+    progress = None
     if is_supabase_available():
-        sb = get_supabase_client()
-        # 获取进度
-        pr_res = (
-            sb.table("program_progress")
-            .select("*")
-            .eq("user_id", user_id)
-            .eq("program_id", program_id)
-            .execute()
-        )
-        if not pr_res.data:
-            raise HTTPException(status_code=400, detail="请先开始项目")
+        try:
+            sb = get_supabase_client()
+            # 获取进度
+            pr_res = (
+                sb.table("program_progress")
+                .select("*")
+                .eq("user_id", user_id)
+                .eq("program_id", program_id)
+                .execute()
+            )
+            if not pr_res.data:
+                raise HTTPException(status_code=400, detail="请先开始项目")
 
-        progress = pr_res.data[0]
-        completed_days = progress.get("completed_days", [])
-        review_answers = progress.get("review_answers", {})
+            progress = pr_res.data[0]
+            completed_days = progress.get("completed_days", [])
+            review_answers = progress.get("review_answers", {})
 
-        if day not in completed_days:
-            completed_days.append(day)
-        if body.review_answer:
-            review_answers[str(day)] = body.review_answer
+            if day not in completed_days:
+                completed_days.append(day)
+            if body.review_answer:
+                review_answers[str(day)] = body.review_answer
 
-        # 计算下一天
-        p_res = sb.table("programs").select("duration_days").eq("id", program_id).execute()
-        max_days = p_res.data[0]["duration_days"] if p_res.data else 7
-        next_day = min(day + 1, max_days)
+            # 计算下一天
+            p_res = sb.table("programs").select("duration_days").eq("id", program_id).execute()
+            max_days = p_res.data[0]["duration_days"] if p_res.data else 7
+            next_day = min(day + 1, max_days)
 
-        sb.table("program_progress").update({
-            "completed_days": completed_days,
-            "review_answers": review_answers,
-            "current_day": max(progress.get("current_day", 1), next_day),
-            "updated_at": datetime.utcnow().isoformat(),
-        }).eq("user_id", user_id).eq("program_id", program_id).execute()
+            sb.table("program_progress").update({
+                "completed_days": completed_days,
+                "review_answers": review_answers,
+                "current_day": max(progress.get("current_day", 1), next_day),
+                "updated_at": datetime.utcnow().isoformat(),
+            }).eq("user_id", user_id).eq("program_id", program_id).execute()
 
-        progress["completed_days"] = completed_days
-        progress["review_answers"] = review_answers
-        progress["current_day"] = max(progress.get("current_day", 1), next_day)
-    else:
+            progress["completed_days"] = completed_days
+            progress["review_answers"] = review_answers
+            progress["current_day"] = max(progress.get("current_day", 1), next_day)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            print(f"[programs] Supabase complete fallback: {exc}")
+            progress = None
+
+    if progress is None:
         _ensure_data()
         all_progress = _read_json(PROGRAM_PROGRESS_FILE)
         progress = next(

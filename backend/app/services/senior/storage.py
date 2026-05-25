@@ -15,6 +15,7 @@ TABLE_FILES = {
     "senior_daily_summaries": DATA_DIR / "senior_daily_summaries.json",
     "senior_help_events": DATA_DIR / "senior_help_events.json",
     "senior_memory": DATA_DIR / "senior_memory.json",
+    "senior_checkup_sessions": DATA_DIR / "senior_checkup_sessions.json",
 }
 
 def utc_now() -> str:

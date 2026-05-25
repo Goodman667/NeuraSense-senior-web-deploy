@@ -4,6 +4,7 @@ import { SeniorResultCard } from '../components/SeniorResultCard';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorLoadingCard } from '../components/SeniorLoadingCard';
 import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
+import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { seniorApi } from '../services/seniorApi';
 import type { SeniorPage, SeniorSummary } from '../types/senior';
@@ -51,6 +52,7 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
   if (loading && !summary) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
+        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
         <SeniorLoadingCard title="正在读取今天的建议" lines={4} />
         <button onClick={() => onNavigate('home')} className="min-h-[56px] rounded-2xl border border-slate-200 bg-white px-5 text-lg font-black text-slate-700">先回到今天</button>
       </div>
@@ -60,6 +62,7 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
   if (!summary) {
     return (
       <div className="mx-auto max-w-4xl space-y-4">
+        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
         {!isOnline ? (
           <SeniorStatusNotice
             tone="warning"
@@ -89,6 +92,7 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
   }
   return (
     <div className="mx-auto max-w-5xl">
+      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
       <div className="mb-4 space-y-3">
         {!isOnline ? (
           <SeniorStatusNotice

@@ -432,8 +432,6 @@ function App() {
     const { error, setError } = useAppStore();
     const avatarRef = useRef<VirtualAvatarRef>(null);
     const embodiedAvatarRef = useRef<EmbodiedAvatarRef>(null);
-    const hasManualModeSelectionRef = useRef(false);
-    const skipInitialSeniorPathCleanupRef = useRef(window.location.pathname.startsWith('/senior'));
     const { bindToUser, loadFromServer } = useOnboardingStore();
     const { hasCheckedIn } = useCheckinStore();
 
@@ -500,7 +498,6 @@ function App() {
     }, [currentUser?.id, currentUser, loadProfile]);
 
     useEffect(() => {
-        if (hasManualModeSelectionRef.current || window.location.pathname.startsWith('/senior')) return;
         hydrateFromProfile(profile?.ui_mode);
     }, [profile?.ui_mode, hydrateFromProfile]);
 
@@ -530,10 +527,14 @@ function App() {
     const handleLogout = useCallback(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('psy-ui-mode');
         bindToUser(null);
+        setMode('standard');
+        setActiveTab('today');
+        setSubView(null);
         setCurrentUser(null);
         setAppView('landing');
-    }, [bindToUser]);
+    }, [bindToUser, setMode]);
 
     useEffect(() => {
         if (window.location.pathname.startsWith('/senior')) {
@@ -621,7 +622,7 @@ function App() {
         if (health.data) {
             phenotyping.computeFeatures(health.data, bioAggregator.getLatestSignals(), { moodAvg: 7, stressCount: 1, activityLevel: 'moderate' });
         }
-    }, [health.data, bioAggregator.latestAggregation, bioAggregator, phenotyping]);
+    }, [health.data, bioAggregator.latestAggregation]);
 
     useEffect(() => {
         if (showMonitors && oculometricSensor.metrics) bioAggregator.addSample({ blinkRate: oculometricSensor.metrics.blinkRate, fatigue: oculometricSensor.metrics.drowsinessIndex });
@@ -638,7 +639,7 @@ function App() {
         } else {
             if (keystrokeDynamics.isActive) keystrokeDynamics.stopTracking();
         }
-    }, [activeTab, keystrokeDynamics]);
+    }, [activeTab]);
 
     // Helper: build full bio_signals payload
     const buildBioSignals = () => {
@@ -689,65 +690,6 @@ function App() {
         }
         window.speechSynthesis?.cancel();
     }, []);
-
-    const forceAppPath = useCallback((path: string) => {
-        const apply = () => {
-            if (window.location.pathname === path && !window.location.search && !window.location.hash) return;
-            try {
-                window.history.replaceState(null, document.title, path);
-            } catch (err) {
-                console.warn('History path cleanup failed, falling back to location.replace:', err);
-                window.location.replace(path);
-            }
-            if (window.location.pathname !== path) {
-                window.location.replace(path);
-            }
-        };
-        apply();
-        window.setTimeout(apply, 0);
-        window.setTimeout(apply, 150);
-        window.setTimeout(apply, 500);
-    }, []);
-
-    const replaceAppPath = useCallback((path: string) => {
-        window.history.replaceState(null, document.title, path);
-    }, []);
-
-    const switchToStandardMode = useCallback(() => {
-        hasManualModeSelectionRef.current = true;
-        try {
-            localStorage.setItem('psy-ui-mode', JSON.stringify({ state: { mode: 'standard' }, version: 0 }));
-        } catch (err) {
-            console.warn('Failed to persist standard UI mode:', err);
-        }
-        stopAllSpeech();
-        setMode('standard');
-        setActiveTab('today');
-        setSubView(null);
-        setShowMonitors(false);
-        forceAppPath('/');
-    }, [forceAppPath, setMode, stopAllSpeech]);
-
-    const switchToSeniorMode = useCallback(() => {
-        hasManualModeSelectionRef.current = true;
-        stopAllSpeech();
-        setSubView(null);
-        setShowMonitors(false);
-        setActiveTab('today');
-        setMode('senior');
-        replaceAppPath('/senior');
-    }, [replaceAppPath, setMode, stopAllSpeech]);
-
-    useEffect(() => {
-        if (mode === 'senior' || !window.location.pathname.startsWith('/senior')) {
-            skipInitialSeniorPathCleanupRef.current = false;
-            return;
-        }
-        if (skipInitialSeniorPathCleanupRef.current) return;
-        if (mode !== 'senior') {
-            replaceAppPath('/');
-        }
-    }, [mode, replaceAppPath]);
 
     const handleAvatarSpeak = async (text: string, emotion: 'happy' | 'sad' | 'neutral' = 'neutral') => {
         stopAllSpeech();
@@ -960,7 +902,13 @@ function App() {
                 <SeniorRoutes
                     userId={currentUser?.id || userId}
                     currentUserName={currentUser?.nickname || currentUser?.username}
-                    onSwitchToStandard={switchToStandardMode}
+                    onLogout={handleLogout}
+                    onSwitchToStandard={() => {
+                        stopAllSpeech();
+                        setMode('standard');
+                        setActiveTab('today');
+                        setSubView(null);
+                    }}
                 />
                 <PWAInstallPrompt />
             </>
@@ -1056,10 +1004,15 @@ function App() {
                 }}
                 onOpenMessages={() => setSubView('messages')}
                 onOpenSettings={() => setSubView('settings')}
-                onSwitchToSenior={switchToSeniorMode}
+                onSwitchToSenior={() => {
+                    setSubView(null);
+                    setShowMonitors(false);
+                    setActiveTab('today');
+                    setMode('senior');
+                }}
                 onSwitchToStandard={() => {
                     if (window.confirm('完整功能会显示更多菜单和页面。确定要切换吗？')) {
-                        switchToStandardMode();
+                        setMode('standard');
                     }
                 }}
             >

@@ -1,4 +1,4 @@
-export type SeniorPage = 'home' | 'companion' | 'chat' | 'summary' | 'relax' | 'help' | 'settings';
+export type SeniorPage = 'home' | 'companion' | 'chat' | 'summary' | 'relax' | 'help' | 'settings' | 'checkup' | 'profile';
 export type SeniorRiskLevel = 'normal' | 'watch' | 'elevated' | 'urgent' | 'medical_emergency';
 export type SeniorInputMode = 'voice' | 'text' | 'choice' | 'mixed';
 
@@ -126,4 +126,80 @@ export interface SeniorChatMessage {
   text: string;
   createdAt: string;
   riskLevel?: SeniorRiskLevel;
+}
+
+export interface SeniorRiskAction {
+  should_show_modal: boolean;
+  should_contact_family: boolean;
+  user_message: string;
+  family_message: string;
+  reason: string;
+  steps: string[];
+}
+
+export interface SeniorChatApiResponse {
+  reply_text: string;
+  risk_level: SeniorRiskLevel;
+  tts_text: string;
+  next_suggestion?: string;
+  risk_reason?: string;
+  risk_action?: SeniorRiskAction | null;
+}
+
+export interface SeniorScaleAnswer {
+  questionId: string;
+  question: string;
+  answer: 'yes' | 'no' | 'unsure';
+}
+
+export interface SeniorCheckupOption {
+  value: string;
+  label: string;
+  helper?: string;
+}
+
+export interface SeniorCheckupQuestion {
+  id: string;
+  text: string;
+  helper: string;
+  dimension: string;
+  scale: string;
+  response_type: 'yes_no' | 'frequency' | 'severity';
+  options: SeniorCheckupOption[];
+}
+
+export interface SeniorCheckupAnswer {
+  question_id: string;
+  question_text: string;
+  answer_value: string;
+  answer_label: string;
+  dimension?: string;
+  scale?: string;
+}
+
+export interface SeniorCheckupScaleSnapshot {
+  mood_score: number;
+  anxiety_score: number;
+  loneliness_score: number;
+  sleep_score: number;
+  safety_score: number;
+  answered_count: number;
+  uncertain_count: number;
+  quality: 'good' | 'partial' | 'thin';
+  source_note: string;
+}
+
+export interface SeniorCheckupQuestionsResponse {
+  success: boolean;
+  session_id: string;
+  mode: string;
+  intro: string;
+  questions: SeniorCheckupQuestion[];
+}
+
+export interface SeniorCheckupAnalysisResponse {
+  success: boolean;
+  summary: SeniorSummary;
+  scale_snapshot: SeniorCheckupScaleSnapshot;
+  generation_status: 'ai' | 'fallback';
 }

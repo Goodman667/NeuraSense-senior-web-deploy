@@ -1,5 +1,16 @@
 import { API_BASE } from '../../../config/api';
-import type { SeniorPreference, SeniorQuestionAnswer, SeniorSummary, SeniorSupportContact, SeniorSupportResource } from '../types/senior';
+import type {
+  SeniorChatApiResponse,
+  SeniorCheckupAnalysisResponse,
+  SeniorCheckupAnswer,
+  SeniorCheckupQuestion,
+  SeniorCheckupQuestionsResponse,
+  SeniorPreference,
+  SeniorQuestionAnswer,
+  SeniorSummary,
+  SeniorSupportContact,
+  SeniorSupportResource,
+} from '../types/senior';
 
 type SeniorContactUpsert = Omit<SeniorSupportContact, 'user_id'> & { user_id?: string };
 
@@ -44,9 +55,22 @@ export const seniorApi = {
     body: JSON.stringify({ user_id: userId, interview_id: interviewId, answers, checkin, recent_context: recentContext }),
   }),
   getDailySummary: (userId: string) => request<{ success: boolean; summary: SeniorSummary | null }>(`/senior/daily-summary?user_id=${encodeURIComponent(userId)}`),
-  seniorChat: (userId: string, message: string, history: Array<{ role: string; content: string }>) => request<{ reply_text: string; risk_level: string; tts_text: string; next_suggestion?: string }>('/senior/chat', {
+  seniorChat: (userId: string, message: string, history: Array<{ role: string; content: string }>) => request<SeniorChatApiResponse>('/senior/chat', {
     method: 'POST',
     body: JSON.stringify({ user_id: userId, message, conversation_history: history }),
+  }),
+  getCheckupQuestions: (userId: string, mode = 'comprehensive') => request<SeniorCheckupQuestionsResponse>(`/senior/checkup/questions?user_id=${encodeURIComponent(userId)}&mode=${encodeURIComponent(mode)}`),
+  analyzeCheckup: (
+    userId: string,
+    payload: {
+      session_id?: string;
+      mode?: string;
+      questions: SeniorCheckupQuestion[];
+      answers: SeniorCheckupAnswer[];
+    },
+  ) => request<SeniorCheckupAnalysisResponse>('/senior/checkup/analyze', {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, mode: 'comprehensive', ...payload }),
   }),
   getSupportResources: (region = 'CN') => request<{ success: boolean; resources: SeniorSupportResource[] }>(`/senior/support-resources?region=${encodeURIComponent(region)}`),
   recordHelpEvent: (userId: string, eventType: string, metadata?: Record<string, unknown>, riskLevel?: string) => request<{ success: boolean }>('/senior/help-events', {

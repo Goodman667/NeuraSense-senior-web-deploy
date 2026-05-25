@@ -4,12 +4,24 @@ export const CONTACTS_STORAGE = 'neurasense-senior-support-contacts';
 
 const storageUserKey = (prefix: string, userId: string) => `${prefix}:${userId || 'anonymous'}`;
 
-export function readStoredContacts(userId: string): SeniorSupportContact[] {
+function readLegacyContacts(): SeniorSupportContact[] {
   try {
-    const parsed = JSON.parse(localStorage.getItem(storageUserKey(CONTACTS_STORAGE, userId)) || '[]');
+    const parsed = JSON.parse(localStorage.getItem(CONTACTS_STORAGE) || '[]');
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
+  }
+}
+
+export function readStoredContacts(userId: string): SeniorSupportContact[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(storageUserKey(CONTACTS_STORAGE, userId)) || '[]');
+    const scoped = Array.isArray(parsed) ? parsed : [];
+    return userId && userId !== 'anonymous' && !userId.startsWith('guest_')
+      ? scoped
+      : mergeContacts(scoped, readLegacyContacts());
+  } catch {
+    return userId && userId !== 'anonymous' && !userId.startsWith('guest_') ? [] : readLegacyContacts();
   }
 }
 

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { SeniorBreathingGuide } from '../components/SeniorBreathingGuide';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
+import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { chooseSeniorExercise } from '../data/seniorExerciseLibrary';
 import type { SeniorPage, SeniorSummary } from '../types/senior';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
@@ -24,6 +25,7 @@ export function SeniorRelaxGuide({ userId, latestSummary, onNavigate }: { userId
   };
   return (
     <div className="mx-auto max-w-6xl">
+      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => { stop(); onNavigate('home'); }} />
       <SeniorPageHeader eyebrow="放松练习" title="今天先做这一个就够" desc="这不是固定工具清单，会优先按刚才的问答和今天的建议来安排。" />
       <section className="relative overflow-hidden rounded-[2.6rem] border border-emerald-100 bg-white p-7 shadow-[0_30px_100px_-68px_rgba(15,23,42,0.42)] md:p-8">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-100/70 blur-3xl" />

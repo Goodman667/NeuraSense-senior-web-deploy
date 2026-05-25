@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { SeniorCareOrb } from '../components/SeniorCareOrb';
-import { SeniorCarePath } from '../components/SeniorCarePath';
-import { SeniorDailyLoopCard } from '../components/SeniorDailyLoopCard';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorLoadingCard } from '../components/SeniorLoadingCard';
-import { SeniorPrimaryAction } from '../components/SeniorPrimaryAction';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
-import { SeniorTopicChips } from '../components/SeniorTopicChips';
 import { seniorApi } from '../services/seniorApi';
 import type { SeniorPage, SeniorSummary } from '../types/senior';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
@@ -127,23 +123,28 @@ export function SeniorHome({
         ) : null}
       </div>
 
-      <div className="mt-6">
-        <SeniorDailyLoopCard userId={userId} hasSummary={Boolean(summary)} onNavigate={onNavigate} />
-      </div>
-
-      <div className="mt-6">
-        <SeniorCarePath hasSummary={Boolean(summary)} onNavigate={onNavigate} />
-      </div>
-
-      <div className="mt-6 grid gap-4 md:grid-cols-3">
-        <SeniorPrimaryAction title="直接聊聊" desc="不做记录，只是陪您说说话" icon={<SeniorIcon name="chat" className="h-8 w-8" />} tone="light" onClick={() => onNavigate('chat')} />
-        <SeniorPrimaryAction title="做一个放松" desc="只推荐一个适合今天的练习" icon={<SeniorIcon name="leaf" className="h-8 w-8" />} tone="light" onClick={() => onNavigate('relax')} />
-        <SeniorPrimaryAction title="找帮助" desc="热线和联系人一直在这里" icon={<SeniorIcon name="phone" className="h-8 w-8" />} tone="danger" onClick={() => onNavigate('help')} />
-      </div>
-
       <section className="mt-6 rounded-[2rem] border border-cyan-100 bg-white/92 p-6 shadow-[0_22px_70px_-62px_rgba(15,23,42,0.36)]">
-        <SeniorPageHeader eyebrow="不知道怎么开口时" title="可以先点一个话题" desc="不用想完整句子。点一下，我会帮您从这个方向慢慢聊。" />
-        <SeniorTopicChips onSelect={onStartTopic} />
+        <SeniorPageHeader eyebrow="三个入口就够" title="今天只选一件事" desc="不放很多功能，避免越看越累。需要测一测时，也可以从“陪您做个小检查”进入。" />
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <button onClick={() => onNavigate('companion')} className="min-h-[150px] rounded-[2rem] bg-cyan-900 p-6 text-left text-white shadow-xl shadow-cyan-900/10 transition hover:bg-cyan-950">
+            <SeniorIcon name="chat" className="h-9 w-9" />
+            <span className="mt-4 block text-3xl font-black">今天聊几句</span>
+            <span className="mt-2 block text-xl leading-8 text-cyan-50">一步一步问，不用自己组织很多话</span>
+          </button>
+          <button onClick={() => onNavigate('relax')} className="min-h-[150px] rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 text-left text-emerald-950 transition hover:bg-emerald-100">
+            <SeniorIcon name="leaf" className="h-9 w-9" />
+            <span className="mt-4 block text-3xl font-black">做个小练习</span>
+            <span className="mt-2 block text-xl leading-8">按今天状态，只推荐一个练习</span>
+          </button>
+          <button onClick={() => onNavigate('help')} className="min-h-[150px] rounded-[2rem] border border-rose-200 bg-rose-50 p-6 text-left text-rose-950 transition hover:bg-rose-100">
+            <SeniorIcon name="phone" className="h-9 w-9" />
+            <span className="mt-4 block text-3xl font-black">联系家人</span>
+            <span className="mt-2 block text-xl leading-8">需要时不用临时找号码</span>
+          </button>
+        </div>
+        <button onClick={() => onNavigate('checkup')} className="mt-4 min-h-[70px] w-full rounded-2xl border border-slate-200 bg-white px-6 text-xl font-black text-slate-800 hover:bg-slate-50">
+          <span className="inline-flex items-center gap-2"><SeniorIcon name="clipboard" className="h-6 w-6" />陪您做个小检查</span>
+        </button>
       </section>
 
       <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6">

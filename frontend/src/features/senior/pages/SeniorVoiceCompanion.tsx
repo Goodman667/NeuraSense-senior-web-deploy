@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorResultCard } from '../components/SeniorResultCard';
+import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
 import { SeniorVoiceStatusCard } from '../components/SeniorVoiceStatusCard';
 import { buildSeniorQuestionSet, getSeniorQuestionContext } from '../data/seniorQuestionBank';
@@ -126,6 +127,7 @@ export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId
   if (summary) {
     return (
       <div className="space-y-4">
+        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
         <div className="mx-auto flex max-w-5xl justify-end">
           <button onClick={restart} className="min-h-[56px] rounded-2xl border border-cyan-200 bg-white px-5 text-lg font-black text-cyan-900 shadow-sm">
             重新回答一轮
@@ -138,6 +140,20 @@ export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId
 
   return (
     <div className="mx-auto max-w-6xl">
+      <SeniorSafetyActions
+        onNavigate={onNavigate}
+        onBack={() => {
+          if (index > 0) {
+            setIndex(index - 1);
+            const previous = answers.slice(0, -1);
+            setAnswers(previous);
+            setAnswer(answers[answers.length - 1]?.answer_text || '');
+          } else {
+            onNavigate('home');
+          }
+        }}
+        onEnd={() => onNavigate('home')}
+      />
       <SeniorPageHeader eyebrow={`第 ${index + 1} 个问题 / 共 ${questions.length} 个`} title="一次只回答一个问题" desc="每次进入都会换一组问法。您可以说话，也可以直接打字。" />
       <section className="rounded-[2.4rem] border border-cyan-100 bg-white p-6 shadow-[0_30px_90px_-65px_rgba(15,23,42,0.42)] md:p-7">
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">

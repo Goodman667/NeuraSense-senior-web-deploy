@@ -13,11 +13,16 @@ from app.schemas.senior import (
     SeniorHelpEventCreate,
     SeniorChatRequest,
     SeniorChatResponse,
+    SeniorCheckupQuestionsResponse,
+    SeniorCheckupAnalysisRequest,
+    SeniorCheckupAnalysisResponse,
 )
 from app.services.auth import auth_service
 from app.services.senior import storage
 from app.services.senior.summary_service import generate_senior_summary, build_fallback_summary, detect_risk_level
+from app.services.senior.risk_service import analyze_senior_risk
 from app.services.senior.support_service import get_default_support_resources
+from app.services.senior.checkup_service import build_checkup_questions, analyze_checkup
 from app.services.llm import CounselorService
 from app.services.tts.tts_service import sanitize_tts_text
 
@@ -153,7 +158,11 @@ async def get_daily_summary(date: Optional[str] = None, token: Optional[str] = N
 @router.post("/chat", response_model=SeniorChatResponse)
 async def senior_chat(payload: SeniorChatRequest, token: Optional[str] = None):
     resolved = _resolve_user_id(token, payload.user_id)
-    risk_level, _ = detect_risk_level(payload.message)
+    risk = await analyze_senior_risk(
+        user_id=resolved,
+        message=payload.message,
+        history=payload.conversation_history[-8:],
+    )
     try:
         counselor = CounselorService()
         response = await counselor.generate_response(
@@ -162,19 +171,79 @@ async def senior_chat(payload: SeniorChatRequest, token: Optional[str] = None):
             conversation_history=payload.conversation_history[-8:],
             emotion_context={
                 "neurasense_mode": "senior",
-                "risk_level": risk_level,
+                "risk_level": risk.level,
+                "risk_reason": risk.reason,
                 "conversation_history": payload.conversation_history[-4:],
             },
         )
         text = response.message.strip()
     except Exception:
         fallback = build_fallback_summary([], interview_id=None)
-        text = fallback.plain_summary if risk_level in {"elevated", "urgent"} else "我在这里陪您。刚才这句话听起来不轻松，我们先慢一点。您可以先喝口水，坐稳，再告诉我最让您挂念的一件事。"
+        text = fallback.plain_summary if risk.level in {"elevated", "urgent", "medical_emergency"} else "我在这里陪您。刚才这句话听起来不轻松，我们先慢一点。您可以先喝口水，坐稳，再告诉我最让您挂念的一件事。"
+    if risk.level in {"elevated", "urgent", "medical_emergency"}:
+        try:
+            contacts = storage.list_by_user("senior_support_contacts", resolved, limit=5)
+            primary_contact = next((item for item in contacts if item.get("is_primary")), contacts[0] if contacts else None)
+            storage.insert("senior_help_events", {
+                "user_id": resolved,
+                "event_type": "senior_chat_risk_detected",
+                "risk_level": risk.level,
+                "action_taken": "modal_prepared",
+                "caregiver_contact_id": primary_contact.get("id") if primary_contact else None,
+                "caregiver_notified": False,
+                "metadata": {
+                    "message": payload.message,
+                    "reason": risk.reason,
+                    "source": risk.source,
+                    "family_message": risk.action.family_message,
+                },
+            })
+        except Exception as exc:
+            print(f"[senior-chat] help event skipped: {exc}")
     return SeniorChatResponse(
         reply_text=text,
-        risk_level=risk_level,  # type: ignore[arg-type]
+        risk_level=risk.level,  # type: ignore[arg-type]
         tts_text=sanitize_tts_text(text),
         next_suggestion="如果愿意，我们先从最让您挂念的一件事说起。",
+        risk_reason=risk.reason,
+        risk_action=risk.action,
+    )
+
+@router.get("/checkup/questions", response_model=SeniorCheckupQuestionsResponse)
+async def get_checkup_questions(
+    mode: str = Query(default="comprehensive"),
+    token: Optional[str] = None,
+    user_id: Optional[str] = None,
+):
+    resolved = _resolve_user_id(token, user_id)
+    session_id, questions = build_checkup_questions(resolved, mode)
+    intro = "接下来是一组老年版小测。我会一题一题问，您只要点最接近的答案。它不是诊断，只是帮您决定今天先照顾哪里。"
+    return SeniorCheckupQuestionsResponse(
+        session_id=session_id,
+        mode=mode,
+        intro=intro,
+        questions=questions,
+    )
+
+@router.post("/checkup/analyze", response_model=SeniorCheckupAnalysisResponse)
+async def analyze_checkup_answers(payload: SeniorCheckupAnalysisRequest, token: Optional[str] = None):
+    resolved = _resolve_user_id(token, payload.user_id)
+    if not payload.answers:
+        raise HTTPException(status_code=400, detail="请先完成小测")
+    questions = payload.questions
+    if not questions:
+        _, questions = build_checkup_questions(resolved, payload.mode)
+    summary, snapshot = await analyze_checkup(
+        user_id=resolved,
+        session_id=payload.session_id,
+        mode=payload.mode,
+        questions=questions,
+        answers=payload.answers,
+    )
+    return SeniorCheckupAnalysisResponse(
+        summary=summary,
+        scale_snapshot=snapshot,
+        generation_status=summary.summary_generation_status,
     )
 
 @router.post("/help-events")

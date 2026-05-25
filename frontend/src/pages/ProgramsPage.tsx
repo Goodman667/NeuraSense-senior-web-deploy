@@ -7,7 +7,7 @@
  * 3. 日课页 (ProgramDayView) — 学习卡片 + 工具练习入口 + 复盘问题
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '../config/api';
 import type { ToolItem } from './ToolboxPage';
@@ -49,7 +49,31 @@ export interface ProgramProgress {
     current_day: number;
     completed_days: number[];
     review_answers: Record<string, string>;
+    pre_assessment_done?: boolean;
+    day_assessments?: Record<string, boolean>;
+    assessment_feedback?: Record<string, ProgramAssessmentFeedback>;
     started_at?: string;
+}
+
+interface ProgramAssessmentQuestion {
+    id: string;
+    text: string;
+    options: Array<{ label: string; value: number }>;
+}
+
+interface ProgramAssessmentFeedback {
+    title: string;
+    summary: string;
+    next_step: string;
+    tone: 'steady' | 'encouraging' | 'supportive';
+    tags: string[];
+}
+
+interface ProgramAssessmentResponse {
+    question_id: string;
+    question_text: string;
+    answer_value: number;
+    answer_text: string;
 }
 
 interface ProgramsPageProps {
@@ -167,6 +191,153 @@ function formatStartedAt(startedAt?: string) {
     const date = new Date(startedAt);
     if (Number.isNaN(date.getTime())) return '尚未记录开始时间';
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} 开始`;
+}
+
+function ProgramAssessmentPanel({
+    title,
+    subtitle,
+    questions,
+    loading,
+    submitting,
+    feedback,
+    onSubmit,
+    onContinue,
+}: {
+    title: string;
+    subtitle: string;
+    questions: ProgramAssessmentQuestion[];
+    loading: boolean;
+    submitting: boolean;
+    feedback: ProgramAssessmentFeedback | null;
+    onSubmit: (responses: ProgramAssessmentResponse[]) => void;
+    onContinue?: () => void;
+}) {
+    const [answers, setAnswers] = useState<Record<string, { value: number; label: string }>>({});
+    const canSubmit = questions.length > 0 && questions.every((question) => answers[question.id]);
+
+    useEffect(() => {
+        setAnswers({});
+    }, [questions.map(q => q.id).join('|')]);
+
+    if (feedback) {
+        return (
+            <section className="rounded-[1.8rem] border border-cyan-200/70 bg-cyan-50/80 p-6 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-cyan-900/50 dark:bg-cyan-950/30">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-300">Assessment Feedback</p>
+                <h4 className="mt-3 text-2xl font-semibold text-slate-950 dark:text-slate-100">{feedback.title}</h4>
+                <p className="mt-4 text-sm leading-7 text-slate-700 dark:text-slate-300">{feedback.summary}</p>
+                <div className="mt-4 rounded-[1.3rem] border border-white/80 bg-white/82 p-4 text-sm leading-7 text-slate-700 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
+                    <p className="font-semibold text-slate-950 dark:text-slate-100">下一步</p>
+                    <p className="mt-1">{feedback.next_step}</p>
+                </div>
+                {feedback.tags?.length ? (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                        {feedback.tags.map(tag => <span key={tag} className="rounded-full border border-cyan-200 bg-white px-3 py-1 text-xs font-medium text-cyan-700 dark:border-cyan-900/60 dark:bg-slate-950 dark:text-cyan-300">{tag}</span>)}
+                    </div>
+                ) : null}
+                {onContinue ? (
+                    <button onClick={onContinue} className="mt-5 inline-flex w-full items-center justify-center rounded-[1.2rem] bg-slate-950 px-5 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 dark:bg-white dark:text-slate-950">
+                        继续课程
+                    </button>
+                ) : null}
+            </section>
+        );
+    }
+
+    return (
+        <section className="rounded-[1.8rem] border border-white/80 bg-white/84 p-6 shadow-[0_24px_80px_-46px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/72">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-700 dark:text-cyan-300">Course Check</p>
+            <h4 className="mt-3 text-2xl font-semibold text-slate-950 dark:text-slate-100">{title}</h4>
+            <p className="mt-3 text-sm leading-7 text-slate-600 dark:text-slate-300">{subtitle}</p>
+
+            {loading ? (
+                <div className="mt-5 space-y-3">
+                    {Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-20 rounded-[1.3rem]" />)}
+                </div>
+            ) : (
+                <div className="mt-5 space-y-5">
+                    {questions.map((question, questionIndex) => (
+                        <div key={question.id} className="rounded-[1.4rem] border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                            <p className="text-sm font-semibold leading-7 text-slate-900 dark:text-slate-100">{questionIndex + 1}. {question.text}</p>
+                            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                                {question.options.map(option => {
+                                    const active = answers[question.id]?.value === option.value;
+                                    return (
+                                        <button
+                                            key={`${question.id}-${option.value}`}
+                                            onClick={() => setAnswers(prev => ({ ...prev, [question.id]: { value: option.value, label: option.label } }))}
+                                            className={cn(
+                                                'rounded-[1rem] border px-3 py-3 text-left text-sm font-medium transition',
+                                                active
+                                                    ? 'border-cyan-300 bg-cyan-50 text-cyan-800 dark:border-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-200'
+                                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300',
+                                            )}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <button
+                onClick={() => onSubmit(questions.map(question => ({
+                    question_id: question.id,
+                    question_text: question.text,
+                    answer_value: answers[question.id].value,
+                    answer_text: answers[question.id].label,
+                })))}
+                disabled={!canSubmit || submitting}
+                className={cn(
+                    'mt-5 inline-flex w-full items-center justify-center rounded-[1.2rem] px-5 py-3.5 text-sm font-semibold transition',
+                    !canSubmit || submitting
+                        ? 'cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                        : 'bg-slate-950 text-white hover:-translate-y-0.5 dark:bg-white dark:text-slate-950',
+                )}
+            >
+                {submitting ? '正在生成反馈...' : '提交测评'}
+            </button>
+        </section>
+    );
+}
+
+function getAssessmentKey(phase: 'pre' | 'post_day', dayNumber?: number) {
+    return phase === 'pre' ? 'pre' : `day-${dayNumber || 0}`;
+}
+
+async function fetchProgramAssessmentQuestions(programId: string, phase: 'pre' | 'post_day', dayNumber?: number) {
+    const params = new URLSearchParams({ phase });
+    if (dayNumber) params.set('day_number', String(dayNumber));
+    const res = await fetch(`${API_BASE}/programs/${programId}/assessment?${params.toString()}`);
+    if (!res.ok) throw new Error('assessment questions failed');
+    const json = await res.json();
+    return (Array.isArray(json.questions) ? json.questions : []) as ProgramAssessmentQuestion[];
+}
+
+async function submitProgramAssessment(
+    programId: string,
+    phase: 'pre' | 'post_day',
+    responses: ProgramAssessmentResponse[],
+    token?: string | null,
+    dayNumber?: number,
+) {
+    const params = token ? `?token=${encodeURIComponent(token)}` : '';
+    let userId: string | undefined;
+    try {
+        userId = JSON.parse(localStorage.getItem('user') || '{}')?.id;
+    } catch {
+        userId = undefined;
+    }
+    const res = await fetch(`${API_BASE}/programs/${programId}/assessment${params}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase, day_number: dayNumber, responses, user_id: userId }),
+    });
+    if (!res.ok) throw new Error('assessment submit failed');
+    const json = await res.json();
+    return json.feedback as ProgramAssessmentFeedback;
 }
 
 function isDayLocked(day: ProgramDayData, progress: ProgramProgress | null) {
@@ -547,12 +718,39 @@ function ProgramDetail({
 }) {
     const theme = getProgramTheme(program.gradient);
     const metrics = getProgressMetrics(program, progress);
+    const [preQuestions, setPreQuestions] = useState<ProgramAssessmentQuestion[]>([]);
+    const [preLoading, setPreLoading] = useState(false);
+    const [preSubmitting, setPreSubmitting] = useState(false);
+    const preKey = getAssessmentKey('pre');
+    const [localPreFeedback, setLocalPreFeedback] = useState<ProgramAssessmentFeedback | null>(() => _loadLocalProgramAssessment(program.id, preKey));
+    const preFeedback = progress?.assessment_feedback?.[preKey] || localPreFeedback;
     const completedDays = progress?.completed_days || [];
     const currentDay =
         days.find((day) => day.day_number === metrics.currentDay) ||
         days.find((day) => !completedDays.includes(day.day_number)) ||
         days[0] ||
         null;
+
+    useEffect(() => {
+        if (metrics.isStarted || preQuestions.length) return;
+        setPreLoading(true);
+        fetchProgramAssessmentQuestions(program.id, 'pre')
+            .then(setPreQuestions)
+            .catch(() => setPreQuestions([]))
+            .finally(() => setPreLoading(false));
+    }, [metrics.isStarted, preQuestions.length, program.id]);
+
+    const submitPreAssessment = async (responses: ProgramAssessmentResponse[]) => {
+        setPreSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const feedback = await submitProgramAssessment(program.id, 'pre', responses, token);
+            _saveLocalProgramAssessment(program.id, preKey, feedback);
+            setLocalPreFeedback(feedback);
+        } finally {
+            setPreSubmitting(false);
+        }
+    };
 
     return (
         <div className="space-y-6 lg:space-y-8">
@@ -646,9 +844,15 @@ function ProgramDetail({
                             {!metrics.isStarted ? (
                                 <button
                                     onClick={onStart}
-                                    className="inline-flex w-full items-center justify-center rounded-[1.2rem] bg-slate-950 px-4 py-3.5 text-sm font-semibold text-white shadow-[0_22px_50px_-32px_rgba(15,23,42,0.68)] transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100"
+                                    disabled={!preFeedback}
+                                    className={cn(
+                                        'inline-flex w-full items-center justify-center rounded-[1.2rem] px-4 py-3.5 text-sm font-semibold shadow-[0_22px_50px_-32px_rgba(15,23,42,0.68)] transition duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70',
+                                        !preFeedback
+                                            ? 'cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                            : 'bg-slate-950 text-white hover:-translate-y-0.5 hover:bg-slate-900 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100',
+                                    )}
                                 >
-                                    开始课程
+                                    {!preFeedback ? '先完成课前测评' : '开始课程'}
                                 </button>
                             ) : currentDay ? (
                                 <button
@@ -671,6 +875,18 @@ function ProgramDetail({
                     </aside>
                 </div>
             </section>
+
+            {!metrics.isStarted ? (
+                <ProgramAssessmentPanel
+                    title="开始前先做 3 个小测"
+                    subtitle="不是考试，是为了让课程知道你现在更需要哪种帮助；提交后会生成一段课程学习建议。"
+                    questions={preQuestions}
+                    loading={preLoading}
+                    submitting={preSubmitting}
+                    feedback={preFeedback}
+                    onSubmit={submitPreAssessment}
+                />
+            ) : null}
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.12fr)_340px]">
                 <div className="space-y-4">
@@ -853,15 +1069,45 @@ function ProgramDayView({
     const theme = getProgramTheme(program.gradient);
     const isDone = progress.completed_days.includes(day.day_number);
     const existingAnswer = progress.review_answers?.[String(day.day_number)] || '';
-    const [toolCompleted, setToolCompleted] = useState(isDone);
+    const [toolCompleted, setToolCompleted] = useState(() => isDone || _isLocalProgramToolDone(program.id, day.day_number));
     const [answer, setAnswer] = useState(existingAnswer);
+    const [reflectionSaved, setReflectionSaved] = useState(Boolean(existingAnswer));
     const [submitting, setSubmitting] = useState(false);
+    const [postQuestions, setPostQuestions] = useState<ProgramAssessmentQuestion[]>([]);
+    const [postLoading, setPostLoading] = useState(false);
+    const [postSubmitting, setPostSubmitting] = useState(false);
+    const postKey = getAssessmentKey('post_day', day.day_number);
+    const [postFeedback, setPostFeedback] = useState<ProgramAssessmentFeedback | null>(() => _loadLocalProgramAssessment(program.id, postKey));
 
     useEffect(() => {
-        setToolCompleted(isDone);
+        setToolCompleted(isDone || _isLocalProgramToolDone(program.id, day.day_number));
         setAnswer(existingAnswer);
+        setReflectionSaved(Boolean(existingAnswer));
         setSubmitting(false);
-    }, [day.day_number, isDone, existingAnswer]);
+        setPostQuestions([]);
+        setPostFeedback(_loadLocalProgramAssessment(program.id, getAssessmentKey('post_day', day.day_number)));
+    }, [day.day_number, isDone, existingAnswer, program.id]);
+
+    useEffect(() => {
+        if (isDone || postQuestions.length) return;
+        setPostLoading(true);
+        fetchProgramAssessmentQuestions(program.id, 'post_day', day.day_number)
+            .then(setPostQuestions)
+            .catch(() => setPostQuestions([]))
+            .finally(() => setPostLoading(false));
+    }, [day.day_number, isDone, postQuestions.length, program.id]);
+
+    const submitPostAssessment = async (responses: ProgramAssessmentResponse[]) => {
+        setPostSubmitting(true);
+        try {
+            const token = localStorage.getItem('token');
+            const feedback = await submitProgramAssessment(program.id, 'post_day', responses, token, day.day_number);
+            _saveLocalProgramAssessment(program.id, postKey, feedback);
+            setPostFeedback(feedback);
+        } finally {
+            setPostSubmitting(false);
+        }
+    };
 
     const handleSubmit = async () => {
         setSubmitting(true);
@@ -869,7 +1115,8 @@ function ProgramDayView({
         setSubmitting(false);
     };
 
-    const canSubmit = !isDone && (!day.tool_id || toolCompleted);
+    const hasReflection = !day.review_question || reflectionSaved || Boolean(existingAnswer.trim());
+    const canSubmit = !isDone && (!day.tool_id || toolCompleted) && hasReflection && Boolean(postFeedback);
 
     return (
         <div className="space-y-6 lg:space-y-8">
@@ -1038,7 +1285,13 @@ function ProgramDayView({
                                         点击进入练习工具。课程页仍通过既有工具接口加载工具数据，并在完成后回写本页状态。
                                     </p>
                                     <button
-                                        onClick={() => onOpenTool(day.tool_id!, () => setToolCompleted(true))}
+                                        onClick={() => {
+                                            _saveProgramReturnState(program.id, day.day_number);
+                                            onOpenTool(day.tool_id!, () => {
+                                                _markLocalProgramToolDone(program.id, day.day_number);
+                                                setToolCompleted(true);
+                                            });
+                                        }}
                                         className="inline-flex items-center justify-center rounded-[1.2rem] px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70"
                                         style={{
                                             background: theme.gradient,
@@ -1075,14 +1328,62 @@ function ProgramDayView({
                             ) : (
                                 <textarea
                                     value={answer}
-                                    onChange={(e) => setAnswer(e.target.value)}
+                                    onChange={(e) => {
+                                        setAnswer(e.target.value);
+                                        setReflectionSaved(false);
+                                    }}
                                     placeholder="写下你的想法..."
                                     rows={5}
                                     className="mt-5 w-full rounded-[1.25rem] border border-slate-200 bg-slate-50/90 px-4 py-4 text-sm leading-7 text-slate-700 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-200/50 dark:border-slate-700 dark:bg-slate-950/70 dark:text-slate-100 dark:placeholder:text-slate-500"
                                 />
                             )}
+
+                            {!isDone && (
+                                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <p className={cn(
+                                        'text-xs',
+                                        hasReflection ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400',
+                                    )}>
+                                        {hasReflection ? '今日复盘已保存，可以继续完成章节小测。' : '写完后请先保存复盘，右侧完成步骤会同步变绿。'}
+                                    </p>
+                                    <button
+                                        onClick={() => setReflectionSaved(true)}
+                                        disabled={!answer.trim() || reflectionSaved}
+                                        className={cn(
+                                            'inline-flex items-center justify-center rounded-[1rem] px-4 py-2.5 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70',
+                                            !answer.trim() || reflectionSaved
+                                                ? 'cursor-not-allowed bg-slate-200 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                                : 'bg-slate-950 text-white hover:-translate-y-0.5 dark:bg-white dark:text-slate-950',
+                                        )}
+                                    >
+                                        {reflectionSaved ? '复盘已保存' : '保存今日复盘'}
+                                    </button>
+                                </div>
+                            )}
                         </section>
                     )}
+
+                    {!isDone ? (
+                        <ProgramAssessmentPanel
+                            title="章节结束小测"
+                            subtitle="完成今天内容后，再做 3 个跟本章有关的小题。它会帮你把课程内容转成下一步行动。"
+                            questions={postQuestions}
+                            loading={postLoading}
+                            submitting={postSubmitting}
+                            feedback={postFeedback}
+                            onSubmit={submitPostAssessment}
+                        />
+                    ) : postFeedback ? (
+                        <ProgramAssessmentPanel
+                            title="章节结束小测"
+                            subtitle=""
+                            questions={postQuestions}
+                            loading={false}
+                            submitting={false}
+                            feedback={postFeedback}
+                            onSubmit={() => undefined}
+                        />
+                    ) : null}
                 </div>
 
                 <aside className="space-y-4 xl:sticky xl:top-28 xl:self-start">
@@ -1103,10 +1404,14 @@ function ProgramDayView({
                             )}
                             {day.review_question && (
                                 <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
-                                    <span className={cn('mt-1 h-2.5 w-2.5 rounded-full', answer.trim() || existingAnswer ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600')} />
+                                    <span className={cn('mt-1 h-2.5 w-2.5 rounded-full', hasReflection ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600')} />
                                     <span>填写今日复盘</span>
                                 </div>
                             )}
+                            <div className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/70">
+                                <span className={cn('mt-1 h-2.5 w-2.5 rounded-full', postFeedback || isDone ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600')} />
+                                <span>完成章节小测</span>
+                            </div>
                         </div>
 
                         {!isDone && (
@@ -1121,7 +1426,7 @@ function ProgramDayView({
                                 )}
                                 style={!submitting && canSubmit ? { background: theme.gradient, boxShadow: `0 24px 50px -30px ${theme.glow}` } : undefined}
                             >
-                                {submitting ? '提交中...' : !canSubmit && day.tool_id ? '请先完成今日练习' : '完成今日课程'}
+                                {submitting ? '提交中...' : !canSubmit && day.tool_id && !toolCompleted ? '请先完成今日练习' : !hasReflection ? '请先保存今日复盘' : !postFeedback ? '请先完成章节小测' : '完成今日课程'}
                             </button>
                         )}
                     </section>
@@ -1181,6 +1486,15 @@ function ProgramDayView({
    本地进度存储 (未登录时使用)
    ============================================================ */
 const LOCAL_PROGRESS_KEY = 'neurasense_program_progress';
+const LOCAL_PROGRAM_ASSESSMENT_KEY = 'neurasense_program_assessment_feedback';
+const LOCAL_PROGRAM_RETURN_KEY = 'neurasense_program_return_state';
+const LOCAL_PROGRAM_TOOL_DONE_KEY = 'neurasense_program_tool_done';
+
+interface ProgramReturnState {
+    programId: string;
+    dayNumber: number;
+    updatedAt: string;
+}
 
 function _loadLocalProgress(): Record<string, ProgramProgress> {
     try {
@@ -1199,6 +1513,129 @@ function _saveLocalProgress(map: Record<string, ProgramProgress>) {
     }
 }
 
+function _loadLocalProgramAssessments(): Record<string, Record<string, ProgramAssessmentFeedback>> {
+    try {
+        const raw = localStorage.getItem(LOCAL_PROGRAM_ASSESSMENT_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function _saveLocalProgramAssessment(programId: string, key: string, feedback: ProgramAssessmentFeedback) {
+    const map = _loadLocalProgramAssessments();
+    map[programId] = { ...(map[programId] || {}), [key]: feedback };
+    try {
+        localStorage.setItem(LOCAL_PROGRAM_ASSESSMENT_KEY, JSON.stringify(map));
+    } catch {
+        /* quota exceeded */
+    }
+}
+
+function _loadLocalProgramAssessment(programId: string, key: string): ProgramAssessmentFeedback | null {
+    return _loadLocalProgramAssessments()[programId]?.[key] || null;
+}
+
+function _saveProgramReturnState(programId: string, dayNumber: number) {
+    const state: ProgramReturnState = {
+        programId,
+        dayNumber,
+        updatedAt: new Date().toISOString(),
+    };
+    try {
+        localStorage.setItem(LOCAL_PROGRAM_RETURN_KEY, JSON.stringify(state));
+    } catch {
+        /* ignore */
+    }
+}
+
+function _loadProgramReturnState(): ProgramReturnState | null {
+    try {
+        const raw = localStorage.getItem(LOCAL_PROGRAM_RETURN_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw) as ProgramReturnState;
+        if (!parsed?.programId || !parsed?.dayNumber) return null;
+        return parsed;
+    } catch {
+        return null;
+    }
+}
+
+function _clearProgramReturnState() {
+    try {
+        localStorage.removeItem(LOCAL_PROGRAM_RETURN_KEY);
+    } catch {
+        /* ignore */
+    }
+}
+
+function _loadLocalProgramToolDone(): Record<string, boolean> {
+    try {
+        const raw = localStorage.getItem(LOCAL_PROGRAM_TOOL_DONE_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function _programToolDoneKey(programId: string, dayNumber: number) {
+    return `${programId}:day-${dayNumber}`;
+}
+
+function _markLocalProgramToolDone(programId: string, dayNumber: number) {
+    const map = _loadLocalProgramToolDone();
+    map[_programToolDoneKey(programId, dayNumber)] = true;
+    try {
+        localStorage.setItem(LOCAL_PROGRAM_TOOL_DONE_KEY, JSON.stringify(map));
+    } catch {
+        /* ignore */
+    }
+}
+
+function _isLocalProgramToolDone(programId: string, dayNumber: number) {
+    return Boolean(_loadLocalProgramToolDone()[_programToolDoneKey(programId, dayNumber)]);
+}
+
+function _getLocalProgramAssessmentMap(programId: string): Record<string, ProgramAssessmentFeedback> {
+    return _loadLocalProgramAssessments()[programId] || {};
+}
+
+function _mergeAssessmentFeedback(
+    primary?: Record<string, ProgramAssessmentFeedback>,
+    secondary?: Record<string, ProgramAssessmentFeedback>,
+) {
+    const merged = { ...(secondary || {}), ...(primary || {}) };
+    return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
+function _normalizeStartedProgress(
+    programId: string,
+    progress: Partial<ProgramProgress>,
+    localAssessmentFeedback: Record<string, ProgramAssessmentFeedback> = {},
+): ProgramProgress {
+    const currentDay = Number(progress.current_day);
+    const completedDays = Array.isArray(progress.completed_days)
+        ? progress.completed_days
+            .map((day) => Number(day))
+            .filter((day) => Number.isFinite(day))
+        : [];
+    const reviewAnswers =
+        progress.review_answers && typeof progress.review_answers === 'object' && !Array.isArray(progress.review_answers)
+            ? progress.review_answers
+            : {};
+
+    return {
+        ...progress,
+        program_id: progress.program_id || programId,
+        current_day: currentDay > 0 ? currentDay : 1,
+        completed_days: completedDays,
+        review_answers: reviewAnswers,
+        pre_assessment_done: true,
+        assessment_feedback: _mergeAssessmentFeedback(progress.assessment_feedback, localAssessmentFeedback),
+        started_at: progress.started_at || new Date().toISOString(),
+    };
+}
+
 /* ============================================================
    Main ProgramsPage
    ============================================================ */
@@ -1213,6 +1650,7 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
     const [progressMap, setProgressMap] = useState<Record<string, ProgramProgress>>(_loadLocalProgress);
     const [loading, setLoading] = useState(true);
     const [detailLoading, setDetailLoading] = useState(false);
+    const restoredReturnKeyRef = useRef<string | null>(null);
 
     const token = localStorage.getItem('token');
 
@@ -1255,7 +1693,7 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
         })();
     }, [token, programs]);
 
-    const openDetail = useCallback(async (program: ProgramMeta) => {
+    const openDetail = useCallback(async (program: ProgramMeta, restoreDayNumber?: number) => {
         setSelectedProgram(program);
         setSelectedDay(null);
         setDays([]);
@@ -1280,6 +1718,15 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
                     return next;
                 });
             }
+
+            if (restoreDayNumber) {
+                const restoredDay = sortedDays.find((day) => day.day_number === restoreDayNumber);
+                if (restoredDay) {
+                    setSelectedDay(restoredDay);
+                    setView('day');
+                    _clearProgramReturnState();
+                }
+            }
         } catch {
             /* offline */
         } finally {
@@ -1287,41 +1734,59 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
         }
     }, [token]);
 
+    useEffect(() => {
+        if (loading || programs.length === 0) return;
+        const returnState = _loadProgramReturnState();
+        if (!returnState) return;
+
+        const returnKey = `${returnState.programId}:${returnState.dayNumber}:${returnState.updatedAt}`;
+        if (restoredReturnKeyRef.current === returnKey) return;
+
+        const program = programs.find((item) => item.id === returnState.programId);
+        if (!program) return;
+
+        restoredReturnKeyRef.current = returnKey;
+        void openDetail(program, returnState.dayNumber);
+    }, [loading, programs, openDetail]);
+
     const startProgram = useCallback(async () => {
         if (!selectedProgram) return;
 
+        const programId = selectedProgram.id;
+        const localAssessmentFeedback = _getLocalProgramAssessmentMap(programId);
+        const applyStartedProgress = (progress: Partial<ProgramProgress>) => {
+            const startedProgress = _normalizeStartedProgress(programId, progress, localAssessmentFeedback);
+            setProgressMap((prev) => {
+                const next = { ...prev, [programId]: startedProgress };
+                _saveLocalProgress(next);
+                return next;
+            });
+        };
+
         if (token) {
             try {
-                const res = await fetch(`${API_BASE}/programs/${selectedProgram.id}/start?token=${token}`, {
+                const res = await fetch(`${API_BASE}/programs/${programId}/start?token=${token}`, {
                     method: 'POST',
                 });
-                if (!res.ok) return;
-                const json = await res.json();
-                if (json.progress) {
-                    setProgressMap((prev) => {
-                        const next = { ...prev, [selectedProgram.id]: json.progress };
-                        _saveLocalProgress(next);
-                        return next;
-                    });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.progress) {
+                        applyStartedProgress(json.progress);
+                        return;
+                    }
                 }
-                return;
             } catch {
                 /* fall through to local */
             }
         }
 
-        const localProgress: ProgramProgress = {
-            program_id: selectedProgram.id,
+        applyStartedProgress({
+            program_id: programId,
             current_day: 1,
             completed_days: [],
             review_answers: {},
+            pre_assessment_done: true,
             started_at: new Date().toISOString(),
-        };
-
-        setProgressMap((prev) => {
-            const next = { ...prev, [selectedProgram.id]: localProgress };
-            _saveLocalProgress(next);
-            return next;
         });
     }, [token, selectedProgram]);
 

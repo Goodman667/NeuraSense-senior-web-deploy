@@ -10,6 +10,7 @@ from typing import AsyncGenerator
 # Load .env before any other imports that use env vars
 from dotenv import load_dotenv
 load_dotenv()
+load_dotenv(dotenv_path="backend/.env")
 
 # Render uses ZHIPU_API_KEY; code uses LLM_API_KEY — bridge the gap
 import os

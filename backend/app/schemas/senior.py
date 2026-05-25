@@ -170,11 +170,74 @@ class SeniorChatRequest(BaseModel):
     message: str
     conversation_history: list[dict[str, str]] = []
 
+class SeniorRiskAction(BaseModel):
+    should_show_modal: bool = False
+    should_contact_family: bool = False
+    user_message: str = ""
+    family_message: str = ""
+    reason: str = ""
+    steps: list[str] = []
+
 class SeniorChatResponse(BaseModel):
     reply_text: str
     risk_level: RiskLevel = "normal"
     tts_text: str
     next_suggestion: Optional[str] = None
+    risk_reason: str = ""
+    risk_action: Optional[SeniorRiskAction] = None
+
+class SeniorCheckupOption(BaseModel):
+    value: str
+    label: str
+    helper: Optional[str] = None
+
+class SeniorCheckupQuestion(BaseModel):
+    id: str
+    text: str
+    helper: str = ""
+    dimension: str
+    scale: str
+    response_type: Literal["yes_no", "frequency", "severity"]
+    options: list[SeniorCheckupOption]
+
+class SeniorCheckupQuestionsResponse(BaseModel):
+    success: bool = True
+    session_id: str
+    mode: str = "comprehensive"
+    intro: str
+    questions: list[SeniorCheckupQuestion]
+
+class SeniorCheckupAnswer(BaseModel):
+    question_id: str
+    question_text: str
+    answer_value: str
+    answer_label: str
+    dimension: Optional[str] = None
+    scale: Optional[str] = None
+
+class SeniorCheckupAnalysisRequest(BaseModel):
+    user_id: Optional[str] = None
+    session_id: Optional[str] = None
+    mode: str = "comprehensive"
+    questions: list[SeniorCheckupQuestion] = []
+    answers: list[SeniorCheckupAnswer]
+
+class SeniorCheckupScaleSnapshot(BaseModel):
+    mood_score: float = 0
+    anxiety_score: float = 0
+    loneliness_score: float = 0
+    sleep_score: float = 0
+    safety_score: float = 0
+    answered_count: int = 0
+    uncertain_count: int = 0
+    quality: Literal["good", "partial", "thin"] = "good"
+    source_note: str = "内部参考老年心情、担心、孤独、睡眠与安全线索；页面只给生活建议，不做诊断。"
+
+class SeniorCheckupAnalysisResponse(BaseModel):
+    success: bool = True
+    summary: SeniorSummaryResponse
+    scale_snapshot: SeniorCheckupScaleSnapshot
+    generation_status: Literal["ai", "fallback"] = "fallback"
 
 class SupportResource(BaseModel):
     id: str

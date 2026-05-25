@@ -74,7 +74,10 @@ export default function ToolRunner({ tool, onBack, onComplete }: ToolRunnerProps
         setSubmitting(false);
         setPhase('done');
         onComplete?.();
-    }, [tool.id, totalElapsed, elapsed, rating, onComplete]);
+        if (onComplete) {
+            onBack();
+        }
+    }, [tool.id, totalElapsed, elapsed, rating, onComplete, onBack]);
 
     const formatTime = (sec: number) => {
         const m = Math.floor(sec / 60);

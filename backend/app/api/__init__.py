@@ -700,6 +700,7 @@ async def text_to_speech(request: TTSRequest):
             "success": True,
             "audio": audio_base64,
             "format": "mp3",
+            "engine": "edge_tts",
             "voice": request.voice,
             "emotion": request.emotion,
         }
@@ -1028,11 +1029,12 @@ async def analyze_biosignal(request: BioSignalAnalysisRequest):
 
 请以温暖专业的语气分析，关注用户心理健康。"""
 
-        response = await counselor_service.generate_response(
+        llm_result = await counselor_service.generate_response(
             user_id="biosignal_analyzer",
-            message=prompt,
+            user_message=prompt,
             conversation_history=[]
         )
+        response = llm_result.message
 
         # 尝试解析JSON响应
         import json

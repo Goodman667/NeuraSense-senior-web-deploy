@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
+import { SeniorRiskModal } from '../components/SeniorRiskModal';
+import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { SeniorTopicChips } from '../components/SeniorTopicChips';
 import { seniorApi } from '../services/seniorApi';
-import type { SeniorChatMessage, SeniorPage } from '../types/senior';
+import type { SeniorChatMessage, SeniorPage, SeniorRiskAction, SeniorRiskLevel } from '../types/senior';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 
@@ -23,6 +25,7 @@ export function SeniorConversation({
   const [messages, setMessages] = useState<SeniorChatMessage[]>([{ id: makeId(), role: 'assistant', text: '我在这里陪您。您可以说一句最近最挂念的事，也可以点下面的按钮开始。', createdAt: new Date().toISOString() }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [riskModal, setRiskModal] = useState<{ action: SeniorRiskAction; level: SeniorRiskLevel } | null>(null);
   const { speak } = useSeniorTTS();
 
   useEffect(() => {
@@ -39,11 +42,14 @@ export function SeniorConversation({
     try {
       const history = messages.slice(-6).map(msg => ({ role: msg.role, content: msg.text }));
       const res = await seniorApi.seniorChat(userId, text, history);
-      const assistant: SeniorChatMessage = { id: makeId(), role: 'assistant', text: res.reply_text, createdAt: new Date().toISOString(), riskLevel: res.risk_level as any };
+      const assistant: SeniorChatMessage = { id: makeId(), role: 'assistant', text: res.reply_text, createdAt: new Date().toISOString(), riskLevel: res.risk_level };
       setMessages(prev => [...prev.slice(-4), assistant]);
       markSeniorProgress(userId, 'chat');
-      await speak(res.tts_text || res.reply_text, { emotion: res.risk_level === 'urgent' ? 'empathetic' : 'friendly' });
-      if (res.risk_level === 'elevated' || res.risk_level === 'urgent') seniorApi.recordHelpEvent(userId, 'chat_risk_prompt', { message: text }, res.risk_level).catch(() => null);
+      await speak(res.tts_text || res.reply_text, { emotion: res.risk_level === 'urgent' || res.risk_level === 'medical_emergency' ? 'empathetic' : 'friendly' });
+      if (res.risk_action?.should_show_modal) {
+        setRiskModal({ action: res.risk_action, level: res.risk_level });
+      }
+      if (res.risk_level === 'elevated' || res.risk_level === 'urgent' || res.risk_level === 'medical_emergency') seniorApi.recordHelpEvent(userId, 'chat_risk_prompt', { message: text, risk_reason: res.risk_reason, family_message: res.risk_action?.family_message }, res.risk_level).catch(() => null);
     } catch {
       const fallback = '网络有点慢，但我还在这里。您可以先喝口水，慢慢告诉我最想说的一件事。';
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', text: fallback, createdAt: new Date().toISOString() }]);
@@ -53,6 +59,8 @@ export function SeniorConversation({
   };
   return (
     <div className="mx-auto max-w-6xl">
+      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
+      {riskModal ? <SeniorRiskModal action={riskModal.action} level={riskModal.level} onNavigate={onNavigate} onClose={() => setRiskModal(null)} /> : null}
       <SeniorPageHeader eyebrow="陪伴式对话" title="这里可以慢慢说" desc="不像标准聊天工具，这里不会给您一堆选项。您说一句，我回几句，然后只给一个小建议。" />
       <section className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
         <aside className="rounded-[2rem] border border-cyan-100 bg-white/92 p-5 shadow-[0_24px_80px_-68px_rgba(15,23,42,0.42)]">

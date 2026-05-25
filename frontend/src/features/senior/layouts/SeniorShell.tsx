@@ -9,14 +9,16 @@ const navItems: Array<{ page: SeniorPage; label: string; desc: string; icon: Sen
   { page: 'home', label: '今天', desc: '先从这里开始', icon: 'home' },
   { page: 'chat', label: '聊聊', desc: '陪您说说话', icon: 'chat' },
   { page: 'relax', label: '放松', desc: '做一个短练习', icon: 'leaf' },
+  { page: 'checkup', label: '小测', desc: '陪您做个小检查', icon: 'clipboard' },
   { page: 'help', label: '帮助', desc: '找得到的人', icon: 'help' },
   { page: 'settings', label: '设置', desc: '字号与联系人', icon: 'settings' },
+  { page: 'profile', label: '我的', desc: '账号与退出', icon: 'user' },
 ];
 
 const fontScalePx: Record<string, string> = {
-  large: '16px',
-  larger: '17.5px',
-  largest: '19px',
+  large: '18px',
+  larger: '20px',
+  largest: '22px',
 };
 
 export function SeniorShell({
@@ -24,15 +26,18 @@ export function SeniorShell({
   onNavigate,
   onSwitchToStandard,
   currentUserName,
+  contactRequired = false,
   children,
 }: {
   page: SeniorPage;
   onNavigate: (page: SeniorPage) => void;
   onSwitchToStandard: () => void;
   currentUserName?: string;
+  contactRequired?: boolean;
   children: ReactNode;
 }) {
   const [fontScale, setFontScale] = useState(() => localStorage.getItem(FONT_SCALE_STORAGE) || 'large');
+  const [navNotice, setNavNotice] = useState('');
   const date = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
 
   useEffect(() => {
@@ -59,7 +64,13 @@ export function SeniorShell({
             <p className="mt-1 text-lg text-slate-600">{date} · 每次只做一件事</p>
           </div>
           <div className="flex flex-wrap gap-3">
+            {page !== 'home' ? (
+              <button onClick={() => contactRequired ? setNavNotice('先添加一位能联系到的人，填完马上进入首页。') : onNavigate('home')} className="min-h-[52px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-lg font-black text-cyan-900">返回首页</button>
+            ) : null}
             <button onClick={() => onNavigate('help')} className="min-h-[52px] rounded-2xl bg-rose-50 px-5 text-lg font-black text-rose-800 ring-1 ring-rose-200">需要帮助</button>
+            <button onClick={() => onNavigate('profile')} className="min-h-[52px] rounded-2xl border border-cyan-200 bg-white px-5 text-lg font-black text-cyan-900">
+              <span className="inline-flex items-center gap-2"><SeniorIcon name="user" className="h-5 w-5" />我的</span>
+            </button>
             <button onClick={onSwitchToStandard} className="min-h-[52px] rounded-2xl bg-slate-950 px-5 text-lg font-black text-white">使用完整功能</button>
           </div>
         </div>
@@ -80,21 +91,34 @@ export function SeniorShell({
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-32 lg:self-start">
           <nav className="grid gap-3 rounded-[2rem] border border-cyan-100 bg-white/92 p-3 shadow-[0_28px_80px_-64px_rgba(15,23,42,0.4)]" aria-label="陪伴版导航">
+            {navNotice ? (
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-lg font-black leading-8 text-amber-950">
+                {navNotice}
+              </div>
+            ) : null}
             {navItems.map((item) => {
               const active = item.page === page;
+              const locked = contactRequired && item.page !== 'settings' && item.page !== 'help' && item.page !== 'profile';
               return (
                 <button
                   key={item.page}
-                  onClick={() => onNavigate(item.page)}
-                  className={`rounded-3xl px-5 py-4 text-left transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200 ${active ? 'bg-cyan-800 text-white' : 'bg-white text-slate-800 hover:bg-cyan-50'}`}
+                  onClick={() => {
+                    if (locked) {
+                      setNavNotice('先完成联系人这一步，就能使用今天、聊聊、小测和放松。');
+                      return;
+                    }
+                    setNavNotice('');
+                    onNavigate(item.page);
+                  }}
+                  className={`rounded-3xl px-5 py-4 text-left transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200 ${active ? 'bg-cyan-800 text-white' : locked ? 'bg-slate-50 text-slate-400' : 'bg-white text-slate-800 hover:bg-cyan-50'}`}
                 >
                   <span className="flex items-center gap-3">
                     <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${active ? 'bg-white/15 text-white' : 'bg-slate-50 text-cyan-800'}`}>
                       <SeniorIcon name={item.icon} className="h-6 w-6" />
                     </span>
-                    <span>
-                      <span className="block text-2xl font-black">{item.label}</span>
-                      <span className={`mt-1 block text-base ${active ? 'text-cyan-50' : 'text-slate-500'}`}>{item.desc}</span>
+                      <span>
+                        <span className="block text-2xl font-black">{item.label}</span>
+                      <span className={`mt-1 block text-base ${active ? 'text-cyan-50' : locked ? 'text-slate-400' : 'text-slate-500'}`}>{locked ? '填完联系人后可用' : item.desc}</span>
                     </span>
                   </span>
                 </button>
@@ -106,6 +130,13 @@ export function SeniorShell({
         <main id="senior-main" className="min-w-0" tabIndex={-1}>
           <div className="mb-5 lg:hidden"><SeniorPlaybackBar /></div>
           {children}
+          <div className="mt-8 grid gap-3 rounded-[2rem] border border-cyan-100 bg-white/90 p-4 md:grid-cols-3">
+            <button onClick={() => contactRequired ? setNavNotice('先添加一位联系人，填完就能返回首页。') : onNavigate('home')} className="min-h-[60px] rounded-2xl border border-cyan-200 bg-cyan-50 px-4 text-lg font-black text-cyan-900">返回首页</button>
+            <button onClick={() => onNavigate('help')} className="min-h-[60px] rounded-2xl bg-rose-700 px-4 text-lg font-black text-white">紧急求助</button>
+            <button onClick={onSwitchToStandard} className="min-h-[60px] rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-slate-700">
+              <span className="inline-flex items-center gap-2"><SeniorIcon name="logout" className="h-5 w-5" />退出陪伴版</span>
+            </button>
+          </div>
         </main>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorLoadingCard } from '../components/SeniorLoadingCard';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
+import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { mergeContacts, readStoredContacts, writeStoredContacts } from '../lib/localSupportContacts';
 import { seniorApi } from '../services/seniorApi';
@@ -64,6 +65,7 @@ export function SeniorHelpCenter({ userId, latestSummary, onNavigate }: { userId
   }, [userId, loadHelpData]);
   return (
     <div className="mx-auto max-w-6xl">
+      <SeniorSafetyActions onNavigate={onNavigate} endLabel="我先回首页" onEnd={() => onNavigate('home')} />
       <SeniorPageHeader eyebrow="帮助支持" title={urgent ? '现在先联系一个真人' : '需要有人帮忙吗？'} desc={urgent ? '先别继续一个人待着。页面上的内容只帮您更快找到现实中的人。' : '这些入口会一直放在这里。现在最重要的是让您找得到人，而不是一个人硬扛。'} />
       <div className="mb-5 space-y-3">
         {resourceError || contactError ? (
