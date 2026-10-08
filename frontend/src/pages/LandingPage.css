@@ -51,13 +51,6 @@ html.ns-cinematic-active body {
   object-fit: cover;
   pointer-events: none;
 }
-.ns-cloud-canvas {
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.ns-cloud-canvas.is-live {
-  opacity: 1;
-}
 .ns-cloud-overlay {
   position: absolute;
   inset: 0;

@@ -9,9 +9,6 @@ import { ArrowRight, ArrowDown, ChevronUp, Info, X } from "lucide-react";
 import { useVideoScrub } from "../hooks/useVideoScrub";
 import "./LandingPage.css";
 
-// Original footage from the second user-supplied MotionSites reference.
-const VIDEO_SRC =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260821_114821_a8ca298f-be2c-4613-a4dd-51b69e16bbde.mp4";
 const navigation = [
   { label: "NEURASENSE", progress: 0 },
   { label: "了解自己", progress: 0.43 },
@@ -49,15 +46,19 @@ export default function LandingPage({
   onGetStarted,
   onLogin,
 }: LandingPageProps) {
+  // Choose once per visit so rotating/resizing doesn't restart the download.
+  const [videoSrc] = useState(() =>
+    window.matchMedia("(max-width: 767px)").matches
+      ? "/cloud/cloud-scrub-540-v1.mp4"
+      : "/cloud/cloud-scrub-720-v1.mp4",
+  );
   const {
     containerRef,
     videoRef,
-    canvasRef,
     progress: p,
-    canvasLive,
     mediaError,
     scrollToProgress,
-  } = useVideoScrub(VIDEO_SRC);
+  } = useVideoScrub(videoSrc);
   const [menuOpen, setMenuOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const menuTrigger = useRef<HTMLButtonElement | null>(null);
@@ -136,17 +137,11 @@ export default function LandingPage({
         <video
           ref={videoRef}
           className="ns-cloud-media"
-          src={VIDEO_SRC}
+          src={videoSrc}
+          poster="/cloud/cloud-poster-v1.webp"
           muted
           playsInline
           preload="auto"
-          aria-hidden="true"
-        />
-        <canvas
-          ref={canvasRef}
-          width={1920}
-          height={1080}
-          className={`ns-cloud-media ns-cloud-canvas ${canvasLive ? "is-live" : ""}`}
           aria-hidden="true"
         />
         <div className="ns-cloud-overlay">
