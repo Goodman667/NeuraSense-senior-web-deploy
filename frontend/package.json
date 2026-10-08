@@ -17,6 +17,7 @@
         "@react-three/xr": "^6.6.28",
         "framer-motion": "^12.23.26",
         "lucide-react": "^1.53.0",
+        "mp4box": "^0.5.4",
         "pixi-live2d-display": "^0.4.0",
         "pixi.js": "^6.5.10",
         "react": "19.2.0",
