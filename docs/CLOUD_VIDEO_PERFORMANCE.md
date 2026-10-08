@@ -13,8 +13,9 @@ The replacements are H.264 all-intra (every frame is a keyframe), no audio,
 uses 960×540 (1,688,415 bytes). This trades some fine detail for much faster
 random access. A 43 KB poster appears while video data loads.
 
-`useVideoScrub` coalesces scrolling into one native seek at a time, quantizes to
-actual frames, eases changes, and stops scheduling animation frames when settled
+`useVideoScrub` normally coalesces scrolling into one native seek at a time. If
+a seek waits on network data for over 150 ms, it retargets to the newest input.
+It quantizes to actual frames, eases changes, and stops scheduling animation frames when settled
 or hidden. No autoplay permission, WebCodecs support, extra fetch, or image bank
 is needed. Reduced-motion skips easing. Error recovery retains the reload button.
 

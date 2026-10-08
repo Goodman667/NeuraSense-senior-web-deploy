@@ -124,7 +124,9 @@ systemctl restart neurasense-backend.service
 sleep 5
 
 log "Running health checks"
-curl --fail --silent --show-error --max-time 20 http://127.0.0.1:8000/health >/dev/null
+# Cold startup can exceed the initial 5 seconds; wait for readiness, but fail
+# within a bounded interval when the service really cannot start.
+curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 2 --retry-max-time 60 --max-time 5 http://127.0.0.1:8000/health >/dev/null
 curl --fail --silent --show-error --max-time 20 http://127.0.0.1/api/v1/health >/dev/null
 curl --fail --silent --show-error --max-time 20 http://127.0.0.1/ >/dev/null
 

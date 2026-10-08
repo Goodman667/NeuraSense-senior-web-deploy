@@ -28,6 +28,7 @@ export function useVideoScrub(videoSrc: string) {
     let lastPublishedAt = 0;
     let published = -1;
     let requestedFrame = -1;
+    let lastSeekAt = -Infinity;
 
     const wake = () => {
       if (!disposed && !document.hidden && !raf) {
@@ -49,17 +50,24 @@ export function useVideoScrub(videoSrc: string) {
         lastPublishedAt = time;
         setProgress(target);
       }
-      if (video.readyState >= 1 && Number.isFinite(video.duration) && !video.seeking) {
+      let waitingToRetarget = false;
+      if (video.readyState >= 1 && Number.isFinite(video.duration)) {
         const lastFrame = Math.max(0, Math.round(video.duration * FPS) - 1);
         const frame = Math.round(current * lastFrame);
         if (frame !== requestedFrame) {
-          requestedFrame = frame;
-          // Coalesce rapid scroll input: at most one native seek is in flight.
-          const seconds = Math.min(frame / FPS, Math.max(0, video.duration - 0.001));
-          if (Math.abs(video.currentTime - seconds) > 0.001) video.currentTime = seconds;
+          // Normally wait for seeked; an unbuffered network seek must not block
+          // newer input indefinitely. Retarget it at most once per 150 ms.
+          if (!video.seeking || time - lastSeekAt >= 150) {
+            requestedFrame = frame;
+            const seconds = Math.min(frame / FPS, Math.max(0, video.duration - 0.001));
+            if (Math.abs(video.currentTime - seconds) > 0.001) {
+              lastSeekAt = time;
+              video.currentTime = seconds;
+            }
+          } else waitingToRetarget = true;
         }
       }
-      if (current !== target) wake();
+      if (current !== target || waitingToRetarget) wake();
       else lastTime = 0;
       // seeked/loadeddata wake us if the final target was waiting on the decoder.
     };
