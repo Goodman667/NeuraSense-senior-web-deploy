@@ -1,0 +1,627 @@
+@import url("https://db.onlinewebfonts.com/c/95cecf452d3208890088a5b4c19c7ecf?family=Helvetica+Neue+ME");
+
+html.ns-cinematic-active {
+  height: auto;
+  overflow: visible;
+  scroll-behavior: smooth;
+}
+html.ns-cinematic-active body {
+  height: auto;
+  overflow: visible;
+  overflow-x: clip;
+}
+.ns-cloud-track {
+  --ns-cloud-dark: #1d3045;
+  position: relative;
+  height: 500vh;
+  background: #e4e9eb;
+  color: var(--ns-cloud-dark);
+  font-family:
+    "Helvetica Neue ME", "Helvetica Neue", Helvetica, "PingFang SC",
+    "Microsoft YaHei", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.ns-cloud-track button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.ns-cloud-track button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 7px;
+}
+.ns-cloud-stage {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+}
+.ns-cloud-media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.ns-cloud-canvas {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.ns-cloud-canvas.is-live {
+  opacity: 1;
+}
+.ns-cloud-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ns-cloud-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 48px 24px;
+  gap: 24px;
+  color: var(--ns-cloud-dark);
+  transition: color 0.5s;
+}
+.ns-cloud-header.is-light {
+  color: #fff;
+}
+.ns-cloud-nav {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.ns-cloud-nav button,
+.ns-cloud-nav-right button,
+.ns-cloud-mobile-login {
+  position: relative;
+  font-size: 12px !important;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-weight: 500 !important;
+  transition: opacity 0.3s;
+}
+.ns-cloud-nav button {
+  animation: ns-cloud-nav-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) var(--nav-delay)
+    both;
+}
+.ns-cloud-nav button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s;
+}
+.ns-cloud-nav button.is-active::after {
+  transform: scaleX(1);
+}
+.ns-cloud-nav button:hover,
+.ns-cloud-nav-right button:hover {
+  opacity: 0.7;
+}
+.ns-cloud-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  animation: ns-cloud-nav-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+.ns-cloud-nav-right button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.2em;
+}
+.ns-cloud-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1d3045;
+  color: #f1f3f4;
+  transition:
+    background 0.5s,
+    color 0.5s;
+}
+.is-light .ns-cloud-info {
+  background: #fff;
+  color: #1d3045;
+}
+.ns-cloud-track .ns-cloud-hamburger,
+.ns-cloud-track .ns-cloud-mobile-login {
+  display: none;
+}
+.ns-cloud-section {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 128px;
+  transition: opacity 0.1s ease-out;
+}
+.ns-cloud-section[inert] {
+  pointer-events: none;
+}
+.ns-cloud-section[inert] button {
+  pointer-events: none;
+}
+.ns-cloud-stagger {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--delay);
+}
+.ns-cloud-stagger.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.ns-cloud-first h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 5rem);
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: 0.035em;
+}
+.ns-cloud-subtitle {
+  margin: 24px 0 0;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #1d304590;
+}
+.ns-cloud-first-next {
+  position: absolute;
+  bottom: 48px;
+  right: 48px;
+}
+.ns-cloud-track .ns-cloud-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #1d304580;
+  border-radius: 50%;
+  transition:
+    opacity 0.3s,
+    transform 0.3s;
+}
+.ns-cloud-circle:hover {
+  opacity: 0.7;
+  transform: translateY(2px);
+}
+.ns-cloud-second {
+  justify-content: center;
+  padding: 0 32px;
+}
+.ns-cloud-second h2 {
+  max-width: 900px;
+  margin: 0;
+  font-size: clamp(1.5rem, 4.5vw, 4.5rem);
+  font-weight: 200;
+  letter-spacing: 0.035em;
+  line-height: 1.3;
+  text-align: center;
+}
+.ns-cloud-second h2 span:first-of-type {
+  color: #1d3045cc;
+}
+.ns-cloud-second h2 span:last-of-type {
+  color: #1d304580;
+}
+.ns-cloud-section-controls {
+  position: absolute;
+  bottom: 64px;
+  right: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.ns-cloud-section-controls .ns-cloud-circle {
+  border-color: #1d304566;
+}
+.ns-cloud-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  height: 8px;
+}
+.ns-cloud-dots i {
+  width: 6px;
+  height: 6px;
+  background: #1d304566;
+  border-radius: 50%;
+}
+.ns-cloud-dots i.is-active {
+  width: 8px;
+  height: 8px;
+  background: #1d3045;
+}
+.ns-cloud-track .ns-cloud-circle-small {
+  width: 40px;
+  height: 40px;
+  border-color: #1d30454d;
+  color: #1d3045cc;
+  margin-top: 8px;
+}
+.ns-cloud-third {
+  justify-content: flex-end;
+  color: #fff;
+}
+.ns-cloud-third-copy {
+  max-width: 672px;
+  text-align: left;
+}
+.ns-cloud-eyebrow {
+  margin: 0 0 16px;
+  color: #fff9;
+  font-size: 18px;
+  letter-spacing: 0.025em;
+}
+.ns-cloud-third h2 {
+  margin: 0 0 32px;
+  font-size: clamp(2rem, 4vw, 4rem);
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: 0.035em;
+}
+.ns-cloud-track .ns-cloud-journey {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-align: left;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: #fffc;
+}
+.ns-cloud-journey-arrow {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #1f2937;
+  transition: transform 0.3s;
+}
+.ns-cloud-journey:hover .ns-cloud-journey-arrow {
+  transform: scale(1.1);
+}
+.ns-cloud-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: #1d3045;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.ns-cloud-menu::backdrop {
+  background: transparent;
+}
+.ns-cloud-menu.is-open {
+  opacity: 1;
+}
+.ns-cloud-menu-inner {
+  min-height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 100px 48px 40px;
+  transform: translateY(-32px);
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ns-cloud-menu.is-open .ns-cloud-menu-inner {
+  transform: translateY(0);
+}
+.ns-cloud-track .ns-cloud-close {
+  position: absolute;
+  top: 48px;
+  right: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ffffff4d;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  transition: border-color 0.3s;
+}
+.ns-cloud-track .ns-cloud-close:hover {
+  border-color: white;
+}
+.ns-cloud-menu nav {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  padding: 20px 0;
+}
+.ns-cloud-menu nav button {
+  padding: 12px 0;
+  font-size: 30px;
+  font-weight: 300;
+  letter-spacing: 0.025em;
+  color: #fff9;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.5s,
+    transform 0.5s,
+    color 0.3s;
+  transition-delay: var(--menu-delay);
+}
+.ns-cloud-menu.is-open nav button {
+  opacity: 1;
+  transform: translateY(0);
+}
+.ns-cloud-menu nav button.is-active,
+.ns-cloud-menu nav button:hover {
+  color: #fff;
+}
+.ns-cloud-menu-footer {
+  display: flex;
+  gap: 40px;
+  color: #fff9;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+.ns-cloud-menu-footer button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.ns-cloud-error {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  max-width: calc(100% - 100px);
+  font-size: 12px;
+  line-height: 1.8;
+  color: #1d3045;
+  background: #e4e9eb;
+  padding: 10px 14px;
+}
+.ns-cloud-error button {
+  text-decoration: underline;
+  margin-left: 12px;
+}
+.has-media-error .ns-cloud-header.is-light,
+.has-media-error .ns-cloud-third,
+.has-media-error .ns-cloud-eyebrow,
+.has-media-error .ns-cloud-journey {
+  color: #1d3045;
+}
+@keyframes ns-cloud-nav-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 1279px) {
+  .ns-cloud-nav {
+    gap: 32px;
+  }
+  .ns-cloud-header {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .ns-cloud-nav-right {
+    gap: 30px;
+  }
+  .ns-cloud-section {
+    padding-left: 80px;
+    padding-right: 80px;
+  }
+  .ns-cloud-second {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+@media (max-width: 1023px) {
+  .ns-cloud-nav {
+    display: none;
+  }
+  .ns-cloud-track .ns-cloud-hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: -12px 0 -12px -10px;
+    padding: 10px;
+  }
+  .ns-cloud-hamburger span {
+    height: 2px;
+    width: 24px;
+    background: currentColor;
+  }
+  .ns-cloud-hamburger span:last-child {
+    width: 16px;
+  }
+  .ns-cloud-third-copy {
+    max-width: 560px;
+  }
+}
+@media (max-width: 767px) {
+  .ns-cloud-header {
+    padding: 48px 32px 24px;
+  }
+  .ns-cloud-section {
+    padding: 0 32px;
+  }
+  .ns-cloud-first-next {
+    right: 32px;
+  }
+  .ns-cloud-section-controls {
+    right: 32px;
+  }
+  .ns-cloud-menu-inner {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+  .ns-cloud-track .ns-cloud-close {
+    right: 32px;
+  }
+  .ns-cloud-second h2 {
+    font-size: clamp(24px, 4.5vw, 40px);
+  }
+}
+@media (max-width: 639px) {
+  .ns-cloud-header {
+    padding: 32px 24px 24px;
+  }
+  .ns-cloud-nav-right {
+    display: none;
+  }
+  .ns-cloud-track .ns-cloud-mobile-login {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    margin: -12px 0;
+  }
+  .ns-cloud-section {
+    padding: 0 24px;
+  }
+  .ns-cloud-first h1 {
+    font-size: clamp(38px, 10vw, 58px);
+    line-height: 1.3;
+    letter-spacing: 0.03em;
+  }
+  .ns-cloud-subtitle {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    line-height: 1.8;
+    margin-top: 24px;
+  }
+  .ns-cloud-first-next {
+    right: 24px;
+    bottom: 48px;
+  }
+  .ns-cloud-second h2 {
+    font-size: clamp(24px, 5.8vw, 34px);
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+  .ns-cloud-section-controls {
+    right: 24px;
+    bottom: 48px;
+  }
+  .ns-cloud-third {
+    justify-content: flex-end;
+  }
+  .ns-cloud-third-copy {
+    max-width: 100%;
+    width: 100%;
+  }
+  .ns-cloud-third h2 {
+    font-size: clamp(32px, 8vw, 46px);
+    line-height: 1.35;
+  }
+  .ns-cloud-eyebrow {
+    font-size: 15px;
+  }
+  .ns-cloud-journey {
+    font-size: 12px !important;
+    letter-spacing: 0.2em !important;
+  }
+  .ns-cloud-menu-inner {
+    padding: 90px 32px 28px;
+  }
+  .ns-cloud-track .ns-cloud-close {
+    top: 32px;
+    right: 24px;
+  }
+  .ns-cloud-menu nav button {
+    font-size: 24px;
+  }
+  .ns-cloud-menu-footer {
+    gap: 32px;
+  }
+}
+@media (max-height: 540px) {
+  .ns-cloud-section-controls {
+    bottom: 24px;
+    gap: 10px;
+  }
+  .ns-cloud-first-next {
+    bottom: 24px;
+  }
+  .ns-cloud-menu-inner {
+    height: auto;
+    min-height: 100dvh;
+    padding-top: 80px;
+  }
+  .ns-cloud-menu nav button {
+    font-size: 22px;
+    padding: 9px 0;
+  }
+  .ns-cloud-menu nav {
+    margin: 0;
+  }
+  .ns-cloud-menu-footer {
+    margin-top: 20px;
+  }
+  .ns-cloud-third h2 {
+    font-size: 36px;
+  }
+  .ns-cloud-first h1 {
+    font-size: 42px;
+  }
+  .ns-cloud-second h2 {
+    font-size: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.ns-cinematic-active {
+    scroll-behavior: auto;
+  }
+  .ns-cloud-track * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

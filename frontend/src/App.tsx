@@ -889,7 +889,7 @@ function App() {
     if (appView === 'onboarding') {
         return (
             <Suspense fallback={<PageSkeleton />}>
-                <OnboardingWizard onComplete={() => setAppView('main')} />
+                <OnboardingWizard onComplete={() => setAppView('main')} onBack={() => setAppView('landing')} />
             </Suspense>
         );
     }

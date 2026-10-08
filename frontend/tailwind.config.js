@@ -90,6 +90,7 @@ export default {
                 },
             },
             fontFamily: {
+                geist: ['Geist', 'PingFang SC', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
                 sans: ['Raleway', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI Variable', 'system-ui', '-apple-system', 'sans-serif'],
                 display: ['Lora', 'Georgia', 'Times New Roman', 'serif'],
             },
