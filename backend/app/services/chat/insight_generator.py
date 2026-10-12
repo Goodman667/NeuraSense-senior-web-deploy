@@ -6,8 +6,14 @@ import re
 from dataclasses import dataclass
 from typing import Optional
 
-import httpx
 from pydantic import BaseModel, Field, ValidationError
+from app.services.llm.client import (
+    DEFAULT_LLM_API_BASE,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LLM_PROVIDER,
+    call_llm_async,
+    provider_uses_responses,
+)
 
 
 class ChatInsightContent(BaseModel):
@@ -44,9 +50,9 @@ class InsightGenerationContext:
 
 class InsightGeneratorService:
     LLM_API_KEY = os.getenv("LLM_API_KEY", "")
-    LLM_MODEL = os.getenv("LLM_MODEL", "glm-4-flash")
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "zhipuai")
-    LLM_API_BASE = os.getenv("LLM_API_BASE", os.getenv("LLM_BASE_URL", "")).rstrip("/")
+    LLM_MODEL = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", DEFAULT_LLM_PROVIDER)
+    LLM_API_BASE = os.getenv("LLM_API_BASE", os.getenv("LLM_BASE_URL", DEFAULT_LLM_API_BASE)).rstrip("/")
     ALLOWED_KINDS = {"crisis", "discordance", "multimodal", "support"}
     LOW_SPECIFICITY_PHRASES = (
         "请关注您的心理健康",
@@ -233,28 +239,19 @@ class InsightGeneratorService:
             {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
         ]
 
-        if self.LLM_PROVIDER.lower() in {"openai", "openai_compatible", "custom"} or self.LLM_API_BASE:
+        provider = self.LLM_PROVIDER.lower()
+        if provider_uses_responses(provider) or provider in {"openai", "openai_compatible", "custom"} or self.LLM_API_BASE:
             if not self.LLM_API_BASE:
-                raise RuntimeError("LLM_API_BASE is required for openai_compatible provider")
-            base = self.LLM_API_BASE.rstrip("/")
-            url = base if base.endswith("/chat/completions") else f"{base}/v1/chat/completions"
-            async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
-                    url,
-                    headers={
-                        "Authorization": f"Bearer {self.LLM_API_KEY}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": self.LLM_MODEL,
-                        "messages": messages,
-                        "temperature": 0.45,
-                        "max_tokens": 900,
-                    },
-                )
-                response.raise_for_status()
-                data = response.json()
-            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                raise RuntimeError("LLM_API_BASE is required for HTTP LLM provider")
+            content = await call_llm_async(
+                api_key=self.LLM_API_KEY,
+                model=self.LLM_MODEL,
+                provider=self.LLM_PROVIDER,
+                api_base=self.LLM_API_BASE,
+                messages=messages,
+                temperature=0.45,
+                max_tokens=900,
+            )
         else:
             from zhipuai import ZhipuAI
 

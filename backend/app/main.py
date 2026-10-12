@@ -12,8 +12,21 @@ from dotenv import load_dotenv
 load_dotenv()
 load_dotenv(dotenv_path="backend/.env")
 
-# Render uses ZHIPU_API_KEY; code uses LLM_API_KEY — bridge the gap
 import os
+
+
+def _set_llm_default(name: str, value: str, legacy_values: set[str]) -> None:
+    current = os.getenv(name, "")
+    if not current or current in legacy_values:
+        os.environ[name] = value
+
+
+# LLM defaults. Keep the secret key in deployment env; never commit it.
+_set_llm_default("LLM_PROVIDER", "responses", {"zhipuai"})
+_set_llm_default("LLM_MODEL", "gpt-5.5", {"glm-4-flash", "gpt-4"})
+_set_llm_default("LLM_API_BASE", "https://ai.ha7e.com", {""})
+
+# Legacy env bridge for old deployments that still expose ZHIPU_API_KEY.
 if not os.getenv("LLM_API_KEY") and os.getenv("ZHIPU_API_KEY"):
     os.environ["LLM_API_KEY"] = os.environ["ZHIPU_API_KEY"]
 

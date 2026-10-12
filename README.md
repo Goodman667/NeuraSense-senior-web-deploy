@@ -96,10 +96,10 @@ cp frontend/.env.example frontend/.env.production
 
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
-- `LLM_API_KEY`
-- `LLM_MODEL`
-- `LLM_PROVIDER`
-- `LLM_API_BASE`
+- `LLM_API_KEY`：生产环境密钥，不要提交到仓库
+- `LLM_MODEL=gpt-5.5`
+- `LLM_PROVIDER=responses`
+- `LLM_API_BASE=https://ai.ha7e.com`
 - `EMBEDDING_PROVIDER`
 - `EMBEDDING_MODEL`
 - `EMBEDDING_DIM`

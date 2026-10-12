@@ -29,6 +29,13 @@ import json
 import os
 import re
 
+from app.services.llm.client import (
+    DEFAULT_LLM_API_BASE,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LLM_PROVIDER,
+    call_llm_sync,
+)
+
 
 # =====================================================
 # PHQ-9 DIMENSION DEFINITIONS
@@ -315,9 +322,10 @@ class AssessmentManager:
         self.session_id = session_id
         self.state = SessionState(session_id=session_id)
         self.crisis_detector = CrisisKeywordTrie()
-        self.llm_provider = os.environ.get("LLM_PROVIDER", "openai")
+        self.llm_provider = os.environ.get("LLM_PROVIDER", DEFAULT_LLM_PROVIDER)
         self.llm_api_key = os.environ.get("LLM_API_KEY", "")
-        self.llm_model = os.environ.get("LLM_MODEL", "gpt-4")
+        self.llm_model = os.environ.get("LLM_MODEL", DEFAULT_LLM_MODEL)
+        self.llm_api_base = os.environ.get("LLM_API_BASE", os.environ.get("LLM_BASE_URL", DEFAULT_LLM_API_BASE))
     
     def process_user_input(self, user_input: str) -> StealthAssessmentResult:
         """
@@ -395,35 +403,37 @@ class AssessmentManager:
         if not self.llm_api_key:
             raise ValueError("No LLM API key configured")
         
-        import httpx
-        
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.llm_api_key}",
-        }
-        
-        payload = {
-            "model": self.llm_model,
-            "messages": messages,
-            "temperature": 0.7,
-            "response_format": {"type": "json_object"},
-        }
-        
-        # 确定 API endpoint
-        if self.llm_provider == "openai":
-            url = "https://api.openai.com/v1/chat/completions"
-        elif self.llm_provider == "zhipuai":
-            url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+        provider = self.llm_provider.lower()
+        if provider == "zhipuai" and not self.llm_api_base:
+            from zhipuai import ZhipuAI
+
+            client = ZhipuAI(api_key=self.llm_api_key)
+            response = client.chat.completions.create(
+                model=self.llm_model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=900,
+            )
+            content = response.choices[0].message.content
         else:
-            url = os.environ.get("LLM_API_URL", "https://open.bigmodel.cn/api/paas/v4/chat/completions")
-        
-        response = httpx.post(url, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
-        
-        result = response.json()
-        content = result["choices"][0]["message"]["content"]
-        
-        return json.loads(content)
+            # Responses API is the new default; chat-completions remains available
+            # when LLM_PROVIDER is explicitly set to openai_compatible/custom.
+            content = call_llm_sync(
+                api_key=self.llm_api_key,
+                model=self.llm_model,
+                provider=self.llm_provider,
+                api_base=self.llm_api_base,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=900,
+                timeout=45,
+            )
+
+        cleaned = content.strip().replace("```json", "").replace("```", "").strip()
+        match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+        if match:
+            cleaned = match.group(0)
+        return json.loads(cleaned)
     
     def _parse_llm_response(self, response_json: dict) -> StealthAssessmentResult:
         """解析 LLM JSON 响应"""

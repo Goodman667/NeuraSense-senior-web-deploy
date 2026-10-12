@@ -66,7 +66,7 @@ NeuraSense is a full-stack AI-powered mental health management platform (PWA + F
 | Python | 3.11+ | Runtime |
 | Supabase Python SDK | 2.5.0 | Primary database (PostgreSQL) |
 | Neo4j | 6.0.3 | Knowledge graph (optional, rule engine fallback) |
-| ZhipuAI SDK (GLM-4-Flash) | 2.1.5 | LLM for dialog/assessment/interpretation |
+| GPT-compatible Responses API | — | LLM for dialog/assessment/interpretation |
 | scikit-learn | 1.8.0 | Trend prediction (RandomForest + LinearRegression) |
 | NumPy / SciPy | 2.3.5 / 1.16.3 | Scientific computing |
 | OpenCV | 4.11.0 | Clock Drawing Test image scoring |
@@ -114,9 +114,9 @@ NeuraSense is a full-stack AI-powered mental health management platform (PWA + F
               └──────┬──────────┬──────────┬────────────────┘
                      │          │          │
          ┌───────────▼┐  ┌─────▼─────┐  ┌─▼────────────┐
-         │ Supabase   │  │ ZhipuAI   │  │ Neo4j        │
-         │ PostgreSQL │  │ GLM-4     │  │ (optional)   │
-         │ (primary)  │  │ Flash/4V  │  │ Knowledge    │
+         │ Supabase   │  │ GPT API   │  │ Neo4j        │
+         │ PostgreSQL │  │ gpt-5.5   │  │ (optional)   │
+         │ (primary)  │  │ Responses │  │ Knowledge    │
          └────────────┘  └───────────┘  │ Graph        │
                                         └──────────────┘
 ```
@@ -617,9 +617,12 @@ User Interaction ────┼── Voice: AudioWorklet ───────
 
 ## 9. Environment Variables
 
-**Backend (Render)**:
+**Backend**:
 ```
-ZHIPU_API_KEY=          # Required — ZhipuAI API key
+LLM_API_KEY=            # Required — LLM API key, keep it in deployment secrets
+LLM_MODEL=gpt-5.5
+LLM_PROVIDER=responses
+LLM_API_BASE=https://ai.ha7e.com
 SUPABASE_URL=           # Required — Supabase project URL
 SUPABASE_SERVICE_KEY=   # Required — service_role key
 JWT_SECRET=             # Required — JWT signing secret
@@ -643,7 +646,7 @@ VITE_API_BASE=https://api.neurasense.cc/api/v1
 - **Mobile Frontend**: Flutter 3.x + Riverpod (fixed)
 - **Backend**: FastAPI + Python 3.11+ (fixed)
 - **Primary Database**: Supabase PostgreSQL
-- **LLM**: ZhipuAI GLM-4-Flash (env: `ZHIPU_API_KEY`)
+- **LLM**: GPT-compatible Responses API (model: `gpt-5.5`, env: `LLM_API_KEY`, base URL: `https://ai.ha7e.com`)
 - **Deployment**: Frontend on Vercel, Backend on Render (auto-deploy main branch)
 - **API**: RESTful, CORS allow all origins
 - **Auth**: JWT token via URL parameter `?token=` or Authorization header

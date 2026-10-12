@@ -16,8 +16,14 @@ from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
 import os
-import httpx
 from app.services.mental_health import build_ai_context
+from .client import (
+    DEFAULT_LLM_API_BASE,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_LLM_PROVIDER,
+    call_llm_async,
+    provider_uses_responses,
+)
 
 # 导入向量记忆服务。使用自定义非智谱聊天 Key 时，本地默认关闭，避免 embedding 仍拿聊天 Key 调智谱导致 401。
 if os.getenv("ENABLE_VECTOR_MEMORY", "true").lower() in {"0", "false", "no"}:
@@ -84,9 +90,9 @@ class CounselorService:
     
     # LLM API 配置
     LLM_API_KEY = os.getenv("LLM_API_KEY", "")
-    LLM_MODEL = os.getenv("LLM_MODEL", "glm-4-flash")
-    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "zhipuai")
-    LLM_API_BASE = os.getenv("LLM_API_BASE", os.getenv("LLM_BASE_URL", "")).rstrip("/")
+    LLM_MODEL = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", DEFAULT_LLM_PROVIDER)
+    LLM_API_BASE = os.getenv("LLM_API_BASE", os.getenv("LLM_BASE_URL", DEFAULT_LLM_API_BASE)).rstrip("/")
     
     # 系统提示词 - 核心配置
     SYSTEM_PROMPT = """你是 NeuraSense 心理健康支持平台中的 AI 陪伴助手，名字叫“小心”。
@@ -296,11 +302,13 @@ class CounselorService:
         调用 LLM 生成回复。
 
         支持：
-        - zhipuai：智谱 SDK
+        - responses：OpenAI Responses-compatible /v1/responses
         - openai_compatible/custom：OpenAI-compatible /v1/chat/completions
+        - zhipuai：legacy 智谱 SDK
         """
-        if self.LLM_PROVIDER.lower() in {"openai", "openai_compatible", "custom"} or self.LLM_API_BASE:
-            return await self._call_openai_compatible(
+        provider = self.LLM_PROVIDER.lower()
+        if provider_uses_responses(provider) or provider in {"openai", "openai_compatible", "custom"} or self.LLM_API_BASE:
+            return await self._call_configured_http_llm(
                 user_message=user_message,
                 context=context,
                 conversation_history=conversation_history,
@@ -382,7 +390,7 @@ class CounselorService:
             return None
         return {"role": role, "content": content}
 
-    async def _call_openai_compatible(
+    async def _call_configured_http_llm(
         self,
         user_message: str,
         context: str,
@@ -390,10 +398,7 @@ class CounselorService:
         crisis_flag: bool,
     ) -> CounselorResponse:
         if not self.LLM_API_BASE:
-            raise RuntimeError("LLM_API_BASE is required for openai_compatible provider")
-
-        base = self.LLM_API_BASE.rstrip("/")
-        url = base if base.endswith("/chat/completions") else f"{base}/v1/chat/completions"
+            raise RuntimeError("LLM_API_BASE is required for HTTP LLM provider")
 
         messages = [{"role": "system", "content": self._compose_system_prompt(context, crisis_flag)}]
         if conversation_history:
@@ -403,31 +408,15 @@ class CounselorService:
                     messages.append(normalized)
         messages.append({"role": "user", "content": user_message})
 
-        payload = {
-            "model": self.LLM_MODEL,
-            "messages": messages,
-            "temperature": 0.72,
-            "max_tokens": 1200,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {self.LLM_API_KEY}",
-            "Content-Type": "application/json",
-        }
-
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(url, headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
-
-        reply_text = (
-            data.get("choices", [{}])[0]
-            .get("message", {})
-            .get("content", "")
-            .strip()
+        reply_text = await call_llm_async(
+            api_key=self.LLM_API_KEY,
+            model=self.LLM_MODEL,
+            provider=self.LLM_PROVIDER,
+            api_base=self.LLM_API_BASE,
+            messages=messages,
+            temperature=0.72,
+            max_tokens=1200,
         )
-        if not reply_text:
-            raise RuntimeError("LLM returned empty content")
 
         return CounselorResponse(
             message=reply_text,
