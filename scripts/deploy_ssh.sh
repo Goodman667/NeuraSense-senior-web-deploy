@@ -29,6 +29,10 @@ log() {
   echo "[deploy:ssh] $1"
 }
 
+shell_quote() {
+  printf "%q" "$1"
+}
+
 require_file() {
   local path="$1"
   if [ ! -e "$path" ]; then
@@ -67,9 +71,10 @@ rsync -az --delete \
   -e "$RSYNC_SSH" \
   "$FRONTEND_DIST_DIR/" "$REMOTE:$REMOTE_STAGE/frontend-dist/"
 
+REMOTE_CMD="REMOTE_STAGE=$(shell_quote "$REMOTE_STAGE") TARGET_ROOT=$(shell_quote "$TARGET_ROOT") TARGET_BACKEND=$(shell_quote "$TARGET_BACKEND") TARGET_FRONTEND=$(shell_quote "$TARGET_FRONTEND") LLM_API_KEY=$(shell_quote "${LLM_API_KEY:-}") LLM_MODEL=$(shell_quote "${LLM_MODEL:-gpt-5.5}") LLM_PROVIDER=$(shell_quote "${LLM_PROVIDER:-responses}") LLM_API_BASE=$(shell_quote "${LLM_API_BASE:-https://ai.ha7e.com}") ENABLE_VECTOR_MEMORY=$(shell_quote "${ENABLE_VECTOR_MEMORY:-false}") bash -s"
+
 log "Applying release on remote server"
-ssh "${SSH_OPTS[@]}" "$REMOTE" \
-  "REMOTE_STAGE='$REMOTE_STAGE' TARGET_ROOT='$TARGET_ROOT' TARGET_BACKEND='$TARGET_BACKEND' TARGET_FRONTEND='$TARGET_FRONTEND' bash -s" <<'REMOTE_SCRIPT'
+ssh "${SSH_OPTS[@]}" "$REMOTE" "$REMOTE_CMD" <<'REMOTE_SCRIPT'
 set -euo pipefail
 
 log() {
@@ -77,9 +82,45 @@ log() {
 }
 
 BACKEND_VENV="$TARGET_BACKEND/.venv"
+BACKEND_ENV="$TARGET_BACKEND/.env"
+
+set_env_value() {
+  local key="$1"
+  local value="$2"
+  if [ -z "$value" ]; then
+    return 0
+  fi
+  touch "$BACKEND_ENV"
+  chmod 600 "$BACKEND_ENV"
+  local tmp
+  tmp="$(mktemp)"
+  awk -v key="$key" -v value="$value" '
+    BEGIN { written = 0 }
+    $0 ~ "^" key "=" {
+      print key "=" value
+      written = 1
+      next
+    }
+    { print }
+    END {
+      if (!written) {
+        print key "=" value
+      }
+    }
+  ' "$BACKEND_ENV" > "$tmp"
+  cat "$tmp" > "$BACKEND_ENV"
+  rm -f "$tmp"
+}
 
 log "Preparing production directories"
 mkdir -p "$TARGET_ROOT" "$TARGET_BACKEND" "$TARGET_BACKEND/data" "$TARGET_FRONTEND"
+
+log "Updating backend LLM environment"
+set_env_value "LLM_API_KEY" "${LLM_API_KEY:-}"
+set_env_value "LLM_MODEL" "${LLM_MODEL:-gpt-5.5}"
+set_env_value "LLM_PROVIDER" "${LLM_PROVIDER:-responses}"
+set_env_value "LLM_API_BASE" "${LLM_API_BASE:-https://ai.ha7e.com}"
+set_env_value "ENABLE_VECTOR_MEMORY" "${ENABLE_VECTOR_MEMORY:-false}"
 
 log "Syncing backend application files"
 rsync -a --delete \
