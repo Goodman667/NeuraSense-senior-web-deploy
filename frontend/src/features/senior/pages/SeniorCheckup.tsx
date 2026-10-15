@@ -3,6 +3,8 @@ import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorResultCard } from '../components/SeniorResultCard';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
+import { SeniorLoadingCard } from '../components/SeniorLoadingCard';
+import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { seniorApi } from '../services/seniorApi';
 import type { SeniorCheckupAnswer, SeniorCheckupQuestion, SeniorCheckupScaleSnapshot, SeniorPage, SeniorSummary } from '../types/senior';
@@ -139,26 +141,22 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
     const tones = dimensionTone(snapshot || undefined);
     return (
       <div className="mx-auto max-w-6xl">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} endLabel="回到首页" />
-        <div className="mb-5 rounded-[2rem] border border-cyan-100 bg-white/92 p-5">
-          <p className="inline-flex items-center gap-2 text-xl font-black text-cyan-900">
-            <SeniorIcon name="clipboard" className="h-6 w-6" />
-            今天的建议已经整理好
-          </p>
-          <p className="mt-2 text-lg leading-8 text-slate-600">
-            下面会一张一张看。每张只讲一件事：先照顾哪里、现在做什么、如果更不舒服该找谁。
-          </p>
+        <SeniorSafetyActions onNavigate={onNavigate} />
+        <section className="sn-sheet mb-5 p-6">
+          <p className="sn-kicker"><SeniorIcon name="clipboard" className="h-5 w-5" />小测做完了</p>
+          <h1 className="sn-h1 mt-2">今天的建议已经整理好</h1>
+          <p className="sn-body mt-2">下面一张一张看，每张只讲一件事：先照顾哪里、现在做什么、更不舒服时找谁。</p>
           {tones.length ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {tones.map(item => (
-                <div key={item.label} className="rounded-2xl bg-cyan-50 p-4">
-                  <p className="text-base font-black text-cyan-800">{item.label}</p>
-                  <p className="mt-1 text-2xl font-black text-slate-950">{item.value > 0 ? '有线索' : '较平稳'}</p>
+                <div key={item.label} className="sn-sheet-flat flex items-center justify-between gap-3 p-4">
+                  <dt className="whitespace-nowrap text-[1.2rem] text-[var(--sn-ink-2)]">{item.label}</dt>
+                  <dd className={`whitespace-nowrap rounded-full px-3 py-1 text-[1.05rem] ${item.value > 0 ? 'bg-[#F3E2D4] text-[#8A4A1F]' : 'bg-[#E7EEDD] text-[#33441C]'}`}>{item.value > 0 ? '有些线索' : '比较平稳'}</dd>
                 </div>
               ))}
-            </div>
+            </dl>
           ) : null}
-        </div>
+        </section>
         <SeniorResultCard
           summary={summary}
           onNext={() => {
@@ -167,9 +165,9 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
           }}
           onHelp={() => onNavigate('help')}
         />
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <button onClick={() => loadQuestions(mode)} className="min-h-[64px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-xl font-black text-cyan-900">换一组题再测一次</button>
-          <button onClick={() => onNavigate('home')} className="min-h-[64px] rounded-2xl bg-slate-950 px-5 text-xl font-black text-white">回到首页</button>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button onClick={() => loadQuestions(mode)} className="sn-btn sn-btn-quiet"><SeniorIcon name="reset" />换一组题再测一次</button>
+          <button onClick={() => onNavigate('home')} className="sn-btn sn-btn-dark">回到今天</button>
         </div>
       </div>
     );
@@ -178,11 +176,8 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
   if (loading) {
     return (
       <div className="mx-auto max-w-5xl">
-        <SeniorPageHeader eyebrow="老年版小测" title="正在准备题目" desc="这次不再是固定几道题，会根据当前模式换一组题。" />
-        <section className="rounded-[2.4rem] border border-cyan-100 bg-white p-8 text-center shadow-[0_30px_100px_-70px_rgba(15,23,42,0.45)]">
-          <p className="text-3xl font-black text-slate-950">正在准备...</p>
-          <p className="mt-3 text-xl leading-9 text-slate-600">请稍等一下。</p>
-        </section>
+        <SeniorPageHeader eyebrow="小测" title="正在准备题目" desc="每次会换一组题，请稍等一下。" />
+        <SeniorLoadingCard title="正在准备题目" lines={3} />
       </div>
     );
   }
@@ -190,14 +185,11 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
   if (analyzing || (questions.length > 0 && answers.length >= questions.length && !summary && !error)) {
     return (
       <div className="mx-auto max-w-5xl">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
-        <SeniorPageHeader eyebrow="老年版小测" title="正在整理今天的建议" desc="小测已经答完了。现在会把这轮问题和答案整理成几张容易看的建议卡。" />
-        <section className="rounded-[2.4rem] border border-emerald-100 bg-emerald-50 p-8 text-center shadow-[0_30px_100px_-70px_rgba(15,23,42,0.45)]">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white text-emerald-800 shadow-sm">
-            <SeniorIcon name="spark" className="h-10 w-10" />
-          </div>
-          <p className="mt-5 text-3xl font-black text-emerald-950">请稍等一下</p>
-          <p className="mt-3 text-xl leading-9 text-emerald-900">马上就好。整理完成后，会一张一张告诉您今天先照顾哪里、现在先做哪一步。</p>
+        <SeniorSafetyActions onNavigate={onNavigate} />
+        <section className="sn-sheet flex flex-col items-center p-10 text-center">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--sn-teal-soft)] text-[var(--sn-teal)]"><SeniorIcon name="spark" className="h-10 w-10 motion-safe:animate-pulse" /></span>
+          <h1 className="sn-h1 mt-5">正在整理今天的建议</h1>
+          <p className="sn-lede mt-3 max-w-2xl">题都答完了。马上就好，整理完会一张一张告诉您：今天先照顾哪里，现在先做哪一步。</p>
         </section>
       </div>
     );
@@ -206,11 +198,11 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
   if (!analyzing && questions.length > 0 && answers.length >= questions.length && error) {
     return (
       <div className="mx-auto max-w-5xl">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
-        <SeniorPageHeader eyebrow="老年版小测" title="小测答完了，但建议没有整理成功" desc={error} />
-        <div className="grid gap-3 md:grid-cols-2">
-          <button onClick={retryAnalyze} className="min-h-[64px] rounded-2xl bg-cyan-900 px-6 text-xl font-black text-white">重新生成建议</button>
-          <button onClick={() => loadQuestions(mode)} className="min-h-[64px] rounded-2xl border border-cyan-200 bg-cyan-50 px-6 text-xl font-black text-cyan-900">换一组题再测一次</button>
+        <SeniorSafetyActions onNavigate={onNavigate} />
+        <SeniorPageHeader eyebrow="小测" title="小测答完了，但建议没有整理成功" desc={error} />
+        <div className="flex flex-wrap gap-3">
+          <button onClick={retryAnalyze} className="sn-btn sn-btn-primary">重新生成建议</button>
+          <button onClick={() => loadQuestions(mode)} className="sn-btn sn-btn-quiet">换一组题再测一次</button>
         </div>
       </div>
     );
@@ -220,8 +212,8 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
     return (
       <div className="mx-auto max-w-5xl">
         <SeniorSafetyActions onNavigate={onNavigate} />
-        <SeniorPageHeader eyebrow="老年版小测" title="题目暂时没有加载出来" desc={error || '可以重新加载一次，或者先回首页。'} />
-        <button onClick={() => loadQuestions(mode)} className="min-h-[64px] rounded-2xl bg-cyan-900 px-6 text-xl font-black text-white">重新加载题目</button>
+        <SeniorPageHeader eyebrow="小测" title="题目暂时没有加载出来" desc={error || '可以重新加载一次，或者先回首页。'} />
+        <button onClick={() => loadQuestions(mode)} className="sn-btn sn-btn-primary">重新加载题目</button>
       </div>
     );
   }
@@ -239,64 +231,46 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
         }}
         onEnd={() => onNavigate('home')}
       />
-      <SeniorPageHeader
-        eyebrow={`老年版小测 · 第 ${index + 1} 题 / 共 ${questions.length} 题`}
-        title="一题一题来，不用答得很标准"
-        desc="这组题会看心情、担心、孤单、睡眠和身体不舒服。答完后，会整理成适合今天的一步建议。"
-      />
-      <section className="mb-5 rounded-[2rem] border border-cyan-100 bg-white/92 p-5">
-        <div className="grid gap-3 md:grid-cols-4">
-          {modeOptions.map(option => (
-            <button
-              key={option.id}
-              onClick={() => chooseMode(option.id)}
-              className={`rounded-2xl p-4 text-left transition ${mode === option.id ? 'bg-cyan-900 text-white' : 'border border-cyan-100 bg-cyan-50 text-cyan-950'}`}
-            >
-              <span className="block text-xl font-black">{option.label}</span>
-              <span className={`mt-2 block text-sm leading-6 ${mode === option.id ? 'text-cyan-50' : 'text-cyan-800'}`}>{option.desc}</span>
-            </button>
-          ))}
+
+      <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="小测重点">
+        <span className="sn-small mr-1">这次多看一点：</span>
+        {modeOptions.map(option => (
+          <button key={option.id} onClick={() => chooseMode(option.id)} aria-pressed={mode === option.id} className="sn-chip" title={option.desc}>
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <section className="sn-sheet sn-rise overflow-hidden">
+        <div className="flex flex-wrap items-center gap-4 border-b border-[var(--sn-line)] px-6 py-4 md:px-8">
+          <span className="text-[1.15rem] tabular-nums text-[var(--sn-ink-2)]">第 {index + 1} 题 · 共 {questions.length} 题</span>
+          <div className="sn-progress min-w-[8rem] flex-1"><span style={{ width: `${progress}%` }} /></div>
+          <span className="rounded-full bg-[var(--sn-teal-soft)] px-3 py-1 text-[1rem] text-[var(--sn-teal-deep)]">{sourceLabel(current.scale)}</span>
         </div>
-        <p className="mt-4 text-base font-bold leading-7 text-slate-600">本轮会从这些方面了解：{importantSources.join('、')}。不用背概念，只按最近感觉回答就好。</p>
-      </section>
-      <section className="rounded-[2.4rem] border border-cyan-100 bg-white p-7 shadow-[0_30px_100px_-70px_rgba(15,23,42,0.45)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full rounded-full bg-cyan-900 transition-all" style={{ width: `${progress}%` }} />
+        <div className="px-6 py-8 md:px-10 md:py-10">
+          <h1 className="sn-display !text-[var(--sn-ink)]">{current.text}</h1>
+          <p className="sn-lede mt-3">{current.helper || intro}</p>
+          <div className={`mt-8 grid gap-3 ${current.options.length >= 4 ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-3'}`}>
+            {current.options.map(option => (
+              <button
+                key={option.value}
+                onClick={() => answer(current, option.value, option.label)}
+                className="min-h-[6.5rem] rounded-[18px] border-[1.5px] border-[var(--sn-line-strong)] bg-[#FFFDF9] px-5 text-[1.5rem] text-[var(--sn-ink)] transition hover:-translate-y-0.5 hover:border-[var(--sn-teal)] hover:bg-[var(--sn-teal-soft)] focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3]"
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
-          <span className="rounded-full bg-cyan-50 px-4 py-2 text-base font-black text-cyan-900">{sourceLabel(current.scale)}</span>
-        </div>
-        <h2 className="mt-8 text-4xl font-black leading-tight text-slate-950 md:text-5xl">{current.text}</h2>
-        <p className="mt-4 text-2xl leading-10 text-slate-600">{current.helper || intro}</p>
-        <div className={`mt-8 grid gap-4 ${current.options.length >= 4 ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
-          {current.options.map(option => (
-            <button
-              key={option.value}
-              onClick={() => answer(current, option.value, option.label)}
-              className="min-h-[112px] rounded-[2rem] border border-cyan-100 bg-cyan-50 px-5 text-2xl font-black text-cyan-950 transition hover:-translate-y-0.5 hover:bg-cyan-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200"
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button onClick={() => speak(current.text, { voice: 'xiaoyi', emotion: 'friendly' })} className="min-h-[64px] rounded-2xl border border-cyan-200 bg-cyan-50 px-6 text-xl font-black text-cyan-900">
-            <span className="inline-flex items-center gap-2"><SeniorIcon name="volume" className="h-6 w-6" />再读一遍</span>
-          </button>
-          <button onClick={() => loadQuestions(mode)} className="min-h-[64px] rounded-2xl border border-slate-200 bg-white px-6 text-xl font-black text-slate-800">
-            换一组题
-          </button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button onClick={() => speak(current.text, { voice: 'xiaoyi', emotion: 'friendly' })} className="sn-btn sn-btn-quiet"><SeniorIcon name="volume" />再读一遍</button>
+            <button onClick={() => loadQuestions(mode)} className="sn-btn sn-btn-quiet"><SeniorIcon name="reset" />换一组题</button>
+          </div>
+          <p className="sn-small mt-6">这一轮会了解：{importantSources.join('、')}。不用背概念，按最近的感觉回答就好。</p>
         </div>
       </section>
-      {analyzing ? (
-        <div className="mt-5 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-5 text-xl font-black leading-8 text-emerald-950">
-          正在整理今天的建议，请稍等。
-        </div>
-      ) : null}
       {error ? (
-        <div className="mt-5 rounded-[2rem] border border-rose-100 bg-rose-50 p-5 text-xl font-black leading-8 text-rose-900">
-          {error}
-          {answers.length ? <button onClick={retryAnalyze} className="ml-0 mt-3 block min-h-[56px] rounded-2xl bg-rose-700 px-5 text-lg font-black text-white md:ml-3 md:mt-0 md:inline-block">重新生成建议</button> : null}
+        <div className="mt-5">
+          <SeniorStatusNotice tone="danger" title="建议没有整理好" desc={error} actionLabel={answers.length ? '重新生成建议' : undefined} onAction={answers.length ? retryAnalyze : undefined} />
         </div>
       ) : null}
     </div>

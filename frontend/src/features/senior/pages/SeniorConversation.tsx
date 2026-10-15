@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
-import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorRiskModal } from '../components/SeniorRiskModal';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { SeniorTopicChips } from '../components/SeniorTopicChips';
@@ -8,6 +7,7 @@ import { seniorApi } from '../services/seniorApi';
 import type { SeniorChatMessage, SeniorPage, SeniorRiskAction, SeniorRiskLevel } from '../types/senior';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
+import { LeafShadow } from '../components/LeafShadow';
 
 const makeId = () => Math.random().toString(36).slice(2);
 
@@ -59,65 +59,49 @@ export function SeniorConversation({
   };
   return (
     <div className="mx-auto max-w-6xl">
-      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
+      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} endLabel="聊完了" />
       {riskModal ? <SeniorRiskModal action={riskModal.action} level={riskModal.level} onNavigate={onNavigate} onClose={() => setRiskModal(null)} /> : null}
-      <SeniorPageHeader eyebrow="陪伴式对话" title="这里可以慢慢说" desc="不像标准聊天工具，这里不会给您一堆选项。您说一句，我回几句，然后只给一个小建议。" />
-      <section className="grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <aside className="rounded-[2rem] border border-cyan-100 bg-white/92 p-5 shadow-[0_24px_80px_-68px_rgba(15,23,42,0.42)]">
-          <div className="rounded-[1.6rem] bg-cyan-900 p-5 text-white">
-            <SeniorIcon name="heart" className="h-9 w-9" />
-            <h2 className="mt-4 text-2xl font-black">今天不用组织好语言</h2>
-            <p className="mt-2 text-lg leading-8 text-cyan-50">想到哪里就说到哪里。您也可以只点一个话题开始。</p>
-          </div>
 
-          <div className="mt-4 rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
-            <p className="text-lg font-black text-slate-950">对话原则</p>
-            <ul className="mt-3 space-y-3 text-lg leading-8 text-slate-600">
-              <li className="flex gap-2"><SeniorIcon name="check" className="mt-1 h-5 w-5 shrink-0 text-emerald-700" />不评价您说得对不对</li>
-              <li className="flex gap-2"><SeniorIcon name="check" className="mt-1 h-5 w-5 shrink-0 text-emerald-700" />每次只给一个小建议</li>
-              <li className="flex gap-2"><SeniorIcon name="check" className="mt-1 h-5 w-5 shrink-0 text-emerald-700" />需要时可以马上找帮助</li>
-            </ul>
-          </div>
+      <section className="sn-wall sn-rise overflow-hidden rounded-[28px] border border-[var(--sn-line)]">
+        <LeafShadow />
+        <header className="px-6 pb-2 pt-8 text-center md:px-10">
+          <h1 className="text-[clamp(2rem,3vw,2.8rem)] leading-tight text-[#2a2420]">这里可以慢慢说</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-[1.15rem] leading-8 text-[#2a2420]/75">想到哪里说到哪里。我听完回您几句，每次只给一个小建议。</p>
+        </header>
 
-          <button onClick={() => onNavigate('help')} className="mt-4 flex min-h-[64px] w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 text-xl font-black text-rose-800 transition hover:bg-rose-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-100">
-            <SeniorIcon name="phone" className="h-6 w-6" />
-            我现在需要帮助
-          </button>
-        </aside>
-
-        <div className="rounded-[2.4rem] border border-cyan-100 bg-white p-5 shadow-[0_30px_90px_-65px_rgba(15,23,42,0.42)] md:p-6">
+        <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 md:px-8" aria-live="polite">
           {input && !messages.some(msg => msg.role === 'user') ? (
-            <div className="mb-5 rounded-[1.6rem] border border-amber-200 bg-amber-50 p-4 text-amber-950">
-              <p className="text-lg font-black">已经帮您放进输入框</p>
-              <p className="mt-1 text-lg leading-8">如果这句话合适，直接点“发送”就可以；也可以先改几个字。</p>
+            <p className="sn-notice tone-warning text-[1.08rem]">已经帮您放进输入框了。合适就直接点“发送”，也可以先改几个字。</p>
+          ) : null}
+          {messages.slice(-6).map(msg => (
+            <div key={msg.id} className={msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+              <div className={`max-w-[88%] rounded-[22px] px-6 py-4 text-[1.3rem] leading-[1.85] ${msg.role === 'user' ? 'rounded-br-md bg-[var(--sn-teal)] text-[#FBF8F3]' : 'rounded-bl-md border border-[var(--sn-line)] bg-[rgba(251,248,243,0.92)] text-[var(--sn-ink)] backdrop-blur-sm'}`}>
+                {msg.role === 'assistant' ? <span className="mb-1 flex items-center gap-2 text-[1rem] text-[var(--sn-teal)]"><SeniorIcon name="heart" className="h-4 w-4" />陪您说话</span> : null}
+                <span>{msg.text}</span>
+              </div>
+            </div>
+          ))}
+          {loading ? (
+            <div className="flex justify-start">
+              <div className="rounded-[22px] rounded-bl-md border border-[var(--sn-line)] bg-[rgba(251,248,243,0.92)] px-6 py-4 text-[1.2rem] text-[var(--sn-ink-2)]">
+                <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-[var(--sn-ochre)] motion-safe:animate-pulse" />我在认真读您的话…</span>
+              </div>
             </div>
           ) : null}
+        </div>
+      </section>
 
-          <div className="min-h-[420px] space-y-5 rounded-[2rem] bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_100%)] p-4" aria-live="polite">
-            {messages.slice(-6).map(msg => (
-              <div key={msg.id} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
-                <div className={`inline-block max-w-[88%] rounded-[2rem] px-6 py-4 text-xl leading-9 shadow-sm ${msg.role === 'user' ? 'bg-cyan-900 text-white' : 'border border-slate-200 bg-white text-slate-800'}`}>
-                  {msg.role === 'assistant' ? <span className="mb-2 flex items-center gap-2 text-base font-black text-cyan-800"><SeniorIcon name="spark" className="h-4 w-4" />陪您一起看</span> : null}
-                  <span>{msg.text}</span>
-                </div>
-              </div>
-            ))}
-            {loading ? (
-              <div className="rounded-2xl bg-amber-50 p-4 text-lg font-bold text-amber-900">
-                <span className="inline-flex items-center gap-2"><SeniorIcon name="spark" className="h-5 w-5" />我正在认真读您的话...</span>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-5">
-            <p className="mb-3 text-lg font-black text-slate-700">不知道怎么说时，可以点一下：</p>
-            <SeniorTopicChips compact onSelect={(prompt) => send(prompt)} />
-          </div>
-
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="也可以在这里打字..." className="min-h-[68px] flex-1 rounded-2xl border border-slate-300 px-5 text-xl outline-none focus:border-cyan-700 focus:ring-4 focus:ring-cyan-100" />
-            <button onClick={() => send()} disabled={loading || !input.trim()} className="min-h-[68px] rounded-2xl bg-cyan-900 px-8 text-xl font-black text-white transition hover:bg-cyan-950 disabled:opacity-50">发送</button>
-          </div>
+      <section className="sn-sheet mt-5 p-5 md:p-6">
+        <p className="sn-small mb-3">不知道怎么开口，点一个就行：</p>
+        <SeniorTopicChips compact onSelect={(prompt) => send(prompt)} />
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <label htmlFor="sn-chat-input" className="sr-only">输入想说的话</label>
+          <input id="sn-chat-input" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="也可以在这里打字…" className="sn-input flex-1 !text-[1.3rem]" />
+          <button onClick={() => send()} disabled={loading || !input.trim()} className="sn-btn sn-btn-primary sn-btn-lg">发送</button>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-[var(--sn-line)] pt-4">
+          <span className="sn-small">我只给生活上的建议，不做医学诊断。</span>
+          <button onClick={() => onNavigate('help')} className="sn-btn sn-btn-help-quiet ml-auto"><SeniorIcon name="phone" />我现在需要帮助</button>
         </div>
       </section>
     </div>

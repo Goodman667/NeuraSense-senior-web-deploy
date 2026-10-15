@@ -34,7 +34,8 @@ export function mergeContacts(primary: SeniorSupportContact[], secondary: Senior
   const merged: SeniorSupportContact[] = [];
 
   for (const contact of [...primary, ...secondary]) {
-    const key = contact.id || contact.contact_phone;
+    // Same phone number = same person, whether it came from the server (with id) or local storage (without id).
+    const key = (contact.contact_phone || '').replace(/[\s-]/g, '') || contact.id;
     if (!key || seen.has(key)) continue;
     seen.add(key);
     merged.push(contact);

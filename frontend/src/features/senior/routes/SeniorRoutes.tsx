@@ -184,9 +184,9 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
   if (contactsChecking && !contactsReady) {
     return (
       <SeniorShell page="settings" onNavigate={handleNavigate} onSwitchToStandard={onSwitchToStandard} currentUserName={currentUserName} contactRequired>
-        <div className="mx-auto max-w-3xl rounded-[2.2rem] border border-cyan-100 bg-white p-8 text-center shadow-[0_30px_100px_-70px_rgba(15,23,42,0.45)]">
-          <p className="text-2xl font-black text-slate-950">正在确认第一次使用的安全设置</p>
-          <p className="mt-3 text-xl leading-9 text-slate-600">别担心，只是检查有没有一位能联系到的人。没有的话，我会带您一步一步填写，填完马上进入首页。</p>
+        <div className="sn-sheet mx-auto max-w-3xl p-8 text-center">
+          <p className="sn-h2">正在确认第一次使用的安全设置</p>
+          <p className="sn-lede mt-3">只是看一下有没有一位能联系到的人。没有的话，我带您一步一步填好，填完马上进入首页。</p>
         </div>
       </SeniorShell>
     );

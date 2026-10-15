@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
-import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorResultCard } from '../components/SeniorResultCard';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { SeniorStatusNotice } from '../components/SeniorStatusNotice';
@@ -11,6 +10,7 @@ import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { seniorApi } from '../services/seniorApi';
 import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
+import { LeafShadow } from '../components/LeafShadow';
 import type { SeniorPage, SeniorQuestionAnswer, SeniorSummary } from '../types/senior';
 
 export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId: string; onNavigate: (page: SeniorPage) => void; onSummary: (summary: SeniorSummary) => void }) {
@@ -126,14 +126,12 @@ export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId
 
   if (summary) {
     return (
-      <div className="space-y-4">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
-        <div className="mx-auto flex max-w-5xl justify-end">
-          <button onClick={restart} className="min-h-[56px] rounded-2xl border border-cyan-200 bg-white px-5 text-lg font-black text-cyan-900 shadow-sm">
-            重新回答一轮
-          </button>
-        </div>
+      <div className="mx-auto max-w-6xl">
+        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} endLabel="先到这里" />
         <SeniorResultCard summary={summary} onNext={() => onNavigate(resolveSummaryNextPage(summary))} onHelp={() => onNavigate('help')} />
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button onClick={restart} className="sn-btn sn-btn-quiet"><SeniorIcon name="reset" />换一组问题，重新回答</button>
+        </div>
       </div>
     );
   }
@@ -154,87 +152,86 @@ export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId
         }}
         onEnd={() => onNavigate('home')}
       />
-      <SeniorPageHeader eyebrow={`第 ${index + 1} 个问题 / 共 ${questions.length} 个`} title="一次只回答一个问题" desc="每次进入都会换一组问法。您可以说话，也可以直接打字。" />
-      <section className="rounded-[2.4rem] border border-cyan-100 bg-white p-6 shadow-[0_30px_90px_-65px_rgba(15,23,42,0.42)] md:p-7">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <div>
-            <div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-cyan-900 transition-all" style={{ width: `${progress}%` }} /></div>
-            <h2 className="mt-7 text-4xl font-black leading-tight text-slate-950">{current.text}</h2>
-            <p className="mt-4 text-xl leading-9 text-slate-600">{current.helper || '可以只说一句。说完后请看一下文字是否正确，再点继续。'}</p>
-          </div>
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-5">
-            <p className="text-lg font-black text-slate-500">当前进度</p>
-            <p className="mt-2 text-4xl font-black text-slate-950">{index + 1}/{questions.length}</p>
-            <p className="mt-2 text-lg leading-8 text-slate-600">每次只回答一个问题，不需要一次说完所有事情。</p>
-          </div>
+
+      <section className="sn-wall sn-rise flex min-h-[24rem] flex-col items-center justify-center rounded-[28px] border border-[var(--sn-line)] px-6 py-12 text-center">
+        <LeafShadow />
+        <p className="text-[1.1rem] tracking-[0.04em] text-[#2a2420]/70">第 {index + 1} 个问题 · 共 {questions.length} 个</p>
+        <h1 className="mt-5 max-w-3xl text-[clamp(2.1rem,3.4vw,3.2rem)] leading-[1.25] text-[#2a2420] [text-wrap:balance]">{current.text}</h1>
+        <p className="mt-4 max-w-2xl text-[1.18rem] leading-8 text-[#2a2420]/75">{current.helper || '说一句就可以。说完看一眼文字对不对，再点继续。'}</p>
+        <span className="mt-7 block h-12 w-px bg-[#2a2420]/25" aria-hidden="true" />
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <button onClick={() => speakSafely(current.speakText || current.text)} disabled={speech.isListening} className="sn-btn sn-btn-glass">
+            <SeniorIcon name="volume" />再读一遍
+          </button>
+        </div>
+        <div className="mt-6 w-full max-w-sm">
+          <div className="sn-progress !bg-[#2a2420]/10"><span style={{ width: `${progress}%` }} /></div>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-5 xl:grid-cols-[17rem_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <button
+            onClick={speech.isListening ? speech.stop : () => { stopAndClearAudio(); speech.start(); }}
+            className={`flex w-full flex-col items-center justify-center gap-3 rounded-[24px] px-6 py-8 text-[#FBF8F3] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3] ${speech.isListening ? 'bg-[var(--sn-help)]' : 'bg-[var(--sn-teal)] hover:bg-[var(--sn-teal-deep)]'}`}
+          >
+            <span className="flex h-24 w-24 items-center justify-center rounded-full border border-white/30 bg-white/10">
+              <SeniorIcon name={speech.isListening ? 'pause' : 'mic'} className="h-12 w-12" />
+            </span>
+            <span className="text-[1.7rem] leading-none">{speech.isListening ? '正在听…' : '按一下，开始说'}</span>
+            <span className="text-[1.05rem] text-white/80">{speech.isListening ? '说完再按一下' : '不方便说话，也可以打字'}</span>
+          </button>
+          <SeniorVoiceStatusCard status={speech.status} hint={speech.hint} />
         </div>
 
-        <div className="mt-7 grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <div className="space-y-4">
-            <button onClick={speech.isListening ? speech.stop : () => { stopAndClearAudio(); speech.start(); }} className={`min-h-[214px] w-full rounded-[2rem] text-center text-white transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200 ${speech.isListening ? 'bg-rose-700' : 'bg-cyan-900 hover:bg-cyan-950'}`}>
-              <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/15">
-                <SeniorIcon name={speech.isListening ? 'pause' : 'mic'} className="h-11 w-11" />
-              </span>
-              <span className="mt-5 block text-3xl font-black">{speech.isListening ? '正在听' : '开始说话'}</span>
-              <span className="mt-3 block text-xl text-white/90">{speech.isListening ? '点一下可暂停' : '不会用也可以打字'}</span>
-            </button>
-            <SeniorVoiceStatusCard status={speech.status} hint={speech.hint} />
-          </div>
-
-          <div>
-            <label className="block">
-              <span className="mb-3 flex items-center gap-2 text-xl font-black text-slate-900">
-                <SeniorIcon name="edit" className="h-6 w-6 text-cyan-800" />
-                我听到 / 记录到的内容
-              </span>
-              <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="如果不方便说话，可以直接在这里输入。" className="min-h-[276px] w-full rounded-[2rem] border border-slate-300 bg-slate-50 p-6 text-2xl leading-10 text-slate-900 outline-none focus:border-cyan-700 focus:ring-4 focus:ring-cyan-100" />
-            </label>
-            {current.chips?.length ? (
-              <div className="mt-4 flex flex-wrap gap-3">
+        <div className="sn-sheet p-5 md:p-6">
+          <label htmlFor="sn-answer" className="flex items-center gap-2 text-[1.3rem]">
+            <SeniorIcon name="edit" className="h-6 w-6 text-[var(--sn-teal)]" />
+            我听到的 / 您写的
+          </label>
+          <textarea id="sn-answer" value={answer} onChange={(event) => setAnswer(event.target.value)} placeholder="不方便说话，可以直接在这里打字。" className="sn-textarea mt-3 min-h-[11rem] text-[1.4rem]" />
+          {current.chips?.length ? (
+            <div className="mt-4">
+              <p className="sn-small mb-2">或者直接点一个：</p>
+              <div className="flex flex-wrap gap-2">
                 {current.chips.map((chip) => (
-                  <button
-                    key={chip}
-                    onClick={() => setAnswer(chip)}
-                    className="min-h-[52px] rounded-2xl border border-cyan-100 bg-cyan-50 px-4 text-lg font-black text-cyan-900 hover:bg-cyan-100"
-                  >
-                    {chip}
-                  </button>
+                  <button key={chip} onClick={() => setAnswer(chip)} aria-pressed={answer === chip} className="sn-chip">{chip}</button>
                 ))}
               </div>
-            ) : null}
-            {answers.length ? (
-              <div className="mt-4 rounded-[1.75rem] border border-slate-200 bg-white p-4">
-                <p className="text-lg font-black text-slate-700">前面已经记录</p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
-                  {answers.slice(-4).map((item, idx) => (
-                    <div key={`${item.question_id}-${idx}`} className="rounded-2xl bg-slate-50 p-3">
-                      <p className="text-sm font-black text-slate-500">{item.question_text}</p>
-                      <p className="mt-1 line-clamp-2 text-base font-bold text-slate-800">{item.answer_text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            </div>
+          ) : null}
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button onClick={next} disabled={submitting} className="sn-btn sn-btn-primary sn-btn-lg min-w-[14rem] flex-[2_1_14rem]">
+              {submitting ? '正在整理…' : index >= questions.length - 1 ? '完成，看看建议' : '继续下一步'}
+              {!submitting ? <SeniorIcon name="arrow" /> : null}
+            </button>
+            <button onClick={() => setAnswer('我现在说不清楚，先跳过这个。')} className="sn-btn sn-btn-quiet sn-btn-lg flex-[1_1_10rem]">不知道怎么说</button>
           </div>
+          {error ? (
+            <div className="mt-4">
+              <SeniorStatusNotice
+                tone={canRetrySummary ? 'danger' : 'warning'}
+                title={canRetrySummary ? '建议暂时没有整理好' : '还需要一点内容'}
+                desc={error}
+                actionLabel={canRetrySummary && lastFinalAnswers.length && !submitting ? '重新整理建议' : undefined}
+                onAction={canRetrySummary && lastFinalAnswers.length && !submitting ? () => finish(lastFinalAnswers) : undefined}
+              />
+            </div>
+          ) : null}
+          {answers.length ? (
+            <div className="mt-6 border-t border-[var(--sn-line)] pt-4">
+              <p className="sn-small">前面已经记下</p>
+              <ol className="mt-2 space-y-2">
+                {answers.slice(-4).map((item, idx) => (
+                  <li key={`${item.question_id}-${idx}`} className="text-[1.05rem] leading-7">
+                    <span className="text-[var(--sn-ink-3)]">{item.question_text}</span>
+                    <span className="ml-2 text-[var(--sn-ink)]">{item.answer_text}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
         </div>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button onClick={() => speakSafely(current.speakText || current.text)} disabled={speech.isListening} className="min-h-[64px] rounded-2xl border border-slate-300 bg-white px-6 text-xl font-black text-slate-800 disabled:opacity-50">
-            <span className="inline-flex items-center gap-2"><SeniorIcon name="volume" className="h-6 w-6" />再读一遍</span>
-          </button>
-          <button onClick={() => setAnswer('我现在说不清楚，先跳过这个。')} className="min-h-[64px] rounded-2xl border border-slate-300 bg-white px-6 text-xl font-black text-slate-800">不知道怎么说</button>
-          <button onClick={next} disabled={submitting} className="min-h-[64px] flex-1 rounded-2xl bg-emerald-800 px-6 text-xl font-black text-white disabled:opacity-60">{submitting ? '正在整理...' : index >= questions.length - 1 ? '完成，看看建议' : '继续下一步'}</button>
-        </div>
-        {error ? (
-          <div className="mt-4">
-            <SeniorStatusNotice
-              tone={canRetrySummary ? 'danger' : 'warning'}
-              title={canRetrySummary ? '建议暂时没有整理好' : '还需要一点内容'}
-              desc={error}
-              actionLabel={canRetrySummary && lastFinalAnswers.length && !submitting ? '重新整理建议' : undefined}
-              onAction={canRetrySummary && lastFinalAnswers.length && !submitting ? () => finish(lastFinalAnswers) : undefined}
-            />
-          </div>
-        ) : null}
       </section>
     </div>
   );

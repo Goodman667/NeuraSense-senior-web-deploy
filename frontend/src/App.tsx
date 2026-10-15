@@ -905,6 +905,10 @@ function App() {
                     onLogout={handleLogout}
                     onSwitchToStandard={() => {
                         stopAllSpeech();
+                        // Leave /senior/* so a page refresh stays in the standard mode.
+                        if (window.location.pathname.startsWith('/senior')) {
+                            window.history.replaceState(null, '', '/');
+                        }
                         setMode('standard');
                         setActiveTab('today');
                         setSubView(null);
@@ -1019,7 +1023,7 @@ function App() {
                 {/* ============================================================ */}
                 {/* MAIN CONTENT AREA                                            */}
                 {/* ============================================================ */}
-                <main className={`mx-auto w-full max-w-[1520px] flex-1 px-4 py-5 sm:px-6 lg:px-10 lg:py-8 ${showTabBar ? 'pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-10' : ''}`}>
+                <main className={`mx-auto w-full max-w-[1800px] flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8 ${showTabBar ? 'pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-10' : ''}`}>
 
                     {/* ===== SUB-VIEWS (overlay current tab) ===== */}
                     {subView === 'clock' && (
@@ -1185,7 +1189,7 @@ function App() {
                         {mode !== 'senior' && activeTab === 'today' && (
                             <Suspense fallback={<PageSkeleton />}>
                             <TodayPage
-                                onNavigate={navigateTo}
+                                onNavigate={(view) => (view === 'toolbox' || view === 'programs' || view === 'me' ? handleTabChange(view) : navigateTo(view))}
                                 onStartChat={() => handleTabChange('chat')}
                                 onOpenTool={(tool) => { setActiveTool(tool); setToolCompleteCallback(null); setSubView('tool-runner'); }}
                             />

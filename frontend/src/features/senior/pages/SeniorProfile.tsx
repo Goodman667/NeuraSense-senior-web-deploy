@@ -20,52 +20,43 @@ export function SeniorProfile({
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   return (
     <div className="mx-auto max-w-5xl">
-      <SeniorPageHeader eyebrow="个人中心" title={`${displayName}，这里可以管理账号`} desc="不用回到完整功能，也可以在陪伴版里查看账号、进入设置或退出登录。" />
+      <SeniorPageHeader eyebrow="我的" title={`${displayName}，这里管账号`} desc="不用回到完整功能，也能在这里看账号、去设置、退出登录。" />
 
-      <section className="rounded-[2.4rem] border border-cyan-100 bg-white p-7 shadow-[0_30px_100px_-70px_rgba(15,23,42,0.45)]">
-        <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-cyan-50 text-cyan-900">
-              <SeniorIcon name="user" className="h-10 w-10" />
-            </div>
-            <div>
-              <p className="text-3xl font-black text-slate-950">{displayName}</p>
-              <p className="mt-2 text-lg leading-8 text-slate-500">账号 ID：{userId}</p>
-            </div>
+      <section className="sn-sheet flex flex-col gap-5 p-6 md:flex-row md:items-center md:justify-between md:p-7">
+        <div className="flex items-center gap-4">
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[var(--sn-teal-soft)] text-[2rem] text-[var(--sn-teal-deep)]">{displayName.slice(0, 1)}</span>
+          <div>
+            <p className="sn-h2">{displayName}</p>
+            <p className="sn-small mt-1 break-all">账号编号：{userId}</p>
           </div>
-          <button onClick={() => onNavigate('settings')} className="min-h-[64px] rounded-2xl bg-cyan-900 px-6 text-xl font-black text-white">
-            去设置联系人
-          </button>
         </div>
+        <button onClick={() => onNavigate('settings')} className="sn-btn sn-btn-primary">去设置联系人</button>
       </section>
 
       <div className="mt-5 grid gap-5 md:grid-cols-2">
-        <section className="rounded-[2.2rem] border border-cyan-100 bg-cyan-50 p-6 text-cyan-950">
-          <p className="flex items-center gap-2 text-2xl font-black"><SeniorIcon name="settings" className="h-7 w-7" />常用设置</p>
-          <p className="mt-3 text-xl leading-9">可以调整字号、朗读声音，也可以添加或更换紧急联系人。</p>
-          <button onClick={() => onNavigate('settings')} className="mt-5 min-h-[60px] rounded-2xl bg-white px-6 text-lg font-black text-cyan-900">打开设置</button>
+        <section className="sn-sheet p-6">
+          <h2 className="sn-h3 flex items-center gap-2"><SeniorIcon name="settings" className="h-6 w-6 text-[var(--sn-teal)]" />常用设置</h2>
+          <p className="sn-body mt-2">调字号、换朗读声音、添加或更换紧急联系人。</p>
+          <button onClick={() => onNavigate('settings')} className="sn-btn sn-btn-quiet mt-5">打开设置</button>
         </section>
-        <section className="rounded-[2.2rem] border border-slate-200 bg-white p-6 text-slate-950">
-          <p className="flex items-center gap-2 text-2xl font-black"><SeniorIcon name="logout" className="h-7 w-7" />切换使用方式</p>
-          <p className="mt-3 text-xl leading-9">如果需要更多功能，可以切到完整功能；如果要换账号，可以直接退出登录。</p>
-          <div className="mt-5 grid gap-3">
-            <button onClick={onSwitchToStandard} className="min-h-[60px] rounded-2xl bg-slate-950 px-6 text-lg font-black text-white">使用完整功能</button>
-            <button onClick={() => setConfirmingLogout(true)} className="min-h-[60px] rounded-2xl border border-rose-200 bg-rose-50 px-6 text-lg font-black text-rose-800">退出当前账号</button>
+        <section className="sn-sheet p-6">
+          <h2 className="sn-h3 flex items-center gap-2"><SeniorIcon name="logout" className="h-6 w-6 text-[var(--sn-teal)]" />换一种用法</h2>
+          <p className="sn-body mt-2">需要更多功能，可以切到完整功能；要换账号，可以退出登录。</p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button onClick={onSwitchToStandard} className="sn-btn sn-btn-dark">使用完整功能</button>
+            <button onClick={() => setConfirmingLogout(true)} className="sn-btn sn-btn-help-quiet">退出当前账号</button>
           </div>
         </section>
       </div>
       {confirmingLogout ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
-          <div className="w-full max-w-xl rounded-[2.2rem] border border-rose-100 bg-white p-6 shadow-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 text-lg font-black text-rose-800">
-              <SeniorIcon name="logout" className="h-5 w-5" />
-              确认退出
-            </p>
-            <h2 className="mt-4 text-4xl font-black leading-tight text-slate-950">要退出当前账号吗？</h2>
-            <p className="mt-3 text-xl leading-9 text-slate-600">退出后会回到欢迎页面。下次需要重新登录，才能看到这个账号的数据。</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(19,40,43,0.45)] p-4" role="dialog" aria-modal="true" aria-labelledby="sn-logout-title">
+          <div className="sn sn-sheet w-full max-w-xl p-6 md:p-8">
+            <p className="sn-kicker !text-[var(--sn-help)]"><SeniorIcon name="logout" className="h-5 w-5" />确认退出</p>
+            <h2 id="sn-logout-title" className="sn-h1 mt-2">要退出当前账号吗？</h2>
+            <p className="sn-body mt-2">退出后回到欢迎页。下次要重新登录，才能看到这个账号的记录。</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button onClick={onLogout} className="min-h-[64px] rounded-2xl bg-rose-700 px-6 text-xl font-black text-white">确认退出</button>
-              <button onClick={() => setConfirmingLogout(false)} className="min-h-[64px] rounded-2xl border border-slate-200 bg-white px-6 text-xl font-black text-slate-700">先不退出</button>
+              <button onClick={onLogout} className="sn-btn sn-btn-help">确认退出</button>
+              <button onClick={() => setConfirmingLogout(false)} className="sn-btn sn-btn-quiet">先不退出</button>
             </div>
           </div>
         </div>

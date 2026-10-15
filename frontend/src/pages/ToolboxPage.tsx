@@ -192,23 +192,7 @@ function LayerGridIcon({ className = 'w-5 h-5' }: { className?: string }) {
     );
 }
 
-function SparklineIcon({ className = 'w-5 h-5' }: { className?: string }) {
-    return (
-        <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16.5 9 11l3.5 3.5L20 7.5" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M17 7.5h3v3" />
-        </svg>
-    );
-}
 
-function CompassIcon({ className = 'w-5 h-5' }: { className?: string }) {
-    return (
-        <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.7} stroke="currentColor">
-            <circle cx="12" cy="12" r="9" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="m14.8 9.2-2 5.6-5.6 2 2-5.6 5.6-2Z" />
-        </svg>
-    );
-}
 
 function ArrowUpRightIcon({ className = 'w-5 h-5' }: { className?: string }) {
     return (
@@ -396,6 +380,9 @@ function formatDuration(value: number) {
     return `${Math.round(value)} min`;
 }
 
+import FlowMateCarousel from '../components/UI/FlowMateCarousel';
+import { standardAssets } from '../lib/standardAssets';
+
 export default function ToolboxPage({ onNavigate, onStartImmersive, onOpenTool }: ToolboxPageProps) {
     const [tools, setTools] = useState<ToolItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -469,154 +456,53 @@ export default function ToolboxPage({ onNavigate, onStartImmersive, onOpenTool }
         { ...SHORTCUT_META[7], action: () => onNavigate('trend') },
     ]), [onNavigate, onStartImmersive]);
 
-    const insightCards = [
-        {
-            label: '当前结果',
-            value: tools.length ? String(tools.length).padStart(2, '0') : '00',
-            detail: '可直接进入的练习工具',
-            icon: <LayerGridIcon className="h-5 w-5" />,
-        },
-        {
-            label: '覆盖分类',
-            value: String(grouped.length).padStart(2, '0'),
-            detail: '当前视图中的主题分区',
-            icon: <CompassIcon className="h-5 w-5" />,
-        },
-        {
-            label: '平均时长',
-            value: formatDuration(averageDuration),
-            detail: '帮助用户预估完成负担',
-            icon: <SparklineIcon className="h-5 w-5" />,
-        },
-    ];
 
     return (
         <div className="space-y-8 lg:space-y-10">
-            <section className="desktop-section relative overflow-hidden px-6 py-6 lg:px-8 lg:py-8 xl:px-10 xl:py-10">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_32%),radial-gradient(circle_at_88%_16%,rgba(5,150,105,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.96))]" />
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:112px_112px] opacity-60" />
-                <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-cyan-200/30 blur-3xl" />
-                <div className="absolute right-8 top-12 h-40 w-40 rounded-full bg-emerald-200/25 blur-3xl" />
+            <FlowMateCarousel
+                title="今天想试试哪一个"
+                subtitle={`共 ${tools.length || 0} 个练习 · ${grouped.length} 个主题 · 平均 ${formatDuration(averageDuration)}`}
+                items={shortcuts.slice(0, 5).map((shortcut, idx) => ({
+                    id: shortcut.id,
+                    label: shortcut.label,
+                    text: shortcut.description,
+                    image: standardAssets.paintings[idx % standardAssets.paintings.length],
+                    onClick: shortcut.action,
+                }))}
+            />
 
-                <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.12fr)_420px] xl:gap-10">
-                    <motion.div initial="hidden" animate="show" variants={staggerGrid} className="max-w-4xl space-y-6">
-                        <motion.div variants={revealCard} className="inline-flex items-center gap-3 rounded-full border border-white/80 bg-white/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.28)] backdrop-blur-xl">
-                            <span className="h-2 w-2 rounded-full bg-cyan-500" />
-                            NeuraSense 工具箱
-                        </motion.div>
-
-                        <motion.div variants={revealCard} className="space-y-4">
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/75 px-3 py-1.5 shadow-sm backdrop-blur">
-                                    <LayerGridIcon className="h-4 w-4 text-cyan-700" />
-                                    练习与评估入口
-                                </span>
-                                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/75 px-3 py-1.5 shadow-sm backdrop-blur">
-                                    <CompassIcon className="h-4 w-4 text-emerald-700" />
-                                    {activeCategoryMeta ? activeCategoryMeta.label : '全部分类'}
-                                </span>
-                            </div>
-
-                            <div>
-                                <h2 className="font-display text-4xl leading-tight text-slate-950 sm:text-5xl xl:text-[3.6rem]">
-                                    为当前状态选择合适的
-                                    <span className="block text-cyan-800">练习、评估与放松方式。</span>
-                                </h2>
-                                <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600 xl:text-[1.05rem]">
-                                    这里汇集呼吸放松、认知训练、睡前调节与常用评估入口，可按主题、时长和需求快速查找。
-                                </p>
-                            </div>
-                        </motion.div>
-
-                        <motion.div variants={revealCard} className="grid gap-4 md:grid-cols-3">
-                            {insightCards.map((card) => (
-                                <div
-                                    key={card.label}
-                                    className="rounded-[1.5rem] border border-white/80 bg-white/78 p-5 shadow-[0_22px_70px_-42px_rgba(15,23,42,0.3)] backdrop-blur-xl"
-                                >
-                                    <div className="flex items-center justify-between gap-4">
-                                        <div>
-                                            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{card.label}</p>
-                                            <p className="mt-3 font-display text-3xl text-slate-950">{card.value}</p>
-                                        </div>
-                                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-100 bg-cyan-50 text-cyan-700">
-                                            {card.icon}
-                                        </span>
-                                    </div>
-                                    <p className="mt-3 text-sm leading-6 text-slate-500">{card.detail}</p>
-                                </div>
-                            ))}
-                        </motion.div>
-
-                        <motion.div variants={revealCard} className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                            <label className="relative block flex-1">
-                                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                    <SearchIcon className="h-5 w-5" />
-                                </span>
-                                <input
-                                    type="search"
-                                    value={searchQuery}
-                                    onChange={(event) => setSearchQuery(event.target.value)}
-                                    placeholder="搜索练习主题、标签或工具名称…"
-                                    aria-label="搜索工具"
-                                    className="h-14 w-full rounded-[1.4rem] border border-white/80 bg-white/88 pl-12 pr-4 text-[15px] text-slate-700 shadow-[0_20px_60px_-44px_rgba(15,23,42,0.28)] outline-none transition duration-200 placeholder:text-slate-400 focus:border-cyan-200 focus:ring-4 focus:ring-cyan-100 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-100"
-                                />
-                            </label>
-
-                            {(trimmedQuery || activeCategory) ? (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        setActiveCategory(null);
-                                    }}
-                                    className="inline-flex h-14 items-center justify-center rounded-[1.4rem] border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 shadow-[0_18px_50px_-38px_rgba(15,23,42,0.3)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100"
-                                >
-                                    重置视图
-                                </button>
-                            ) : null}
-                        </motion.div>
-                    </motion.div>
-
-                    <motion.aside
-                        initial={{ opacity: 0, x: 18 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, ease: 'easeOut', delay: 0.08 }}
-                        className="overflow-hidden rounded-[1.9rem] border border-white/80 bg-white/82 p-6 shadow-[0_30px_90px_-46px_rgba(15,23,42,0.34)] backdrop-blur-xl"
-                    >
-                        <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">常用入口</p>
-                                <h3 className="mt-3 font-display text-2xl text-slate-950">常用功能</h3>
-                            </div>
-                            <span className="rounded-full border border-cyan-100 bg-cyan-50 px-3 py-1 text-xs font-semibold text-cyan-700">
-                                8 项
-                            </span>
-                        </div>
-                        <p className="mt-3 text-sm leading-6 text-slate-500">
-                            常用功能集中在这里，可快速进入评估、沉浸练习、生物信号分析和趋势查看。
-                        </p>
-
-                        <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-                            {shortcuts.map((shortcut) => (
-                                <button
-                                    key={shortcut.id}
-                                    type="button"
-                                    onClick={shortcut.action}
-                                    aria-label={`打开${shortcut.label}`}
-                                    className="group rounded-[1.5rem] border border-slate-200/80 bg-white/86 p-4 text-left shadow-[0_18px_60px_-40px_rgba(15,23,42,0.28)] transition duration-200 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_28px_80px_-42px_rgba(15,23,42,0.34)] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100"
-                                >
-                                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-gradient-to-br ${shortcut.tone} shadow-inner`}>
-                                        {shortcut.icon}
-                                    </div>
-                                    <div className="mt-4">
-                                        <h4 className="text-sm font-semibold text-slate-900 transition-colors duration-200 group-hover:text-cyan-900">{shortcut.label}</h4>
-                                        <p className="mt-2 text-xs leading-5 text-slate-500">{shortcut.description}</p>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </motion.aside>
+            <section className="flex flex-col gap-3 rounded-[20px] bg-white p-3 shadow-sm sm:rounded-full sm:flex-row sm:items-center sm:p-2">
+                <label className="relative block flex-1">
+                    <span className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">
+                        <SearchIcon className="h-5 w-5" />
+                    </span>
+                    <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="搜索练习主题、标签或工具名称…"
+                        aria-label="搜索工具"
+                        className="h-12 w-full rounded-full bg-transparent pl-12 pr-4 text-[15px] text-gray-800 outline-none placeholder:text-gray-400"
+                    />
+                </label>
+                <div className="flex flex-wrap items-center gap-2 px-1">
+                    {shortcuts.slice(5).map((shortcut) => (
+                        <button key={shortcut.id} type="button" onClick={shortcut.action} className="whitespace-nowrap rounded-full bg-gray-100 px-4 py-2 text-sm text-gray-900 transition hover:bg-gray-200">
+                            {shortcut.label}
+                        </button>
+                    ))}
+                    {(trimmedQuery || activeCategory) ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSearchQuery('');
+                                setActiveCategory(null);
+                            }}
+                            className="whitespace-nowrap rounded-full bg-black px-4 py-2 text-sm text-white"
+                        >
+                            重置
+                        </button>
+                    ) : null}
                 </div>
             </section>
 

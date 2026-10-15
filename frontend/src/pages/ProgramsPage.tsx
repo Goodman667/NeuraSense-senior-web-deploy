@@ -423,6 +423,17 @@ function ProgramList({
 
     return (
         <div className="space-y-6 lg:space-y-8">
+            <FlowMateCarousel
+                title="选一个课程，慢慢练起来"
+                subtitle={`${programs.length} 个课程 · 每天 ${programs.length ? Math.round(summary.totalMinutes / programs.length) : 0} 分钟左右`}
+                items={programs.map((program, idx) => ({
+                    id: program.id,
+                    label: `${program.duration_days} 天 · ${program.daily_minutes} 分钟/天`,
+                    text: `${program.title}——${program.subtitle}`,
+                    image: standardAssets.paintings[(idx + 2) % standardAssets.paintings.length],
+                    onClick: () => onSelect(program),
+                }))}
+            />
             <section className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-white/72 p-6 shadow-[0_32px_100px_-44px_rgba(15,23,42,0.26)] backdrop-blur-2xl sm:p-7 lg:p-8 dark:border-slate-800 dark:bg-slate-900/78 dark:shadow-[0_38px_120px_-56px_rgba(2,6,23,0.8)]">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_85%_12%,rgba(16,185,129,0.12),transparent_26%),linear-gradient(180deg,rgba(255,255,255,0.78)_0%,rgba(248,250,252,0.76)_100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.14),transparent_30%),radial-gradient(circle_at_85%_12%,rgba(16,185,129,0.1),transparent_22%),linear-gradient(180deg,rgba(15,23,42,0.72)_0%,rgba(2,6,23,0.82)_100%)]" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.08)_1px,transparent_1px)] bg-[size:120px_120px] opacity-40" />
@@ -1640,6 +1651,9 @@ function _normalizeStartedProgress(
    Main ProgramsPage
    ============================================================ */
 type View = 'list' | 'detail' | 'day';
+
+import FlowMateCarousel from '../components/UI/FlowMateCarousel';
+import { standardAssets } from '../lib/standardAssets';
 
 export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
     const [view, setView] = useState<View>('list');

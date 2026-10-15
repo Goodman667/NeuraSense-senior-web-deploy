@@ -1,8 +1,157 @@
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lora:wght@500;600;700&family=Raleway:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===== Senior companion mode (ink & paper) ===== */
+@layer components {
+/* Senior companion mode — "ink & paper" system.
+   Built from library materials: Heritage Grove (teal ink on cream paper),
+   Kova Features (dark-green image cards, donut), Botanical Shadow (leaf-shadow wall),
+   Breathstone (misty stone valley). Typeface: LXGW WenKai Screen. */
+
+.sn {
+  --sn-paper: #F1EBE4;
+  --sn-sheet: #FBF8F3;
+  --sn-sheet-2: #F4EFE8;
+  --sn-line: #DCD2C6;
+  --sn-line-strong: #C9BCAD;
+  --sn-ink: #13282B;
+  --sn-ink-2: #4A5A5B;
+  --sn-ink-3: #6E7B7A;
+  --sn-teal: #175A67;
+  --sn-teal-deep: #0F454F;
+  --sn-teal-soft: #DDE8E5;
+  --sn-forest: #08150C;
+  --sn-help: #A3352A;
+  --sn-help-deep: #852A21;
+  --sn-help-soft: #F6E2DC;
+  --sn-ochre: #C46B2D;
+  --sn-olive: #7A8C3E;
+  --sn-sage: #A8B87A;
+  --sn-stone: #B8AFA4;
+  --sn-kai: 'LXGW WenKai Screen', 'KaiTi', 'STKaiti', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', serif;
+  --sn-sans: 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  font-family: var(--sn-kai);
+  color: var(--sn-ink);
+  background: var(--sn-paper);
+  letter-spacing: 0.01em;
+}
+
+.sn ::selection { background: #C9DDD8; }
+
+/* ---------- type ---------- */
+.sn-display { font-family: var(--sn-kai); font-weight: 400; font-size: clamp(2.3rem, 3.6vw, 3.4rem); line-height: 1.16; letter-spacing: 0; color: var(--sn-teal-deep); text-wrap: balance; }
+.sn-h1 { font-family: var(--sn-kai); font-weight: 400; font-size: clamp(2rem, 2.8vw, 2.7rem); line-height: 1.2; color: var(--sn-ink); text-wrap: balance; }
+.sn-h2 { font-family: var(--sn-kai); font-weight: 400; font-size: 1.75rem; line-height: 1.3; color: var(--sn-ink); }
+.sn-h3 { font-family: var(--sn-kai); font-weight: 400; font-size: 1.4rem; line-height: 1.35; color: var(--sn-ink); }
+.sn-lede { font-size: 1.2rem; line-height: 1.75; color: var(--sn-ink-2); }
+.sn-body { font-size: 1.1rem; line-height: 1.75; color: var(--sn-ink-2); }
+.sn-small { font-size: 0.95rem; line-height: 1.6; color: var(--sn-ink-3); }
+.sn-kicker { font-size: 1rem; color: var(--sn-teal); display: inline-flex; align-items: center; gap: 0.5rem; }
+
+/* ---------- surfaces ---------- */
+.sn-sheet { background: var(--sn-sheet); border: 1px solid var(--sn-line); border-radius: 22px; }
+.sn-sheet-flat { background: var(--sn-sheet-2); border-radius: 18px; }
+.sn-rule { height: 1px; background: var(--sn-line); border: 0; }
+
+/* ---------- buttons ---------- */
+.sn-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  min-height: 3.6rem; padding: 0 1.6rem; border-radius: 14px;
+  font-family: var(--sn-kai); font-size: 1.2rem; line-height: 1.2; text-align: center;
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.sn-btn:focus-visible { outline: 3px solid #8FB9B3; outline-offset: 3px; }
+.sn-btn:disabled { opacity: .45; cursor: not-allowed; }
+.sn-btn svg { width: 1.35em; height: 1.35em; flex-shrink: 0; }
+.sn-btn-lg { min-height: 4.2rem; padding: 0 2rem; font-size: 1.35rem; border-radius: 16px; }
+.sn-btn-primary { background: var(--sn-teal); color: #FBF8F3; }
+.sn-btn-primary:hover:not(:disabled) { background: var(--sn-teal-deep); }
+.sn-btn-dark { background: var(--sn-forest); color: #FBF8F3; }
+.sn-btn-dark:hover:not(:disabled) { background: #1A2E1F; }
+.sn-btn-quiet { background: var(--sn-sheet); color: var(--sn-ink); border-color: var(--sn-line); }
+.sn-btn-quiet:hover:not(:disabled) { border-color: var(--sn-teal); color: var(--sn-teal-deep); }
+.sn-btn-outline { background: transparent; color: var(--sn-teal-deep); border-color: var(--sn-teal); }
+.sn-btn-outline:hover:not(:disabled) { background: var(--sn-teal-soft); }
+.sn-btn-glass { background: rgba(251, 248, 243, .82); color: var(--sn-teal-deep); border-color: rgba(23, 90, 103, .25); backdrop-filter: blur(6px); }
+.sn-btn-glass:hover:not(:disabled) { background: #FBF8F3; }
+.sn-btn-help { background: var(--sn-help); color: #FFF8F5; }
+.sn-btn-help:hover:not(:disabled) { background: var(--sn-help-deep); }
+.sn-btn-help-quiet { background: var(--sn-help-soft); color: var(--sn-help-deep); border-color: #E8C3B9; }
+.sn-btn-help-quiet:hover:not(:disabled) { border-color: var(--sn-help); }
+.sn-btn-block { width: 100%; }
+
+/* chips: selectable answers and topics */
+.sn-chip {
+  display: inline-flex; align-items: center; gap: .55rem; min-height: 3.2rem; padding: .55rem 1.2rem;
+  border-radius: 999px; border: 1.5px solid var(--sn-line-strong); background: var(--sn-sheet);
+  font-family: var(--sn-kai); font-size: 1.15rem; color: var(--sn-ink); cursor: pointer;
+  transition: border-color .2s ease, background-color .2s ease;
+}
+.sn-chip:hover { border-color: var(--sn-teal); background: #FFFDF9; }
+.sn-chip[aria-pressed="true"] { background: var(--sn-teal); color: #FBF8F3; border-color: var(--sn-teal); }
+.sn-chip:focus-visible { outline: 3px solid #8FB9B3; outline-offset: 2px; }
+
+/* inputs */
+.sn-input, .sn-textarea, .sn-select {
+  width: 100%; border: 1.5px solid var(--sn-line-strong); background: #FFFDF9; color: var(--sn-ink);
+  border-radius: 14px; font-family: var(--sn-kai); font-size: 1.25rem; outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.sn-input, .sn-select { min-height: 3.7rem; padding: 0 1.1rem; }
+.sn-textarea { padding: 1rem 1.2rem; line-height: 1.8; }
+.sn-input:focus, .sn-textarea:focus, .sn-select:focus { border-color: var(--sn-teal); box-shadow: 0 0 0 4px rgba(23, 90, 103, .14); }
+.sn-input::placeholder, .sn-textarea::placeholder { color: #8E9A99; }
+
+/* progress line */
+.sn-progress { height: 6px; background: var(--sn-line); border-radius: 999px; overflow: hidden; }
+.sn-progress > span { display: block; height: 100%; background: var(--sn-teal); border-radius: inherit; transition: width .5s ease; }
+
+/* ---------- media panels ---------- */
+.sn-media { position: relative; overflow: hidden; isolation: isolate; }
+.sn-media > video, .sn-media > img.sn-media-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+
+/* Kova-style image card */
+.sn-photo-card { position: relative; overflow: hidden; border-radius: 20px; background: var(--sn-forest); color: #fff; text-align: left; isolation: isolate; display: flex; flex-direction: column; justify-content: space-between; padding: 1.1rem 1.2rem 1.3rem; cursor: pointer; transition: transform .35s cubic-bezier(.22,1,.36,1); }
+.sn-photo-card > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; transition: transform .8s cubic-bezier(.22,1,.36,1); }
+.sn-photo-card::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(8, 21, 12, .86) 0%, rgba(8, 21, 12, .28) 48%, rgba(8, 21, 12, 0) 72%); }
+.sn-photo-card:hover > img { transform: scale(1.04); }
+.sn-photo-card:focus-visible { outline: 3px solid #8FB9B3; outline-offset: 3px; }
+.sn-photo-card .sn-pill { display: inline-flex; align-items: center; gap: .45rem; align-self: flex-start; padding: .3rem .8rem; border-radius: 999px; background: rgba(8, 21, 12, .35); backdrop-filter: blur(4px); font-size: 1rem; color: #fff; }
+.sn-photo-card.is-help::after { background: linear-gradient(to top, rgba(74, 21, 16, .9) 0%, rgba(74, 21, 16, .3) 50%, rgba(74, 21, 16, 0) 74%); }
+
+/* leaf-shadow wall (Botanical Shadow About) */
+.sn-wall { position: relative; overflow: hidden; isolation: isolate; background: #EFE8DE; }
+.sn-wall > video, .sn-wall > canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+.sn-wall::before { content: ''; position: absolute; inset: 0; z-index: -1; background: rgba(242, 238, 230, .5); }
+
+/* navigation rail */
+.sn-nav-item { display: flex; align-items: center; gap: .9rem; width: 100%; min-height: 3.5rem; padding: 0 1rem; border-radius: 14px; font-family: var(--sn-kai); font-size: 1.3rem; color: var(--sn-ink-2); text-align: left; border: 1px solid transparent; transition: background-color .2s ease, color .2s ease; }
+.sn-nav-item svg { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+.sn-nav-item:hover { background: var(--sn-sheet); color: var(--sn-ink); }
+.sn-nav-item[aria-current="page"] { background: var(--sn-sheet); color: var(--sn-teal-deep); border-color: var(--sn-line); }
+.sn-nav-item[data-locked="true"] { color: #A3ABA9; }
+.sn-nav-item:focus-visible { outline: 3px solid #8FB9B3; outline-offset: 2px; }
+
+/* notices */
+.sn-notice { display: flex; gap: 1rem; align-items: flex-start; padding: 1.1rem 1.25rem; border-radius: 18px; border: 1px solid var(--sn-line); background: var(--sn-sheet); }
+.sn-notice.tone-warning { background: #F7EEDC; border-color: #E5CFA2; color: #5B4313; }
+.sn-notice.tone-danger { background: var(--sn-help-soft); border-color: #E8C3B9; color: #6A231B; }
+.sn-notice.tone-success { background: #E7EEDD; border-color: #C8D6AF; color: #33441C; }
+.sn-notice.tone-info { background: var(--sn-teal-soft); border-color: #BCD3CE; color: #123F47; }
+
+@keyframes sn-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.sn-rise { animation: sn-rise .6s cubic-bezier(.22,1,.36,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .sn-rise { animation: none; }
+  .sn-photo-card, .sn-photo-card > img { transition: none; }
+  .sn-media > video, .sn-wall > video { display: none; }
+}
+
+}
+
 
 /* Dark Mode Support */
 :root {
@@ -41,14 +190,14 @@ html[data-ui-mode='senior'] {
 }
 
 html[data-ui-mode='senior'] body {
-  font-family: 'Atkinson Hyperlegible', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI Variable', system-ui, sans-serif;
+  font-family: 'LXGW WenKai Screen', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', system-ui, sans-serif;
   letter-spacing: 0.01em;
 }
 
 /* Custom base styles for PsyAntigravity */
 @layer base {
   html {
-    font-family: 'Raleway', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI Variable', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
     /* 防止 iOS 弹性滚动导致背景露出 */
     overscroll-behavior-y: none;
     /* PWA standalone 模式下，禁止文本选择长按菜单 */
@@ -98,11 +247,39 @@ html[data-ui-mode='senior'] body {
   }
 
   .font-display {
-    font-family: 'Lora', Georgia, 'Times New Roman', serif;
+    font-family: 'LXGW WenKai Screen', 'KaiTi', Georgia, serif;
+  }
+
+  .font-display-cn {
+    font-family: 'LXGW WenKai Screen', 'KaiTi', 'STKaiti', serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
   }
 
   .desktop-section {
-    @apply rounded-[1.75rem] border border-white/70 bg-white/90 p-6 shadow-[0_28px_90px_-46px_rgba(15,23,42,0.22)] backdrop-blur-xl;
+    @apply rounded-[20px] bg-white p-5 shadow-sm sm:rounded-[28px] sm:p-6;
+  }
+
+  /* Nexar surfaces stay white in dark mode (the sky dims instead) */
+  .dark .nexar-light {
+    --bg-primary: 249 250 251;
+    --bg-secondary: 255 255 255;
+    --text-primary: 17 24 39;
+    --text-secondary: 107 114 128;
+    --border-color: 229 231 235;
+  }
+
+  /* Nexar staggered entrance */
+  @keyframes nexarFadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .nexar-fade-up {
+    opacity: 0;
+    animation: nexarFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nexar-fade-up { opacity: 1; animation: none; }
   }
 
   .assessment-card {
@@ -126,6 +303,13 @@ html[data-ui-mode='senior'] body {
     background-color: rgba(15, 23, 42, 0.82);
     border-color: rgba(51, 65, 85, 0.8);
     box-shadow: 0 38px 120px -64px rgba(2, 6, 23, 0.8);
+  }
+
+  .dark .nexar-light .desktop-section,
+  .dark .nexar-light .app-surface {
+    background-color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
 
   .dark .bg-gray-50,
