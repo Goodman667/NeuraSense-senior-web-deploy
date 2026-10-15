@@ -5,14 +5,14 @@ import { SeniorIcon, type SeniorIconName } from '../components/SeniorIcon';
 
 const FONT_SCALE_STORAGE = 'neurasense-senior-font-scale';
 
-const navItems: Array<{ page: SeniorPage; label: string; desc: string; icon: SeniorIconName }> = [
-  { page: 'home', label: '今天', desc: '先从这里开始', icon: 'home' },
-  { page: 'chat', label: '聊聊', desc: '陪您说说话', icon: 'chat' },
-  { page: 'relax', label: '放松', desc: '做一个短练习', icon: 'leaf' },
-  { page: 'checkup', label: '小测', desc: '陪您做个小检查', icon: 'clipboard' },
-  { page: 'help', label: '帮助', desc: '找得到的人', icon: 'help' },
-  { page: 'settings', label: '设置', desc: '字号与联系人', icon: 'settings' },
-  { page: 'profile', label: '我的', desc: '账号与退出', icon: 'user' },
+const navItems: Array<{ page: SeniorPage; label: string; icon: SeniorIconName }> = [
+  { page: 'home', label: '今天', icon: 'home' },
+  { page: 'chat', label: '聊聊', icon: 'chat' },
+  { page: 'relax', label: '放松', icon: 'leaf' },
+  { page: 'checkup', label: '小测', icon: 'clipboard' },
+  { page: 'help', label: '帮助', icon: 'help' },
+  { page: 'settings', label: '设置', icon: 'settings' },
+  { page: 'profile', label: '我的', icon: 'user' },
 ];
 
 const fontScalePx: Record<string, string> = {
@@ -20,6 +20,19 @@ const fontScalePx: Record<string, string> = {
   larger: '20px',
   largest: '22px',
 };
+
+// Heritage Grove brand mark: an upright oval with a small sprig.
+function BrandMark({ className = 'h-10 w-8' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 96 120" fill="none" stroke="currentColor" strokeWidth="3" className={className} aria-hidden="true">
+      <ellipse cx="48" cy="60" rx="45" ry="57" />
+      <path d="M48 88V46" strokeLinecap="round" />
+      <path d="M48 58c-8-2-14-8-16-16 9 0 15 5 16 16Zm0 0c8-2 14-8 16-16-9 0-15 5-16 16Z" />
+      <path d="M48 74c-9-2-15-8-17-17 10 0 16 6 17 17Zm0 0c9-2 15-8 17-17-10 0-16 6-17 17Z" />
+      <path d="M48 46c-6-3-9-9-8-16 6 3 9 9 8 16Zm0 0c6-3 9-9 8-16-6 3-9 9-8 16Z" />
+    </svg>
+  );
+}
 
 export function SeniorShell({
   page,
@@ -53,90 +66,66 @@ export function SeniorShell({
     };
   }, [fontScale]);
 
+  const go = (target: SeniorPage) => {
+    const locked = contactRequired && target !== 'settings' && target !== 'help' && target !== 'profile';
+    if (locked) {
+      setNavNotice('先添加一位能联系到的人，填完马上就能用。');
+      return;
+    }
+    setNavNotice('');
+    onNavigate(target);
+  };
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,#fffdf6_0%,#eefcfc_55%,#f4fff7_100%)] text-slate-950 senior-ui">
-      <a href="#senior-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-2xl focus:bg-slate-950 focus:px-5 focus:py-3 focus:text-white">跳到主要内容</a>
-      <header className="sticky top-0 z-30 border-b border-cyan-100 bg-white/88 px-5 py-4 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-black tracking-[0.18em] text-cyan-800">陪伴版</p>
-            <h1 className="mt-1 text-3xl font-black leading-tight text-slate-950">{currentUserName ? `${currentUserName}，` : ''}今天我们慢慢来</h1>
-            <p className="mt-1 text-lg text-slate-600">{date} · 每次只做一件事</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {page !== 'home' ? (
-              <button onClick={() => contactRequired ? setNavNotice('先添加一位能联系到的人，填完马上进入首页。') : onNavigate('home')} className="min-h-[52px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-lg font-black text-cyan-900">返回首页</button>
-            ) : null}
-            <button onClick={() => onNavigate('help')} className="min-h-[52px] rounded-2xl bg-rose-50 px-5 text-lg font-black text-rose-800 ring-1 ring-rose-200">需要帮助</button>
-            <button onClick={() => onNavigate('profile')} className="min-h-[52px] rounded-2xl border border-cyan-200 bg-white px-5 text-lg font-black text-cyan-900">
-              <span className="inline-flex items-center gap-2"><SeniorIcon name="user" className="h-5 w-5" />我的</span>
+    <div className="sn senior-ui min-h-screen">
+      <a href="#senior-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-[#13282B] focus:px-5 focus:py-3 focus:text-white">跳到主要内容</a>
+
+      <header className="sticky top-0 z-30 border-b border-[var(--sn-line)] bg-[rgba(241,235,228,0.92)] backdrop-blur-md">
+        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-3 lg:px-8">
+          <button onClick={() => go('home')} className="flex items-center gap-3 text-[var(--sn-teal-deep)]" aria-label="回到今天">
+            <BrandMark className="h-11 w-9" />
+            <span className="text-left">
+              <span className="block text-[1.5rem] leading-none">NeuraSense</span>
+              <span className="mt-1 block text-base text-[var(--sn-ink-3)]">陪伴版 · {currentUserName ? `${currentUserName}，` : ''}{date}</span>
+            </span>
+          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={() => onNavigate('help')} className="sn-btn sn-btn-help">
+              <SeniorIcon name="phone" />需要帮助
             </button>
-            <button onClick={onSwitchToStandard} className="min-h-[52px] rounded-2xl bg-slate-950 px-5 text-lg font-black text-white">使用完整功能</button>
+            <button onClick={onSwitchToStandard} className="sn-btn sn-btn-outline">完整功能</button>
           </div>
-        </div>
-        <div className="mx-auto mt-4 grid max-w-7xl gap-2 md:grid-cols-3">
-          {[
-            { icon: 'check' as SeniorIconName, text: '一屏一件事，不让您自己找功能' },
-            { icon: 'volume' as SeniorIconName, text: '朗读可以暂停、重听或停止' },
-            { icon: 'shield' as SeniorIconName, text: '只给生活建议，需要时找真人帮助' },
-          ].map((item) => (
-            <div key={item.text} className="flex min-h-[44px] items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50/70 px-4 text-base font-bold text-cyan-950">
-              <SeniorIcon name={item.icon} className="h-5 w-5 shrink-0" />
-              <span>{item.text}</span>
-            </div>
-          ))}
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-5 py-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="lg:sticky lg:top-32 lg:self-start">
-          <nav className="grid gap-3 rounded-[2rem] border border-cyan-100 bg-white/92 p-3 shadow-[0_28px_80px_-64px_rgba(15,23,42,0.4)]" aria-label="陪伴版导航">
-            {navNotice ? (
-              <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-lg font-black leading-8 text-amber-950">
-                {navNotice}
-              </div>
-            ) : null}
+      <div className="mx-auto grid max-w-[1440px] gap-6 px-5 py-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8 lg:px-8">
+        <aside className="lg:sticky lg:top-28 lg:self-start">
+          <nav className="grid grid-cols-4 gap-1.5 sm:grid-cols-7 lg:grid-cols-1" aria-label="陪伴版导航">
             {navItems.map((item) => {
-              const active = item.page === page;
               const locked = contactRequired && item.page !== 'settings' && item.page !== 'help' && item.page !== 'profile';
               return (
                 <button
                   key={item.page}
-                  onClick={() => {
-                    if (locked) {
-                      setNavNotice('先完成联系人这一步，就能使用今天、聊聊、小测和放松。');
-                      return;
-                    }
-                    setNavNotice('');
-                    onNavigate(item.page);
-                  }}
-                  className={`rounded-3xl px-5 py-4 text-left transition focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200 ${active ? 'bg-cyan-800 text-white' : locked ? 'bg-slate-50 text-slate-400' : 'bg-white text-slate-800 hover:bg-cyan-50'}`}
+                  onClick={() => go(item.page)}
+                  aria-current={item.page === page ? 'page' : undefined}
+                  data-locked={locked ? 'true' : undefined}
+                  className="sn-nav-item max-lg:flex-col max-lg:justify-center max-lg:gap-1 max-lg:py-2 max-lg:text-base"
                 >
-                  <span className="flex items-center gap-3">
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${active ? 'bg-white/15 text-white' : 'bg-slate-50 text-cyan-800'}`}>
-                      <SeniorIcon name={item.icon} className="h-6 w-6" />
-                    </span>
-                      <span>
-                        <span className="block text-2xl font-black">{item.label}</span>
-                      <span className={`mt-1 block text-base ${active ? 'text-cyan-50' : locked ? 'text-slate-400' : 'text-slate-500'}`}>{locked ? '填完联系人后可用' : item.desc}</span>
-                    </span>
-                  </span>
+                  <SeniorIcon name={item.icon} />
+                  <span>{item.label}</span>
                 </button>
               );
             })}
           </nav>
-          <div className="mt-4 hidden lg:block"><SeniorPlaybackBar /></div>
+          {navNotice ? (
+            <p className="mt-3 rounded-2xl border border-[#E5CFA2] bg-[#F7EEDC] px-4 py-3 text-lg leading-8 text-[#5B4313]" role="status">{navNotice}</p>
+          ) : null}
+          <div className="mt-5 hidden lg:block"><SeniorPlaybackBar /></div>
         </aside>
-        <main id="senior-main" className="min-w-0" tabIndex={-1}>
+
+        <main id="senior-main" className="min-w-0 pb-10" tabIndex={-1}>
           <div className="mb-5 lg:hidden"><SeniorPlaybackBar /></div>
           {children}
-          <div className="mt-8 grid gap-3 rounded-[2rem] border border-cyan-100 bg-white/90 p-4 md:grid-cols-3">
-            <button onClick={() => contactRequired ? setNavNotice('先添加一位联系人，填完就能返回首页。') : onNavigate('home')} className="min-h-[60px] rounded-2xl border border-cyan-200 bg-cyan-50 px-4 text-lg font-black text-cyan-900">返回首页</button>
-            <button onClick={() => onNavigate('help')} className="min-h-[60px] rounded-2xl bg-rose-700 px-4 text-lg font-black text-white">紧急求助</button>
-            <button onClick={onSwitchToStandard} className="min-h-[60px] rounded-2xl border border-slate-200 bg-white px-4 text-lg font-black text-slate-700">
-              <span className="inline-flex items-center gap-2"><SeniorIcon name="logout" className="h-5 w-5" />退出陪伴版</span>
-            </button>
-          </div>
         </main>
       </div>
     </div>

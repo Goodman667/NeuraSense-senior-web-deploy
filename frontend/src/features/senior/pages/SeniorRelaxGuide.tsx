@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import { SeniorBreathingGuide } from '../components/SeniorBreathingGuide';
 import { SeniorIcon } from '../components/SeniorIcon';
-import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
 import { chooseSeniorExercise } from '../data/seniorExerciseLibrary';
 import type { SeniorPage, SeniorSummary } from '../types/senior';
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
+import { seniorAssets } from '../lib/seniorAssets';
 
 export function SeniorRelaxGuide({ userId, latestSummary, onNavigate }: { userId: string; latestSummary: SeniorSummary | null; onNavigate: (page: SeniorPage) => void }) {
   const [done, setDone] = useState(false);
@@ -25,74 +25,74 @@ export function SeniorRelaxGuide({ userId, latestSummary, onNavigate }: { userId
   };
   return (
     <div className="mx-auto max-w-6xl">
-      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => { stop(); onNavigate('home'); }} />
-      <SeniorPageHeader eyebrow="放松练习" title="今天先做这一个就够" desc="这不是固定工具清单，会优先按刚才的问答和今天的建议来安排。" />
-      <section className="relative overflow-hidden rounded-[2.6rem] border border-emerald-100 bg-white p-7 shadow-[0_30px_100px_-68px_rgba(15,23,42,0.42)] md:p-8">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-100/70 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-cyan-100/60 blur-3xl" />
-        <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-lg font-black text-emerald-800">
-              <SeniorIcon name="leaf" className="h-5 w-5" />
-              推荐练习
-            </p>
-            <h2 className="mt-4 text-5xl font-black leading-tight text-slate-950">{personalPlan.title}</h2>
-            <p className="mt-5 text-2xl leading-10 text-slate-600">{personalPlan.reason}</p>
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {personalPlan.contextCards.map(card => (
-                <div key={card.label} className="rounded-[1.5rem] border border-slate-100 bg-slate-50/90 p-4">
-                  <p className="text-base font-black text-slate-500">{card.label}</p>
-                  <p className="mt-2 text-xl font-black leading-8 text-slate-950">{card.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-[2rem] border border-emerald-100 bg-emerald-50 p-5 text-emerald-950">
-            <p className="flex items-center gap-2 text-xl font-black"><SeniorIcon name="shield" className="h-6 w-6" />练习提醒</p>
-            <p className="mt-3 text-lg leading-8">{personalPlan.caution}</p>
-            <div className="mt-5 rounded-2xl bg-white/70 p-4">
-              <p className="text-base font-black text-emerald-700">今天的小玩法</p>
-              <p className="mt-2 text-2xl font-black leading-9">{personalPlan.microQuest}</p>
-            </div>
-          </div>
-        </div>
+      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => { stop(); onNavigate('home'); }} endLabel="今天先到这里" />
 
-        <div className="mt-7">
-          {showBreathing ? (
-            <SeniorBreathingGuide onComplete={completeRelax} />
-          ) : (
-            <div className="grid gap-4 md:grid-cols-3">
-              {personalPlan.steps.map((step, index) => (
-                <div key={step} className="rounded-[1.8rem] border border-emerald-100 bg-emerald-50 p-5 text-emerald-950">
-                  <p className="text-lg font-black text-emerald-700">第 {index + 1} 步</p>
-                  <p className="mt-3 text-2xl font-black leading-10">{step}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-7 grid gap-3 sm:grid-cols-3">
-          <button onClick={() => speak(guide)} className="min-h-[72px] rounded-2xl bg-emerald-800 px-6 text-xl font-black text-white">
-            <span className="inline-flex items-center gap-2"><SeniorIcon name="volume" className="h-6 w-6" />{isPlaying ? '正在播放' : '播放语音引导'}</span>
-          </button>
-          <button onClick={stop} className="min-h-[72px] rounded-2xl border border-slate-300 bg-white px-6 text-xl font-black text-slate-800">停止</button>
-          <button onClick={completeRelax} className="min-h-[72px] rounded-2xl bg-slate-950 px-6 text-xl font-black text-white">{personalPlan.doneLabel}</button>
-        </div>
-        {done ? (
-          <div className="mt-6 rounded-3xl border border-cyan-100 bg-cyan-50 p-5 text-cyan-950">
-            <p className="flex items-center gap-2 text-2xl font-black"><SeniorIcon name="check" className="h-7 w-7" />做得很好</p>
-            <p className="mt-2 text-xl font-bold leading-9">{sessionDone ? personalPlan.completionText : '今天不需要做很多，慢慢来就好。'}</p>
-            {personalPlan.familyMessage ? (
-              <p className="mt-3 rounded-2xl bg-white/75 p-4 text-lg font-bold leading-8 text-cyan-900">如果想告诉家人，可以说：{personalPlan.familyMessage}</p>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button onClick={() => onNavigate('chat')} className="min-h-[58px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-lg font-black text-cyan-900">做完后还想说说话</button>
-          <button onClick={() => onNavigate('home')} className="min-h-[58px] rounded-2xl border border-slate-200 bg-white px-5 text-lg font-black text-slate-700">回到今天</button>
+      <section className="sn-rise relative h-[22rem] overflow-hidden rounded-[28px] border border-[var(--sn-line)] bg-[#E8E4DA] md:h-[27rem]">
+        <img src={seniorAssets.stoneValley} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <p className="absolute inset-x-0 top-8 z-[5] text-center text-[clamp(4.5rem,11vw,9.5rem)] leading-[0.9] tracking-[0.2em] text-[#010101]/80 md:top-10" aria-hidden="true">慢慢来</p>
+        <img src={seniorAssets.stoneCutout} alt="" className="absolute inset-0 z-10 h-full w-full object-cover" />
+        <div className="absolute bottom-5 left-5 z-20 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(251,248,243,0.88)] px-4 py-2 text-[1.05rem] text-[var(--sn-forest)] backdrop-blur"><SeniorIcon name="leaf" className="h-5 w-5" />今天推荐</span>
+          <span className="inline-flex items-center gap-2 rounded-full bg-[rgba(251,248,243,0.88)] px-4 py-2 text-[1.05rem] text-[var(--sn-forest)] backdrop-blur"><SeniorIcon name="clock" className="h-5 w-5" />{personalPlan.contextCards[1]?.value}</span>
         </div>
       </section>
+
+      <section className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="sn-sheet p-6 md:p-8">
+          <h1 className="sn-h1">{personalPlan.title}</h1>
+          <p className="sn-lede mt-3">{personalPlan.reason}</p>
+          <dl className="mt-6 grid gap-3 sm:grid-cols-3">
+            {personalPlan.contextCards.map(card => (
+              <div key={card.label} className="sn-sheet-flat p-4">
+                <dt className="sn-small">{card.label}</dt>
+                <dd className="mt-1 text-[1.25rem] leading-8 text-[var(--sn-ink)]">{card.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+        <aside className="rounded-[22px] bg-[var(--sn-forest)] p-6 text-[#F4EFE8]">
+          <p className="flex items-center gap-2 text-[1.25rem]"><SeniorIcon name="shield" className="h-6 w-6" />练习提醒</p>
+          <p className="mt-3 text-[1.1rem] leading-8 text-[#F4EFE8]/85">{personalPlan.caution}</p>
+          <hr className="my-5 border-0 border-t border-white/15" />
+          <p className="text-[1rem] text-[#F4EFE8]/70">今天的小玩法</p>
+          <p className="mt-2 text-[1.35rem] leading-9">{personalPlan.microQuest}</p>
+        </aside>
+      </section>
+
+      <div className="mt-6">
+        {showBreathing ? (
+          <SeniorBreathingGuide onComplete={completeRelax} />
+        ) : (
+          <ol className="grid gap-4 md:grid-cols-3">
+            {personalPlan.steps.map((step, index) => (
+              <li key={step} className="sn-sheet p-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--sn-line-strong)] text-[1.2rem] text-[var(--sn-teal-deep)]">{index + 1}</span>
+                <p className="mt-4 text-[1.4rem] leading-9">{step}</p>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button onClick={() => speak(guide)} className="sn-btn sn-btn-primary sn-btn-lg"><SeniorIcon name="volume" />{isPlaying ? '正在播放引导' : '播放语音引导'}</button>
+        <button onClick={stop} className="sn-btn sn-btn-quiet sn-btn-lg">停止</button>
+        <button onClick={completeRelax} className="sn-btn sn-btn-dark sn-btn-lg"><SeniorIcon name="check" />{personalPlan.doneLabel}</button>
+      </div>
+
+      {done ? (
+        <div className="sn-notice tone-success mt-6 flex-col">
+          <p className="flex items-center gap-2 text-[1.5rem]"><SeniorIcon name="check" className="h-7 w-7" />做得很好</p>
+          <p className="text-[1.2rem] leading-9">{sessionDone ? personalPlan.completionText : '今天不用做很多，慢慢来就好。'}</p>
+          {personalPlan.familyMessage ? (
+            <p className="rounded-[14px] bg-white/60 p-4 text-[1.1rem] leading-8">想告诉家人的话，可以这样说：{personalPlan.familyMessage}</p>
+          ) : null}
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => onNavigate('chat')} className="sn-btn sn-btn-quiet">做完还想说说话</button>
+            <button onClick={() => onNavigate('home')} className="sn-btn sn-btn-quiet">回到今天</button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

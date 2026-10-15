@@ -4,6 +4,7 @@ import type { SeniorInsightCard, SeniorRiskLevel, SeniorSummary } from '../types
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 import { SeniorIcon, type SeniorIconName } from './SeniorIcon';
+import { seniorAssets } from '../lib/seniorAssets';
 
 type ResultSlide = {
   id: string;
@@ -18,12 +19,14 @@ type ResultSlide = {
 
 const iconNames: SeniorIconName[] = ['home', 'chat', 'leaf', 'help', 'settings', 'spark', 'play', 'check', 'phone', 'heart', 'shield', 'volume', 'keyboard', 'mic', 'edit', 'pause', 'reset', 'warning', 'clock', 'user', 'arrow'];
 
-const toneClass: Record<ResultSlide['tone'], string> = {
-  mint: 'from-emerald-50 via-white to-teal-50 border-emerald-100 text-emerald-950',
-  cyan: 'from-cyan-50 via-white to-sky-50 border-cyan-100 text-cyan-950',
-  rose: 'from-rose-50 via-white to-orange-50 border-rose-100 text-rose-950',
-  slate: 'from-slate-50 via-white to-stone-50 border-slate-200 text-slate-950',
+const slideImage: Record<string, string> = {
+  overview: seniorAssets.stoneValley,
+  next: seniorAssets.cardMossStone,
+  why: seniorAssets.cardSilhouette,
+  safety: seniorAssets.cardLoneTree,
+  family: seniorAssets.stoneValleyBloom,
 };
+const fallbackImages = [seniorAssets.stoneValley, seniorAssets.cardMossStone, seniorAssets.cardSilhouette, seniorAssets.cardLoneTree, seniorAssets.stoneValleyBloom];
 
 function slideToneFromRisk(level?: SeniorRiskLevel | string): ResultSlide['tone'] {
   if (level === 'urgent' || level === 'medical_emergency' || level === 'elevated') return 'rose';
@@ -250,115 +253,91 @@ export function SeniorResultCard({ summary, onNext, onHelp }: { summary: SeniorS
     goTo(delta < 0 ? activeIndex + 1 : activeIndex - 1);
   };
 
+  const image = slideImage[activeSlide.id] || fallbackImages[activeIndex % fallbackImages.length];
+  const urgentTone = activeSlide.tone === 'rose';
+
   return (
-    <section className="relative overflow-hidden rounded-[2.4rem] border border-emerald-100 bg-white p-5 shadow-[0_28px_100px_-68px_rgba(15,23,42,0.45)] md:p-7">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-100/70 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-28 left-16 h-72 w-72 rounded-full bg-cyan-100/60 blur-3xl" />
-
-      <div className="relative mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-lg font-black text-emerald-800">
-            <SeniorIcon name="spark" className="h-5 w-5" />
-            今天的建议
-          </p>
-          <h2 className="mt-3 text-3xl font-black leading-tight text-slate-950 md:text-4xl">一张一张看，先照顾当下</h2>
-        </div>
-        <div className="rounded-2xl bg-slate-950 px-4 py-3 text-lg font-black text-white">
-          {activeIndex + 1} / {slides.length}
-        </div>
+    <section className="sn-sheet overflow-hidden p-3 md:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 pb-3 pt-1">
+        <p className="sn-kicker"><SeniorIcon name="spark" className="h-5 w-5" />今天的建议 · 一张一张看</p>
+        <p className="text-[1.1rem] tabular-nums text-[var(--sn-ink-3)]">{activeIndex + 1} / {slides.length}</p>
       </div>
 
-      <div className="relative">
-        <div
-          className="overflow-hidden"
-          onTouchStart={(event) => setTouchStart(event.touches[0]?.clientX ?? null)}
-          onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
-        >
-          <AnimatePresence custom={direction} mode="wait">
-            <motion.article
-              key={activeSlide.id}
-              custom={direction}
-              initial={{ x: direction > 0 ? 80 : -80, opacity: 0, scale: 0.98 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: direction > 0 ? -80 : 80, opacity: 0, scale: 0.98 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-              className={`min-h-[560px] rounded-[2.2rem] border bg-gradient-to-br p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] md:p-8 ${toneClass[activeSlide.tone]}`}
-            >
-              <div className="flex h-full flex-col">
-                <div className="flex items-start justify-between gap-4">
-                  <p className="inline-flex items-center gap-2 rounded-full bg-white/82 px-4 py-2 text-lg font-black">
-                    <SeniorIcon name={activeSlide.icon} className="h-5 w-5" />
-                    {activeSlide.eyebrow}
-                  </p>
-                  <button
-                    onClick={() => {
-                      stopAndClearAudio();
-                      speak(composeSlideSpeech(activeSlide), { voice: 'xiaoyi', emotion: needsHelp ? 'calm' : 'friendly' });
-                    }}
-                    className="inline-flex min-h-[48px] items-center gap-2 rounded-2xl bg-white/82 px-4 text-base font-black text-slate-800 ring-1 ring-black/5"
-                  >
-                    <SeniorIcon name="volume" className="h-5 w-5" />
-                    重听
-                  </button>
-                </div>
+      <div
+        onTouchStart={(event) => setTouchStart(event.touches[0]?.clientX ?? null)}
+        onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0]?.clientX ?? 0)}
+      >
+        <AnimatePresence custom={direction} mode="wait">
+          <motion.article
+            key={activeSlide.id}
+            custom={direction}
+            initial={{ x: direction > 0 ? 60 : -60, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: direction > 0 ? -60 : 60, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+            className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
+          >
+            <div className={`sn-photo-card min-h-[18rem] cursor-default xl:min-h-[30rem] ${urgentTone ? 'is-help' : ''}`}>
+              <img src={image} alt="" />
+              <span className="sn-pill"><SeniorIcon name={activeSlide.icon} className="h-5 w-5" />{activeSlide.eyebrow}</span>
+              <h3 className="text-[clamp(1.9rem,2.8vw,2.6rem)] leading-tight [text-wrap:balance]">{activeSlide.title}</h3>
+            </div>
 
-                <h3 className="mt-8 text-4xl font-black leading-tight md:text-5xl">{activeSlide.title}</h3>
-                <p className="mt-5 text-2xl leading-10 opacity-85">{activeSlide.body}</p>
-
-                {activeSlide.bullets?.length ? (
-                  <div className="mt-8 grid gap-3">
-                    {activeSlide.bullets.map((bullet) => (
-                      <div key={bullet} className="flex gap-3 rounded-3xl bg-white/78 p-4 text-xl font-bold leading-8 shadow-sm ring-1 ring-black/5">
-                        <SeniorIcon name="check" className="mt-1 h-6 w-6 shrink-0" />
-                        <span>{bullet}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className="mt-auto pt-8">
-                  <p className="text-lg font-bold opacity-70">可以左右滑动，也可以点下面按钮。</p>
-                </div>
+            <div className="flex flex-col rounded-[20px] bg-[#F4F1EC] p-6 md:p-8">
+              <p className="text-[1.4rem] leading-[1.85] text-[var(--sn-ink)]">{activeSlide.body}</p>
+              {activeSlide.bullets?.length ? (
+                <ul className="mt-6 space-y-3">
+                  {activeSlide.bullets.map((bullet) => (
+                    <li key={bullet} className="flex gap-3 text-[1.2rem] leading-8 text-[var(--sn-ink-2)]">
+                      <SeniorIcon name="check" className={`mt-1 h-6 w-6 shrink-0 ${urgentTone ? 'text-[var(--sn-help)]' : 'text-[var(--sn-olive)]'}`} />
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-auto flex flex-wrap items-center gap-3 pt-8">
+                <button
+                  onClick={() => {
+                    stopAndClearAudio();
+                    speak(composeSlideSpeech(activeSlide), { voice: 'xiaoyi', emotion: needsHelp ? 'calm' : 'friendly' });
+                  }}
+                  className="sn-btn sn-btn-quiet"
+                >
+                  <SeniorIcon name="volume" />重听这一张
+                </button>
+                <span className="sn-small">也可以左右滑动</span>
               </div>
-            </motion.article>
-          </AnimatePresence>
-        </div>
-
-        <div className="mt-5 flex items-center justify-center gap-2">
-          {slides.map((slide, index) => (
-            <button
-              key={slide.id}
-              onClick={() => goTo(index)}
-              aria-label={`查看第 ${index + 1} 张卡片`}
-              className={`h-3 rounded-full transition-all ${index === activeIndex ? 'w-10 bg-cyan-900' : 'w-3 bg-slate-300'}`}
-            />
-          ))}
-        </div>
+            </div>
+          </motion.article>
+        </AnimatePresence>
       </div>
 
-      <div className="relative mt-6 grid gap-3 md:grid-cols-[1fr_1.3fr_1fr]">
-        <button
-          onClick={() => goTo(activeIndex - 1)}
-          disabled={isFirst}
-          className={`min-h-[66px] rounded-2xl border px-5 text-xl font-black transition ${
-            isFirst ? 'border-slate-100 bg-slate-50 text-slate-300' : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
-          }`}
-        >
-          上一张
+      <div className="mt-4 flex items-center justify-center gap-2" role="tablist" aria-label="建议卡片">
+        {slides.map((slide, index) => (
+          <button
+            key={slide.id}
+            onClick={() => goTo(index)}
+            role="tab"
+            aria-selected={index === activeIndex}
+            aria-label={`第 ${index + 1} 张：${slide.eyebrow}`}
+            className="flex min-h-[48px] items-center justify-center px-1"
+          >
+            {/* 48px tall hit area, small visual dot */}
+            <span className={`block h-2.5 rounded-full transition-all ${index === activeIndex ? 'w-10 bg-[var(--sn-teal)]' : 'w-2.5 bg-[var(--sn-line-strong)]'}`} />
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1.4fr_1fr]">
+        <button onClick={() => goTo(activeIndex - 1)} disabled={isFirst} className="sn-btn sn-btn-quiet">
+          <SeniorIcon name="arrow" className="rotate-180" />上一张
         </button>
-        <button
-          onClick={isLast ? handlePrimary : () => goTo(activeIndex + 1)}
-          className="min-h-[66px] rounded-2xl bg-cyan-900 px-5 text-xl font-black text-white shadow-lg shadow-cyan-900/15 transition hover:bg-cyan-950"
-        >
+        <button onClick={isLast ? handlePrimary : () => goTo(activeIndex + 1)} className="sn-btn sn-btn-primary sn-btn-lg">
           {isLast ? (activeSlide.id === 'family' ? (copied ? '已复制' : '复制给家人') : summary.next_action.label) : '下一张'}
+          {!isLast ? <SeniorIcon name="arrow" /> : null}
         </button>
-        <button
-          onClick={handleNavigate}
-          className={`min-h-[66px] rounded-2xl border px-5 text-xl font-black transition ${
-            needsHelp ? 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100' : 'border-emerald-200 bg-emerald-50 text-emerald-900 hover:bg-emerald-100'
-          }`}
-        >
-          {needsHelp ? '找帮助' : summary.next_action.label}
+        <button onClick={handleNavigate} className={needsHelp ? 'sn-btn sn-btn-help' : 'sn-btn sn-btn-outline'}>
+          {needsHelp ? '找人帮忙' : summary.next_action.label}
         </button>
       </div>
     </section>

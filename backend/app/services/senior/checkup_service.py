@@ -31,6 +31,13 @@ YES_NO_OPTIONS = [
     {"value": "unsure", "label": "不确定"},
 ]
 
+# Same values as YES_NO_OPTIONS, worded for "有没有……？" questions.
+HAVE_OPTIONS = [
+    {"value": "yes", "label": "有"},
+    {"value": "no", "label": "没有"},
+    {"value": "unsure", "label": "不确定"},
+]
+
 FREQUENCY_OPTIONS = [
     {"value": "not_at_all", "label": "没有"},
     {"value": "several_days", "label": "有几天"},
@@ -79,12 +86,12 @@ QUESTION_BANK: list[dict[str, Any]] = [
     # Sleep / ISI inspired items.
     {"id": "isi_falling_asleep", "scale": "sleep_short", "dimension": "sleep", "response_type": "severity", "text": "最近入睡困难明显吗？", "helper": "比如躺下很久睡不着。"},
     {"id": "isi_staying_asleep", "scale": "sleep_short", "dimension": "sleep", "response_type": "severity", "text": "夜里醒来或者早醒，会不会影响您白天精神？", "helper": "如果醒了还能睡回去，可以选轻一点。"},
-    {"id": "isi_satisfaction", "scale": "sleep_short", "dimension": "sleep", "response_type": "severity", "text": "您对最近的睡眠满意吗？", "helper": "满意选没有或有一点，不满意选明显或严重。", "reverse": True},
+    {"id": "isi_satisfaction", "scale": "sleep_short", "dimension": "sleep", "response_type": "severity", "text": "您对最近的睡眠，有没有不满意？", "helper": "睡得满意就选“没有”；越不满意，选得越靠后。"},
     {"id": "sleep_daytime", "scale": "sleep_short", "dimension": "sleep", "response_type": "severity", "text": "白天没精神、打盹或发困明显吗？", "helper": "这能帮助判断今天适合休息还是练习。"},
     # Safety/body observation.
     {"id": "body_pain", "scale": "body_safety", "dimension": "body", "response_type": "severity", "text": "今天身体有没有明显不舒服？", "helper": "比如头痛、胸口不适、胃不舒服、眼睛痛。"},
-    {"id": "safety_hopeless", "scale": "safety", "dimension": "safety", "response_type": "yes_no", "text": "最近有没有一刻觉得实在撑不下去？", "helper": "如果有，请如实选是，我会优先帮您找人。", "concern": {"yes": 2, "unsure": 0.5}},
-    {"id": "safety_self_harm", "scale": "safety", "dimension": "safety", "response_type": "yes_no", "text": "有没有出现过想伤害自己、或不想活的念头？", "helper": "这题很重要，选是不会责怪您，只会优先保护您。", "concern": {"yes": 4, "unsure": 1}},
+    {"id": "safety_hopeless", "scale": "safety", "dimension": "safety", "response_type": "yes_no", "text": "最近有没有一刻觉得实在撑不下去？", "helper": "如果有，请如实选“有”，我会优先帮您找人。", "concern": {"yes": 2, "unsure": 0.5}, "options": HAVE_OPTIONS},
+    {"id": "safety_self_harm", "scale": "safety", "dimension": "safety", "response_type": "yes_no", "text": "有没有出现过想伤害自己、或不想活的念头？", "helper": "这题很重要，选“有”不会责怪您，只会优先保护您。", "concern": {"yes": 4, "unsure": 1}, "options": HAVE_OPTIONS},
 ]
 
 
@@ -227,6 +234,21 @@ def _joined_answers(answers: list[SeniorCheckupAnswer]) -> str:
     return "；".join(f"{item.question_text}：{item.answer_label}" for item in answers)
 
 
+def _safety_text(answers: list[SeniorCheckupAnswer]) -> str:
+    """Text used for keyword-based safety detection.
+
+    Question wording such as "有没有出现过想伤害自己、或不想活的念头？" contains the very keywords the
+    detector looks for, so the question text is only included when the answer itself signals concern.
+    Otherwise answering "不是/没有" to a safety question would be flagged as urgent.
+    """
+    parts: list[str] = []
+    for item in answers:
+        question = next((q for q in QUESTION_BANK if q["id"] == item.question_id), None)
+        concerning = question is not None and _answer_score(question, item.answer_value) >= 1
+        parts.append(f"{item.question_text}：{item.answer_label}" if concerning else item.answer_label)
+    return "；".join(parts)
+
+
 def _level_from_snapshot(snapshot: SeniorCheckupScaleSnapshot, answer_text: str) -> str:
     safety = detect_senior_safety(answer_text)
     if safety.level in {"urgent", "medical_emergency", "elevated"}:
@@ -273,9 +295,10 @@ def _fallback_summary(
     session_id: str | None = None,
 ) -> SeniorSummaryResponse:
     answer_text = _joined_answers(answers)
-    safety_detection = detect_senior_safety(answer_text)
-    risk_level = _level_from_snapshot(snapshot, answer_text)
-    dimensions = _dimension_text(snapshot, answer_text)
+    safety_text = _safety_text(answers)
+    safety_detection = detect_senior_safety(safety_text)
+    risk_level = _level_from_snapshot(snapshot, safety_text)
+    dimensions = _dimension_text(snapshot, safety_text)
 
     if risk_level in {"urgent", "medical_emergency"}:
         title = "现在先保证安全"

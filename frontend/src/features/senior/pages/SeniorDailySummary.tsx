@@ -51,18 +51,17 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
 
   if (loading && !summary) {
     return (
-      <div className="mx-auto max-w-4xl space-y-4">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
+      <div className="mx-auto max-w-5xl space-y-4">
+        <SeniorSafetyActions onNavigate={onNavigate} />
         <SeniorLoadingCard title="正在读取今天的建议" lines={4} />
-        <button onClick={() => onNavigate('home')} className="min-h-[56px] rounded-2xl border border-slate-200 bg-white px-5 text-lg font-black text-slate-700">先回到今天</button>
       </div>
     );
   }
 
   if (!summary) {
     return (
-      <div className="mx-auto max-w-4xl space-y-4">
-        <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
+      <div className="mx-auto max-w-5xl space-y-4">
+        <SeniorSafetyActions onNavigate={onNavigate} />
         {!isOnline ? (
           <SeniorStatusNotice
             tone="warning"
@@ -79,20 +78,17 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
             onAction={loadSummary}
           />
         ) : null}
-        <div className="rounded-[2.4rem] border border-cyan-100 bg-white p-8 shadow-[0_28px_90px_-68px_rgba(15,23,42,0.42)]">
-          <SeniorPageHeader eyebrow="今日状态" title="还没有今天的建议" desc="先完成一次简短问候，我会帮您整理今天适合做什么。" />
-          <div className="rounded-[2rem] bg-cyan-50 p-6 text-cyan-950">
-            <p className="flex items-center gap-2 text-xl font-black"><SeniorIcon name="chat" className="h-6 w-6" />您只需要回答几个简单问题</p>
-            <p className="mt-2 text-xl leading-9">比如昨晚睡得怎么样、今天心情如何、有没有挂念的事。可以说话，也可以打字。</p>
-          </div>
-          <button onClick={() => onNavigate('companion')} className="mt-6 min-h-[72px] rounded-2xl bg-cyan-900 px-8 text-2xl font-black text-white">开始今天的问候</button>
-        </div>
+        <section className="sn-sheet p-8">
+          <SeniorPageHeader eyebrow="今天的建议" title="还没有今天的建议" desc="先完成一次简短的问候，我帮您整理今天适合做什么。" />
+          <p className="sn-notice tone-info text-[1.15rem] leading-8">只要回答几个简单问题，比如昨晚睡得怎么样、今天心情如何、有没有挂念的事。说话打字都可以。</p>
+          <button onClick={() => onNavigate('companion')} className="sn-btn sn-btn-primary sn-btn-lg mt-6">开始今天的问候<SeniorIcon name="arrow" /></button>
+        </section>
       </div>
     );
   }
   return (
     <div className="mx-auto max-w-5xl">
-      <SeniorSafetyActions onNavigate={onNavigate} onEnd={() => onNavigate('home')} />
+      <SeniorSafetyActions onNavigate={onNavigate} />
       <div className="mb-4 space-y-3">
         {!isOnline ? (
           <SeniorStatusNotice
@@ -105,15 +101,10 @@ export function SeniorDailySummary({ userId, latestSummary, onNavigate }: { user
           <SeniorStatusNotice tone="danger" title="刷新建议失败" desc={error} actionLabel="再试一次" onAction={loadSummary} />
         ) : null}
       </div>
-      <div className="mb-5 flex flex-wrap justify-end gap-3">
-        <button onClick={() => speak(summary.tts_text || summary.plain_summary)} className="min-h-[56px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-lg font-black text-cyan-900">
-          <span className="inline-flex items-center gap-2"><SeniorIcon name="volume" className="h-5 w-5" />朗读建议</span>
-        </button>
-        <button onClick={loadSummary} disabled={loading} className="min-h-[56px] rounded-2xl border border-slate-200 bg-white px-5 text-lg font-black text-slate-700 disabled:opacity-60">
-          {loading ? '正在刷新' : '刷新建议'}
-        </button>
-        <button onClick={() => onNavigate('companion')} className="min-h-[56px] rounded-2xl border border-cyan-200 bg-cyan-50 px-5 text-lg font-black text-cyan-900">重新问答</button>
-        <button onClick={() => onNavigate('home')} className="min-h-[56px] rounded-2xl border border-slate-200 bg-white px-5 text-lg font-black text-slate-700">回到今天</button>
+      <div className="mb-5 flex flex-wrap gap-3">
+        <button onClick={() => speak(summary.tts_text || summary.plain_summary)} className="sn-btn sn-btn-outline"><SeniorIcon name="volume" />朗读建议</button>
+        <button onClick={loadSummary} disabled={loading} className="sn-btn sn-btn-quiet"><SeniorIcon name="reset" />{loading ? '正在刷新' : '刷新'}</button>
+        <button onClick={() => onNavigate('companion')} className="sn-btn sn-btn-quiet">重新问答</button>
       </div>
       <SeniorResultCard summary={summary} onNext={() => onNavigate(resolveSummaryNextPage(summary))} onHelp={() => onNavigate('help')} />
     </div>

@@ -1,3 +1,4 @@
+import { standardAssets } from '../lib/standardAssets';
 import { useEffect, type ReactNode } from 'react';
 import type { UserInfo } from '../components';
 import { useProfileStore } from '../store/useProfileStore';
@@ -113,27 +114,38 @@ function SectionHeader({
 }) {
     return (
         <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-700">{eyebrow}</p>
-            <h3 className="mt-2 font-display text-[1.45rem] leading-none text-slate-950">{title}</h3>
+            <p className="text-xs text-gray-500">{eyebrow}</p>
+            <h3 className="font-display-cn mt-1 text-[1.6rem] leading-tight text-black">{title}</h3>
             {description ? <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p> : null}
         </div>
     );
 }
 
-function StatCard({
-    label,
-    value,
-    hint,
-}: {
-    label: string;
-    value: string | number;
-    hint: string;
-}) {
+// Veloce cards: soft looping video tiles with a big number; the middle tile is shorter on desktop.
+function VeloceStats({ items }: { items: Array<{ value: string; unit: string; desc: string }> }) {
     return (
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white/92 p-5 shadow-[0_22px_70px_-48px_rgba(15,23,42,0.28)]">
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">{label}</p>
-            <div className="mt-3 text-[2rem] font-semibold leading-none text-slate-950">{value}</div>
-            <p className="mt-3 text-xs leading-5 text-slate-500">{hint}</p>
+        <div className="flex flex-col items-stretch gap-5 lg:flex-row lg:items-end">
+            {items.map((item, index) => {
+                const media = standardAssets.softVideos[index % standardAssets.softVideos.length];
+                return (
+                    <div
+                        key={item.desc}
+                        className={`nexar-fade-up relative flex flex-1 flex-col justify-end overflow-hidden rounded-[32px] bg-white p-8 lg:rounded-[40px] lg:p-10 ${index === 1 ? 'min-h-[260px] lg:min-h-[300px]' : 'min-h-[300px] lg:min-h-[380px]'}`}
+                        style={{ animationDelay: `${0.1 + index * 0.15}s` }}
+                    >
+                        <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover motion-reduce:hidden">
+                            <source src={media.src} type="video/mp4" />
+                        </video>
+                        <div className="absolute inset-0" style={{ background: media.overlay }} />
+                        <div className="relative z-10 flex max-w-[388px] flex-col gap-4">
+                            <div className="text-5xl font-medium leading-none tracking-[-0.03em] text-[#00041F] tabular-nums md:text-[60px]">
+                                {item.value}<span className="ml-1 text-2xl">{item.unit}</span>
+                            </div>
+                            <p className="text-lg text-[#49484F] opacity-80 md:text-[20px]">{item.desc}</p>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -154,9 +166,9 @@ function ActionCard({
     return (
         <button
             onClick={onClick}
-            className="group flex w-full items-start gap-4 rounded-[1.55rem] border border-slate-200 bg-white/92 p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_-50px_rgba(15,23,42,0.3)] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100"
+            className="group flex w-full items-start gap-4 rounded-[20px] border border-black/10 bg-white p-5 text-left transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_-50px_rgba(15,23,42,0.3)] focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-100"
         >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white">
                 {icon}
             </div>
             <div className="min-w-0 flex-1">
@@ -191,12 +203,12 @@ function ModeButton({
             onClick={onClick}
             className={`flex w-full flex-col rounded-[1.35rem] border px-4 py-4 text-left transition duration-200 ${
                 active
-                    ? 'border-cyan-200 bg-cyan-50 text-slate-950 shadow-[0_18px_50px_-36px_rgba(8,145,178,0.35)]'
+                    ? 'border-black bg-black text-white'
                     : 'border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300'
             }`}
         >
             <span className="text-sm font-semibold">{title}</span>
-            <span className={`mt-2 text-xs leading-5 ${active ? 'text-slate-600' : 'text-slate-500'}`}>{desc}</span>
+            <span className={`mt-2 text-xs leading-5 ${active ? 'text-white/70' : 'text-gray-500'}`}>{desc}</span>
         </button>
     );
 }
@@ -316,22 +328,22 @@ export default function MePage({
     return (
         <div className="mx-auto w-full max-w-[1520px] px-1 pb-8 pt-1 sm:px-0 lg:pb-10">
             <div className="space-y-6">
-                <section className="overflow-hidden rounded-[2rem] border border-white/80 bg-[linear-gradient(140deg,rgba(15,23,42,0.96),rgba(15,23,42,0.9)),radial-gradient(circle_at_top_left,rgba(34,211,238,0.22),transparent_40%)] p-7 text-white shadow-[0_36px_120px_-56px_rgba(15,23,42,0.9)] lg:p-8">
+                <section className="overflow-hidden rounded-[20px] bg-white p-7 text-black shadow-sm sm:rounded-[28px] lg:p-8">
                     <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_380px] xl:items-start">
                         <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300">个人中心</p>
+                            <p className="text-xs text-gray-500">个人中心</p>
                             <div className="mt-6 flex items-center gap-4">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-[1.6rem] bg-white/10 text-2xl font-semibold shadow-lg shadow-cyan-900/15">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-orange-500 text-2xl text-white">
                                     {(currentUser.nickname || currentUser.username || '?')[0].toUpperCase()}
                                 </div>
                                 <div>
-                                    <h2 className="font-display text-[2.2rem] leading-none text-white">
+                                    <h2 className="font-display-cn text-[2.6rem] leading-none text-black">
                                         {currentUser.nickname || currentUser.username}
                                     </h2>
-                                    <p className="mt-2 text-sm text-slate-300">@{currentUser.username}</p>
+                                    <p className="mt-2 text-sm text-gray-500">@{currentUser.username}</p>
                                 </div>
                             </div>
-                            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300">
+                            <p className="mt-6 max-w-3xl text-base leading-8 text-gray-600">
                                 {tx(
                                     '这里可以查看账号信息、成长记录和使用偏好。',
                                     'This is where you can review account details, progress, mode switching, and preferences.'
@@ -343,14 +355,14 @@ export default function MePage({
                                     profile?.tts_enabled ? tx('语音播报开启', 'TTS enabled') : tx('语音播报关闭', 'TTS off'),
                                     profile?.high_contrast ? tx('高对比度', 'High contrast') : tx('标准对比度', 'Standard contrast'),
                                 ].map((chip) => (
-                                    <span key={chip} className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200">
+                                    <span key={chip} className="rounded-full bg-gray-100 px-3 py-2 text-xs font-medium text-gray-800">
                                         {chip}
                                     </span>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="rounded-[1.85rem] border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
+                        <div className="rounded-[24px] bg-[#DBECFC] p-5">
                             <SectionHeader
                                 eyebrow={tx('模式与偏好', 'Mode & Preferences')}
                                 title={tx('界面模式', 'Interface mode')}
@@ -373,23 +385,23 @@ export default function MePage({
                             <div className="mt-5 grid gap-3 sm:grid-cols-2">
                                 <button
                                     onClick={onToggleDarkMode}
-                                    className="flex min-h-[52px] items-center justify-between rounded-[1.35rem] border border-white/10 bg-slate-950/35 px-4 py-3 text-left text-sm text-white transition hover:bg-slate-950/50"
+                                    className="flex min-h-[52px] items-center justify-between rounded-full bg-white px-4 py-3 text-left text-sm text-gray-900 transition hover:bg-gray-50"
                                 >
                                     <span className="flex items-center gap-3">
                                         <MoonSunIcon className="h-5 w-5" dark={isDarkMode} />
                                         {isDarkMode ? tx('当前深色模式', 'Dark mode active') : tx('当前浅色模式', 'Light mode active')}
                                     </span>
-                                    <ArrowIcon className="h-4 w-4 text-slate-400" />
+                                    <ArrowIcon className="h-4 w-4 text-gray-400" />
                                 </button>
                                 <button
                                     onClick={() => onNavigate('messages')}
-                                    className="flex min-h-[52px] items-center justify-between rounded-[1.35rem] border border-white/10 bg-slate-950/35 px-4 py-3 text-left text-sm text-white transition hover:bg-slate-950/50"
+                                    className="flex min-h-[52px] items-center justify-between rounded-full bg-white px-4 py-3 text-left text-sm text-gray-900 transition hover:bg-gray-50"
                                 >
                                     <span className="flex items-center gap-3">
                                         <BellIcon className="h-5 w-5" />
                                         {tx('消息中心', 'Messages')}
                                     </span>
-                                    <span className="rounded-full bg-cyan-400/15 px-2.5 py-1 text-[11px] font-semibold text-cyan-200">
+                                    <span className="rounded-full bg-black px-2.5 py-1 text-[11px] font-semibold text-white">
                                         {unreadCount > 0 ? unreadCount : tx('已读', 'Clear')}
                                     </span>
                                 </button>
@@ -398,28 +410,13 @@ export default function MePage({
                     </div>
                 </section>
 
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <StatCard
-                        label={tx('连续打卡', 'Streak')}
-                        value={streak}
-                        hint={tx('保持每日记录，趋势更有解释力。', 'Daily logging makes trends more meaningful.')}
-                    />
-                    <StatCard
-                        label={tx('总积分', 'Points')}
-                        value={todayPoints}
-                        hint={tx('成就系统仍然保留，并可继续叠加。', 'Your achievement system remains fully intact.')}
-                    />
-                    <StatCard
-                        label={tx('本周练习', 'This week')}
-                        value={toolCompletions7d}
-                        hint={tx('统计近 7 天已完成的工具练习。', 'Counts completed tool practices in the last 7 days.')}
-                    />
-                    <StatCard
-                        label={tx('累计签到', 'Check-ins')}
-                        value={checkinTotal}
-                        hint={tx('作为状态数据和推荐刷新基础。', 'Used as the basis for status history and recommendations.')}
-                    />
-                </div>
+                <VeloceStats
+                    items={[
+                        { value: `${streak}`, unit: tx('天', 'd'), desc: tx('连续打卡。保持每天记录，变化趋势才看得清。', 'Day streak. Daily logging makes trends readable.') },
+                        { value: `${toolCompletions7d}`, unit: tx('次', ''), desc: tx('近 7 天完成的练习。', 'Practices completed in the last 7 days.') },
+                        { value: `${checkinTotal}`, unit: tx('次', ''), desc: tx(`累计状态签到 · 测评 ${assessmentsCount} 次 · 积分 ${todayPoints}`, `Check-ins · ${assessmentsCount} assessments · ${todayPoints} pts`) },
+                    ]}
+                />
 
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
                     <section className="desktop-section">

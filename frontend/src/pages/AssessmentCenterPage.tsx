@@ -20,6 +20,7 @@ import { SDSScale } from '../components/Assessment/SDSScale';
 import { SASScale } from '../components/Assessment/SASScale';
 import { PSSScale } from '../components/Assessment/PSSScale';
 import { PDFDownloadButton } from '../components/Assessment/PDFDownloadButton';
+import { standardAssets } from '../lib/standardAssets';
 
 /* ============================================================
    Types
@@ -140,96 +141,85 @@ function CatalogView({
     return (
         <div className="space-y-5">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button onClick={onClose} className="w-10 h-10 rounded-xl bg-white/80 border border-warm-200/50 flex items-center justify-center text-warm-500 hover:text-warm-700 transition-all active:scale-95">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M15 18l-6-6 6-6" /></svg>
+            <section className="rounded-[20px] bg-white px-5 py-5 shadow-sm sm:rounded-[28px] sm:px-8 sm:py-7">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-black/15 text-gray-700 transition hover:border-black/40" aria-label="返回">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M15 18l-6-6 6-6" /></svg>
+                        </button>
+                        <div>
+                            <h2 className="font-display-cn text-[28px] leading-none text-black md:text-[34px]">测评中心</h2>
+                            <p className="mt-2 text-sm text-black/55">标准量表自评，结果仅供自我了解，不作诊断。</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onShowHistory}
+                        className="flex items-center gap-2 whitespace-nowrap rounded-full bg-black px-4 py-2 text-sm text-white transition hover:bg-gray-800"
+                    >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        测评记录
                     </button>
-                    <div>
-                        <h2 className="text-xl font-bold text-warm-800">测评中心</h2>
-                        <p className="text-warm-500 text-xs mt-0.5">专业心理健康评估工具</p>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                    <div className="relative min-w-[14rem] flex-1">
+                        <svg className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="搜索量表，例如 PHQ-9、睡眠"
+                            className="w-full rounded-full bg-gray-100 py-2.5 pl-11 pr-4 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-black/10"
+                        />
+                    </div>
+                    <div className="flex flex-wrap gap-2" role="group" aria-label="量表分类">
+                        {CATEGORIES.map((cat) => (
+                            <button
+                                key={cat.key || 'all'}
+                                onClick={() => setActiveCategory(cat.key)}
+                                aria-pressed={activeCategory === cat.key}
+                                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm transition ${
+                                    activeCategory === cat.key ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'
+                                }`}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
-                <button
-                    onClick={onShowHistory}
-                    className="w-10 h-10 rounded-xl bg-white/80 border border-warm-200/50 flex items-center justify-center text-warm-500 hover:text-warm-700 transition-all active:scale-95"
-                >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </button>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-warm-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="搜索量表..."
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/80 border border-warm-100/60 text-sm text-warm-700 placeholder:text-warm-300 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent"
-                />
-            </div>
-
-            {/* Category Chips */}
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                {CATEGORIES.map((cat) => (
-                    <button
-                        key={cat.key || 'all'}
-                        onClick={() => setActiveCategory(cat.key)}
-                        className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                            activeCategory === cat.key
-                                ? 'bg-primary-500 text-white shadow-sm'
-                                : 'bg-white/80 text-warm-600 border border-warm-100/60 hover:bg-warm-50'
-                        }`}
-                    >
-                        {cat.label}
-                    </button>
-                ))}
-            </div>
+            </section>
 
             {/* Assessment Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filtered.map((item) => {
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {filtered.map((item, index) => {
                     const hasComponent = !!SCALE_MAP[item.key];
+                    const cover = standardAssets.paintings[index % standardAssets.paintings.length];
                     return (
                         <motion.button
                             key={item.key}
-                            whileTap={{ scale: 0.97 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => hasComponent && onSelect(item)}
-                            className={`text-left bg-white/80 backdrop-blur rounded-2xl border border-warm-100/60 shadow-sm hover:shadow-md transition-all overflow-hidden ${
-                                !hasComponent ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+                            disabled={!hasComponent}
+                            className={`group overflow-hidden rounded-[20px] bg-white text-left shadow-sm transition hover:shadow-md sm:rounded-[24px] ${
+                                !hasComponent ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
                             }`}
                         >
-                            {/* Gradient Cover */}
-                            <div className={`h-24 bg-gradient-to-r ${item.gradient} flex items-center justify-center relative`}>
-                                <span className="text-4xl">{item.icon}</span>
-                                {!hasComponent && (
-                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                        <span className="text-white text-sm font-medium bg-black/40 px-3 py-1 rounded-full">即将上线</span>
-                                    </div>
-                                )}
+                            <div className="relative h-36 overflow-hidden">
+                                <span className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style={{ backgroundImage: `url(${cover})` }} />
+                                <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                                <span className="absolute bottom-4 left-5 font-display-cn text-[26px] leading-none text-white">{item.title}</span>
+                                <span className="absolute right-4 top-4 rounded-full bg-white/85 px-2.5 py-1 text-xs text-gray-800">{hasComponent ? '免费' : '即将上线'}</span>
                             </div>
-
-                            {/* Card Body */}
-                            <div className="p-4">
-                                <div className="flex items-center justify-between mb-1">
-                                    <h4 className="font-bold text-warm-800">{item.title}</h4>
-                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">免费</span>
-                                </div>
-                                <p className="text-xs text-warm-500 mb-3 line-clamp-1">{item.subtitle}</p>
-                                <div className="flex items-center gap-3 text-xs text-warm-400">
-                                    <span className="flex items-center gap-1">
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        {item.estimated_minutes} 分钟
-                                    </span>
-                                    <span className="w-1 h-1 rounded-full bg-warm-300" />
-                                    <span>{item.question_count} 题</span>
-                                    <span className="w-1 h-1 rounded-full bg-warm-300" />
-                                    <span>{item.score_range} 分</span>
+                            <div className="p-5">
+                                <p className="line-clamp-1 text-[15px] text-gray-900">{item.subtitle}</p>
+                                <div className="mt-4 grid grid-cols-3 border-t border-black/10 pt-4 text-xs text-gray-500">
+                                    <span><span className="block text-gray-400">用时</span><span className="mt-1 block text-sm text-gray-900">{item.estimated_minutes} 分钟</span></span>
+                                    <span><span className="block text-gray-400">题目</span><span className="mt-1 block text-sm text-gray-900">{item.question_count} 题</span></span>
+                                    <span><span className="block text-gray-400">分值</span><span className="mt-1 block text-sm text-gray-900">{item.score_range}</span></span>
                                 </div>
                             </div>
                         </motion.button>
@@ -238,7 +228,7 @@ function CatalogView({
             </div>
 
             {filtered.length === 0 && (
-                <div className="text-center py-12 text-warm-400">
+                <div className="rounded-[20px] bg-white py-12 text-center text-gray-400 shadow-sm">
                     <p>暂无匹配的测评</p>
                 </div>
             )}

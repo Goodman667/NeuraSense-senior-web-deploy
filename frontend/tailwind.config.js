@@ -91,8 +91,9 @@ export default {
             },
             fontFamily: {
                 geist: ['Geist', 'PingFang SC', 'Microsoft YaHei', 'system-ui', 'sans-serif'],
-                sans: ['Raleway', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI Variable', 'system-ui', '-apple-system', 'sans-serif'],
-                display: ['Lora', 'Georgia', 'Times New Roman', 'serif'],
+                sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI Variable', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', 'sans-serif'],
+                display: ['LXGW WenKai Screen', 'KaiTi', 'Georgia', 'serif'],
+                kai: ['LXGW WenKai Screen', 'KaiTi', 'STKaiti', 'serif'],
             },
             animation: {
                 'fadeIn': 'fadeIn 0.2s ease-out',

@@ -14,6 +14,7 @@ import { useCheckinStore, type CheckinData } from '../store/useCheckinStore';
 import { API_BASE } from '../config/api';
 import { DAILY_PROGRESS_EVENT, isDailyTaskCompleted, readToolCompletionCount } from '../lib/dailyProgress';
 import type { ToolItem } from './ToolboxPage';
+import { standardAssets } from '../lib/standardAssets';
 
 const IconMood = ({ className = 'w-5 h-5' }: { className?: string }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
@@ -167,13 +168,13 @@ function PanelTitle({
 }) {
     return (
         <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white shadow-[0_20px_40px_-24px_rgba(15,23,42,0.7)]">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white">
                 {icon}
             </div>
             <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-cyan-700">{eyebrow}</p>
-                <h3 className="mt-2 font-display text-[1.55rem] leading-none text-slate-950">{title}</h3>
-                {description ? <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p> : null}
+                <p className="text-xs text-gray-500">{eyebrow}</p>
+                <h3 className="font-display-cn mt-1 text-[1.75rem] leading-tight text-black">{title}</h3>
+                {description ? <p className="mt-1 text-sm leading-6 text-gray-500">{description}</p> : null}
             </div>
         </div>
     );
@@ -500,30 +501,23 @@ function RecommendationCards({ onOpenTool }: { onOpenTool: (tool: ToolItem) => v
     );
 }
 
-function DailyTasks({
-    hasCheckedIn,
-    onStartChat,
-    onNavigate,
-}: {
-    hasCheckedIn: boolean;
-    onStartChat: () => void;
-    onNavigate: (view: string) => void;
-}) {
+function useDailyTaskFlags() {
     const [doneTool, setDoneTool] = useState(false);
     const [doneChat, setDoneChat] = useState(false);
     const [doneAssessment, setDoneAssessment] = useState(false);
+    const [toolCount, setToolCount] = useState(0);
 
     useEffect(() => {
         const syncCompletions = () => {
-            setDoneTool(readToolCompletionCount() > 0);
+            const count = readToolCompletionCount();
+            setToolCount(count);
+            setDoneTool(count > 0);
             setDoneChat(isDailyTaskCompleted('chat'));
             setDoneAssessment(isDailyTaskCompleted('assessment'));
         };
-
         const handleVisible = () => {
             if (!document.hidden) syncCompletions();
         };
-
         syncCompletions();
         window.addEventListener('focus', syncCompletions);
         window.addEventListener('storage', syncCompletions);
@@ -537,93 +531,305 @@ function DailyTasks({
         };
     }, []);
 
-    const tasks: { label: string; done: boolean; icon: ReactNode; action?: () => void; hint: string }[] = [
-        {
-            label: '完成状态签到',
-            done: hasCheckedIn,
-            icon: <IconJournal className="h-5 w-5" />,
-            hint: '建立今天的状态基线。',
-        },
-        {
-            label: '完成 1 个练习工具',
-            done: doneTool,
-            icon: <IconMeditation className="h-5 w-5" />,
-            hint: '把建议落到一个可执行动作。',
-        },
-        {
-            label: '和 AI 聊一次',
-            done: doneChat,
-            icon: <IconChat className="h-5 w-5" />,
-            action: onStartChat,
-            hint: '获得支持性反馈与陪伴。',
-        },
-        {
-            label: '做 1 次测评',
-            done: doneAssessment,
-            icon: <IconAssessment className="h-5 w-5" />,
-            action: () => onNavigate('scale'),
-            hint: '补充更结构化的心理量表信息。',
-        },
-    ];
+    return { doneTool, doneChat, doneAssessment, toolCount };
+}
 
-    const doneCount = tasks.filter((task) => task.done).length;
+function readDisplayName() {
+    try {
+        const raw = window.localStorage.getItem('user');
+        const parsed = raw ? JSON.parse(raw) as { nickname?: string; username?: string } : null;
+        return parsed?.nickname || parsed?.username || '';
+    } catch {
+        return '';
+    }
+}
 
+type TagTone = 'green' | 'yellow' | 'red';
+const tagClass: Record<TagTone, string> = {
+    green: 'bg-green-500 text-white',
+    yellow: 'bg-yellow-400 text-gray-900',
+    red: 'bg-red-500 text-white',
+};
+const buttonClass = {
+    dark: 'bg-[#ECECEC] text-gray-900 hover:bg-[#e2e2e2]',
+    black: 'bg-black text-white hover:bg-gray-800',
+    light: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+} as const;
+
+// Nexar TaskCard: three rows separated by hairlines.
+function TaskCard({
+    icon,
+    title,
+    tagText,
+    tagTone,
+    details,
+    bottom,
+    buttonText,
+    buttonVariant,
+    onAction,
+    tilt = false,
+    delay = 0,
+}: {
+    icon: ReactNode;
+    title: string;
+    tagText: string;
+    tagTone: TagTone;
+    details: Array<{ label: string; value: string }>;
+    bottom: ReactNode;
+    buttonText: string;
+    buttonVariant: keyof typeof buttonClass;
+    onAction?: () => void;
+    tilt?: boolean;
+    delay?: number;
+}) {
     return (
-        <section className="desktop-section">
-            <PanelTitle
-                icon={<IconChart className="h-5 w-5" />}
-                eyebrow="今日安排"
-                title="先完成这几步"
-                description={hasCheckedIn ? '先从一个工具练习开始，AI 对话和测评作为后续补充。' : '先签到，再从推荐里完成一个练习，页面节奏会更清晰。'}
-            />
-
-            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50/90 p-4">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-semibold text-slate-700">完成度</span>
-                    <span className="text-slate-500">{doneCount}/{tasks.length}</span>
+        <div
+            className={`nexar-fade-up rounded-[20px] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-6 sm:py-5 ${tilt ? 'lg:rotate-[2deg]' : ''}`}
+            style={{ animationDelay: `${delay}s` }}
+        >
+            <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-3">
+                <div className="flex items-center gap-2.5 text-[17px] font-medium text-gray-900">
+                    <span className="text-gray-700">{icon}</span>
+                    {title}
                 </div>
-                <div className="mt-3 h-3 rounded-full bg-white shadow-inner">
-                    <div
-                        className="h-3 rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-teal-400 transition-all duration-500"
-                        style={{ width: `${(doneCount / tasks.length) * 100}%` }}
-                    />
-                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-medium ${tagClass[tagTone]}`}>{tagText}</span>
             </div>
-
-            <div className="mt-5 space-y-3">
-                {tasks.map((task) => (
-                    <button
-                        key={task.label}
-                        onClick={task.action}
-                        disabled={!task.action}
-                        className={`flex w-full items-center gap-4 rounded-[1.4rem] border px-4 py-4 text-left transition duration-200 ${
-                            task.done
-                                ? 'border-emerald-200 bg-emerald-50/80'
-                                : task.action
-                                    ? 'border-slate-200 bg-white/92 hover:-translate-y-0.5 hover:shadow-[0_18px_60px_-42px_rgba(15,23,42,0.28)]'
-                                    : 'border-slate-200 bg-white/92'
-                        }`}
-                    >
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${task.done ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                            {task.icon}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <div className={`text-sm font-semibold ${task.done ? 'text-emerald-700' : 'text-slate-900'}`}>{task.label}</div>
-                            <div className="mt-1 text-xs leading-5 text-slate-500">{task.hint}</div>
-                        </div>
-                        {task.done ? (
-                            <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                        ) : task.action ? (
-                            <IconArrow className="h-5 w-5 text-slate-300" />
-                        ) : (
-                            <span className="h-5 w-5 rounded-full border-2 border-slate-200" />
-                        )}
-                    </button>
+            <div className="flex gap-4 border-b border-black/10 py-3">
+                {details.map((detail, index) => (
+                    <div key={detail.label} className={index === 2 ? 'max-w-[120px] flex-[0.5]' : 'min-w-0 flex-1'}>
+                        <div className="text-xs text-gray-500">{detail.label}</div>
+                        <div className="mt-1 text-sm font-medium leading-5 text-gray-900">{detail.value}</div>
+                    </div>
                 ))}
             </div>
-        </section>
+            <div className="flex items-center justify-between gap-3 pt-3">
+                <div className="min-w-0 text-sm text-gray-500">{bottom}</div>
+                <button
+                    onClick={onAction}
+                    disabled={!onAction}
+                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition disabled:cursor-default ${buttonClass[buttonVariant]}`}
+                >
+                    {buttonText}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+const WAVE = [8, 16, 12, 28, 20, 36, 42, 24, 40, 16, 44, 32, 48, 28, 20, 36, 14, 32, 22, 40, 18, 30, 12, 26, 16, 34, 20, 38, 24, 28, 16, 22, 12, 20, 8];
+
+function AvatarStack({ count }: { count: number }) {
+    return (
+        <span className="flex items-center gap-2">
+            <span className="flex -space-x-2">
+                {standardAssets.avatars.slice(0, count).map((src) => (
+                    <img key={src} src={src} alt="" className="h-7 w-7 rounded-full border-2 border-white object-cover" loading="lazy" />
+                ))}
+            </span>
+        </span>
+    );
+}
+
+function NexarDashboard({
+    checkinComplete,
+    wellnessScore,
+    historyCount,
+    onStartChat,
+    onNavigate,
+    onCheckin,
+}: {
+    checkinComplete: boolean;
+    wellnessScore: number | null;
+    historyCount: number;
+    onStartChat: () => void;
+    onNavigate: (view: string) => void;
+    onCheckin: () => void;
+}) {
+    const { doneTool, doneChat, doneAssessment, toolCount } = useDailyTaskFlags();
+    const name = readDisplayName();
+    const doneCount = [checkinComplete, doneTool, doneChat, doneAssessment].filter(Boolean).length;
+    const hour = new Date().getHours();
+    const hello = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+
+    return (
+        <div>
+            {/* Section header row */}
+            <div className="mb-4 grid items-end gap-4 border-b border-black/10 pb-4 sm:mb-6 sm:pb-6 lg:grid-cols-12">
+                <div className="nexar-fade-up flex items-center gap-3 lg:col-span-3" style={{ animationDelay: '0.1s' }}>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-orange-500 text-white">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 20a8 8 0 0 1 16 0" /></svg>
+                    </span>
+                    <h1 className="font-display-cn text-[28px] leading-tight text-black sm:text-[34px] 2xl:text-[42px]">{hello}{name ? `，${name}` : ''}</h1>
+                </div>
+                <div className="nexar-fade-up lg:col-span-6" style={{ animationDelay: '0.15s' }}>
+                    <div className="lg:mx-auto lg:w-[85%] 2xl:w-[70%]">
+                        <p className="text-[20px] tracking-[-0.04em] text-black sm:text-[24px] lg:text-[26px]">今日安排</p>
+                        <p className="mt-1 text-sm text-black/60">{getDailyQuote()}</p>
+                    </div>
+                </div>
+                <div className="nexar-fade-up flex items-center gap-2 text-sm text-black/70 lg:col-span-3 lg:justify-end" style={{ animationDelay: '0.2s' }}>
+                    <span>{formatDateCN()}</span>
+                    <span className="rounded-full bg-black px-2.5 py-1 text-xs text-white">{doneCount}/4 已完成</span>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-4 sm:gap-6 lg:grid lg:grid-cols-12 lg:gap-7">
+                {/* Left column */}
+                <div className="flex flex-col gap-5 lg:col-span-3">
+                    <button onClick={onCheckin} className="nexar-fade-up flex items-center gap-3 rounded-full bg-[#DBECFC] py-2 pl-2 pr-5 text-left" style={{ animationDelay: '0.25s' }}>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="#EAB308" strokeWidth="3.5" strokeLinecap="round" /></svg>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-[15px] font-medium text-gray-900">{checkinComplete ? '今日签到已完成' : '今日还没签到'}</span>
+                            <span className="block text-xs text-gray-600">心情 · 压力 · 精力 · 睡眠</span>
+                        </span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-gray-700" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                    </button>
+
+                    <div className="nexar-fade-up" style={{ animationDelay: '0.3s' }}>
+                        <div className="text-[96px] leading-none tracking-[-0.04em] text-black tabular-nums sm:text-[110px] xl:text-[132px]">
+                            {wellnessScore === null ? '--' : wellnessScore}
+                        </div>
+                        <p className="mt-2 text-[15px] text-black/70">今日综合状态分{wellnessScore === null ? '（签到后生成）' : ''}</p>
+                    </div>
+
+                    <div
+                        className="nexar-fade-up relative rounded-[20px] bg-cover bg-top p-5 pb-8 sm:rounded-[28px]"
+                        style={{ backgroundImage: `url(${standardAssets.metricsCard})`, animationDelay: '0.35s' }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <span className="text-[17px] font-medium text-gray-900">本周记录</span>
+                            <span className="rounded-full bg-white/80 px-3 py-1 text-xs text-gray-800">近 7 天</span>
+                        </div>
+                        <div className="mt-5 grid grid-cols-3 gap-2">
+                            {[
+                                { value: historyCount, unit: '次', label: '状态签到' },
+                                { value: toolCount, unit: '次', label: '今日练习' },
+                                { value: doneCount, unit: '/4', label: '今日任务' },
+                            ].map((item) => (
+                                <div key={item.label}>
+                                    <div className="text-[30px] leading-none tracking-[-0.03em] text-gray-900 tabular-nums">{item.value}<span className="ml-0.5 text-base">{item.unit}</span></div>
+                                    <div className="mt-1 text-xs text-gray-700">{item.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={() => onNavigate('trend')} className="absolute -bottom-4 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full bg-white shadow-md" aria-label="查看历史记录">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Center column */}
+                <div className="lg:col-span-6">
+                    <div className="flex flex-col gap-4 lg:mx-auto lg:w-[85%] 2xl:w-[70%]">
+                        <TaskCard
+                            icon={<IconJournal className="h-5 w-5" />}
+                            title="1 分钟状态签到"
+                            tagText={checkinComplete ? '已完成' : '待完成'}
+                            tagTone={checkinComplete ? 'green' : 'yellow'}
+                            details={[
+                                { label: '记录', value: '心情、压力、精力、睡眠' },
+                                { label: '作用', value: '刷新今日推荐' },
+                                { label: '用时', value: '1 分钟' },
+                            ]}
+                            bottom={checkinComplete ? '今日基线已建立' : '先签到，推荐会更准'}
+                            buttonText={checkinComplete ? '查看结果' : '开始签到'}
+                            buttonVariant="dark"
+                            onAction={onCheckin}
+                            delay={0.3}
+                        />
+                        <TaskCard
+                            icon={<IconChat className="h-5 w-5" />}
+                            title="和 AI 聊一次"
+                            tagText={doneChat ? '已完成' : 'AI 陪伴'}
+                            tagTone={doneChat ? 'green' : 'yellow'}
+                            details={[
+                                { label: '方式', value: '文字或语音' },
+                                { label: '内容', value: '说说今天最在意的一件事' },
+                                { label: '用时', value: '5 分钟' },
+                            ]}
+                            bottom={<span className="flex items-center gap-2"><AvatarStack count={2} /><span>支持性回应，不做诊断</span></span>}
+                            buttonText="开始对话"
+                            buttonVariant="black"
+                            onAction={onStartChat}
+                            tilt
+                            delay={0.4}
+                        />
+                        <TaskCard
+                            icon={<IconMeditation className="h-5 w-5" />}
+                            title="完成 1 个练习"
+                            tagText={doneTool ? '已完成' : '推荐'}
+                            tagTone={doneTool ? 'green' : 'yellow'}
+                            details={[
+                                { label: '来源', value: '工具箱' },
+                                { label: '建议', value: '呼吸、正念或认知练习' },
+                                { label: '用时', value: '3–10 分钟' },
+                            ]}
+                            bottom={<span className="flex items-center gap-2"><AvatarStack count={3} /><span>按签到结果推荐</span></span>}
+                            buttonText="打开工具箱"
+                            buttonVariant="light"
+                            onAction={() => onNavigate('toolbox')}
+                            delay={0.5}
+                        />
+                        <TaskCard
+                            icon={<IconAssessment className="h-5 w-5" />}
+                            title="做 1 次心理自评"
+                            tagText={doneAssessment ? '已完成' : '可选'}
+                            tagTone={doneAssessment ? 'green' : 'red'}
+                            details={[
+                                { label: '量表', value: 'PHQ-9 · GAD-7 等' },
+                                { label: '结果', value: '自动保存到历史' },
+                                { label: '用时', value: '3 分钟' },
+                            ]}
+                            bottom="结果仅供自我了解"
+                            buttonText="进入测评"
+                            buttonVariant="dark"
+                            onAction={() => onNavigate('scale')}
+                            delay={0.6}
+                        />
+                    </div>
+                </div>
+
+                {/* Right column */}
+                <div className="flex flex-col gap-5 lg:col-span-3">
+                    <div className="nexar-fade-up" style={{ animationDelay: '0.45s' }}>
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg" aria-hidden="true">✦</span>
+                                <h2 className="whitespace-nowrap text-[20px] tracking-[-0.04em] text-black sm:text-[24px] xl:text-[28px]">快捷入口</h2>
+                            </div>
+                            <button onClick={() => onNavigate('toolbox')} className="whitespace-nowrap rounded-full bg-white/70 px-3 py-1.5 text-sm text-gray-900 hover:bg-white">全部工具</button>
+                        </div>
+                        <div className="mt-4">
+                            {[
+                                { text: '跟着 3D 呼吸球慢慢呼吸，平复紧张', action: () => onNavigate('breathing') },
+                                { text: '用 PHQ-9 / GAD-7 看看最近两周的状态', action: () => onNavigate('scale') },
+                                { text: '回看最近 7 天的情绪与睡眠变化', action: () => onNavigate('trend') },
+                            ].map((item) => (
+                                <button key={item.text} onClick={item.action} className="flex w-full items-center justify-between gap-4 border-t border-black/10 py-4 text-left text-[15px] leading-6 text-gray-900 hover:text-black">
+                                    <span>{item.text}</span>
+                                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-gray-700" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5Z" /></svg>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="nexar-fade-up relative rounded-[20px] bg-[#DBECFC] p-5 pb-10 sm:rounded-[28px]" style={{ animationDelay: '0.55s' }}>
+                        <span className="inline-block rounded-full bg-blue-500 px-3 py-1 text-xs text-white">语音输入</span>
+                        <h3 className="font-display-cn mt-3 text-[26px] leading-tight text-black">说出来，AI 陪你理一理</h3>
+                        <div className="mt-5 flex h-12 items-center justify-center gap-[3px]" aria-hidden="true">
+                            {WAVE.map((h, i) => (
+                                <span key={i} className="w-0.5 rounded-full bg-blue-400" style={{ height: `${h * 0.8}px` }} />
+                            ))}
+                        </div>
+                        <button onClick={onStartChat} className="absolute -bottom-5 left-1/2 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-white shadow-md" aria-label="开始语音对话">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -723,7 +929,7 @@ function TrendChart() {
 }
 
 export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: TodayPageProps) {
-    const { hasCheckedIn, todayCheckin, loadHistory, loadRecommendations } = useCheckinStore();
+    const { hasCheckedIn, todayCheckin, history, loadHistory, loadRecommendations } = useCheckinStore();
     const [justCheckedIn, setJustCheckedIn] = useState(false);
     const checkinRef = useRef<HTMLDivElement | null>(null);
 
@@ -749,91 +955,21 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
     const checkinComplete = hasCheckedIn || justCheckedIn;
     const wellnessScore = getWellnessScore(todayCheckin);
 
-    const glanceMetrics = [
-        {
-            label: '当前步骤',
-            value: checkinComplete ? '签到完成' : '等待签到',
-            note: checkinComplete ? '可以直接去完成一个练习' : '先用 1 分钟建立今日状态基线',
-        },
-        {
-            label: '综合分',
-            value: wellnessScore === null ? '--' : String(wellnessScore),
-            note: wellnessScore === null ? '暂无评分' : '基于四项状态计算',
-        },
-        {
-            label: '下一步',
-            value: checkinComplete ? '开始练习' : '完成签到',
-            note: checkinComplete ? '推荐区和任务区都已可用' : '未登录也会先保存在当前浏览器',
-        },
-    ];
 
     return (
-        <div className="mx-auto w-full max-w-[1520px] px-1 pb-8 pt-1 sm:px-0 lg:pb-10">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_380px]">
+        <div className="mx-auto w-full max-w-[1800px] pb-10">
+            <NexarDashboard
+                checkinComplete={checkinComplete}
+                wellnessScore={wellnessScore}
+                historyCount={history.length}
+                onStartChat={onStartChat}
+                onNavigate={onNavigate}
+                onCheckin={scrollToCheckin}
+            />
+
+            <div className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
                 <div className="space-y-6">
-                    <section className="relative overflow-hidden rounded-[2rem] border border-white/80 bg-[linear-gradient(140deg,rgba(15,23,42,0.96),rgba(15,23,42,0.88)),radial-gradient(circle_at_top_left,rgba(34,211,238,0.22),transparent_38%)] p-7 text-white shadow-[0_36px_120px_-56px_rgba(15,23,42,0.9)] lg:p-8">
-                        <div className="absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-cyan-400/10 blur-3xl" />
-                        <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl" />
-                        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-                            <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-cyan-300">今日概览</p>
-                                <h1 className="mt-4 font-display text-[2.4rem] leading-[0.95] tracking-[-0.04em] text-white sm:text-[3rem] lg:text-[3.4rem]">
-                                    {checkinComplete ? '今天的状态已更新，' : '先完成今日签到，'}
-                                    <span className="block text-slate-300">{checkinComplete ? '下一步开始一个练习。' : '再决定接下来做什么。'}</span>
-                                </h1>
-                                <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">
-                                    {checkinComplete
-                                        ? '推荐区和任务区已经按你今天的状态更新好了，现在优先做一个短练习就可以。'
-                                        : '先用 1 分钟记录今天的心情、压力、精力和睡眠，系统会立刻刷新更适合今天的推荐。'}
-                                </p>
-                                <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400">{getDailyQuote()}</p>
-                                <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                                    <button
-                                        onClick={() => (checkinComplete ? onNavigate('toolbox') : scrollToCheckin())}
-                                        className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition duration-200 hover:-translate-y-0.5"
-                                    >
-                                        {checkinComplete ? '开始今日练习' : '先完成今日签到'}
-                                    </button>
-                                    <button
-                                        onClick={() => (checkinComplete ? onStartChat() : onNavigate('scale'))}
-                                        className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/10"
-                                    >
-                                        {checkinComplete ? '与 AI 聊一聊' : '查看测评中心'}
-                                    </button>
-                                </div>
-                                <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-300">
-                                    {['1. 今日签到', '2. 完成一个工具练习', '3. 再决定是否做 AI 对话或测评'].map((step) => (
-                                        <span key={step} className="rounded-full border border-white/10 bg-white/5 px-3 py-2">
-                                            {step}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="rounded-[1.8rem] border border-white/10 bg-white/5 p-5 backdrop-blur-xl">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">日期</p>
-                                        <h2 className="mt-2 text-xl font-semibold text-white">{formatDateCN()}</h2>
-                                    </div>
-                                    <div className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${checkinComplete ? 'border border-emerald-300/20 bg-emerald-300/10 text-emerald-200' : 'border border-white/10 bg-white/5 text-slate-300'}`}>
-                                        {checkinComplete ? '今日已更新' : '等待记录'}
-                                    </div>
-                                </div>
-                                <div className="mt-5 grid gap-3">
-                                    {glanceMetrics.map((metric) => (
-                                        <div key={metric.label} className="rounded-2xl border border-white/10 bg-slate-950/25 px-4 py-3">
-                                            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{metric.label}</div>
-                                            <div className="mt-2 text-lg font-semibold text-white">{metric.value}</div>
-                                            <div className="mt-1 text-xs text-slate-400">{metric.note}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <div ref={checkinRef}>
+                    <div ref={checkinRef} className="scroll-mt-28">
                     <AnimatePresence mode="wait">
                         {!checkinComplete ? (
                             <CheckinCard key="checkin" onDone={handleCheckinDone} />
@@ -850,15 +986,15 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.3 }}
-                                className="rounded-[1.4rem] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-700 shadow-[0_20px_60px_-46px_rgba(16,185,129,0.55)]"
+                                className="rounded-[28px] bg-white px-5 py-4 text-sm font-medium text-gray-900 shadow-sm"
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 text-white">
+                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
                                         <IconCelebration className="h-5 w-5" />
                                     </span>
                                     <div>
                                         <div>签到成功，今日推荐与趋势已刷新。</div>
-                                        <div className="mt-1 text-xs text-emerald-600">现在可以继续去完成一个工具练习或和 AI 对话。</div>
+                                        <div className="mt-1 text-xs text-gray-500">现在可以去完成一个练习，或者和 AI 聊一聊。</div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -870,7 +1006,6 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
 
                 <div className="space-y-6">
                     <RecommendationCards onOpenTool={onOpenTool} />
-                    <DailyTasks hasCheckedIn={checkinComplete} onStartChat={onStartChat} onNavigate={onNavigate} />
                 </div>
             </div>
         </div>
