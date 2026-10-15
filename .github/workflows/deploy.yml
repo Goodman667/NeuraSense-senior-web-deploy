@@ -83,7 +83,7 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_MODEL: gpt-5.5
+          LLM_MODEL: gpt-6-luna
           LLM_PROVIDER: responses
           LLM_API_BASE: https://ai.ha7e.com
           ENABLE_VECTOR_MEMORY: "false"
