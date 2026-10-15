@@ -23,7 +23,7 @@ def _set_llm_default(name: str, value: str, legacy_values: set[str]) -> None:
 
 # LLM defaults. Keep the secret key in deployment env; never commit it.
 _set_llm_default("LLM_PROVIDER", "responses", {"zhipuai"})
-_set_llm_default("LLM_MODEL", "gpt-5.5", {"glm-4-flash", "gpt-4"})
+_set_llm_default("LLM_MODEL", "gpt-6-luna", {"glm-4-flash", "gpt-4", "gpt-5.5"})
 _set_llm_default("LLM_API_BASE", "https://ai.ha7e.com", {""})
 
 # Legacy env bridge for old deployments that still expose ZHIPU_API_KEY.

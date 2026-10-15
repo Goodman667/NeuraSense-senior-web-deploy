@@ -11,7 +11,7 @@ from typing import Any
 import httpx
 
 
-DEFAULT_LLM_MODEL = "gpt-5.5"
+DEFAULT_LLM_MODEL = "gpt-6-luna"
 DEFAULT_LLM_PROVIDER = "responses"
 DEFAULT_LLM_API_BASE = "https://ai.ha7e.com"
 
