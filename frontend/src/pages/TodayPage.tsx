@@ -227,47 +227,68 @@ function CheckinCard({ onDone }: { onDone: () => void }) {
         <motion.section
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            className="desktop-section overflow-hidden"
+            className="desktop-section h-full overflow-hidden"
         >
-            <div className="grid gap-8 xl:grid-cols-[minmax(280px,0.92fr)_minmax(0,1.08fr)]">
-                <div className="rounded-[1.6rem] border border-cyan-100 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_55%),linear-gradient(180deg,#ffffff_0%,#f8fcff_58%,#f0fdfa_100%)] p-6">
+            <div className="grid h-full gap-6 xl:grid-cols-[minmax(300px,0.85fr)_minmax(0,1.15fr)]">
+                <div className="flex flex-col rounded-[1.6rem] border border-cyan-100 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_55%),linear-gradient(180deg,#ffffff_0%,#f8fcff_58%,#f0fdfa_100%)] p-6">
                     <PanelTitle
                         icon={<IconJournal className="h-5 w-5" />}
                         eyebrow="今日签到"
                         title="1 分钟状态签到"
-                        description="先记录今天的身体与情绪状态，系统会据此刷新今日推荐与趋势视图。"
+                        description="拖动右侧四个滑块记录今天的状态，系统会据此刷新今日推荐与趋势视图。"
                     />
-                    <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                        {SLIDER_KEYS.map((key) => {
-                            const meta = SLIDER_LABELS[key];
-                            return (
-                                <div key={key} className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.28)]">
-                                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{meta.icon}</span>
-                                        {meta.label}
-                                    </div>
-                                    <div className="mt-4 text-3xl font-semibold text-slate-950">{values[key]}</div>
-                                    <p className="mt-1 text-xs text-slate-500">{meta.low} → {meta.high}</p>
-                                </div>
-                            );
-                        })}
+                    <label className="mt-6 block text-sm font-semibold text-slate-700" htmlFor="today-note">
+                        一句话记录今天的感受
+                    </label>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">可选。简短写下你此刻的状态，便于之后回看变化。</p>
+                    <textarea
+                        id="today-note"
+                        value={note}
+                        onChange={(event) => setNote(event.target.value)}
+                        placeholder="例如：今天有点紧张，但整体还能稳住。"
+                        rows={3}
+                        className="mt-3 min-h-[96px] w-full flex-1 resize-none rounded-[1.3rem] border border-slate-200 bg-white/90 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
+                    />
+                    {feedback ? (
+                        <div
+                            className={`mt-4 rounded-[1.2rem] border px-4 py-3 text-sm ${
+                                feedback.kind === 'success'
+                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                    : 'border-rose-200 bg-rose-50 text-rose-700'
+                            }`}
+                        >
+                            {feedback.message}
+                        </div>
+                    ) : null}
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs leading-5 text-slate-500">
+                            {isLoggedIn
+                                ? '提交后会自动刷新今日推荐与近 7 天趋势。'
+                                : '未登录时也可以先记录，数据会保存在当前浏览器。'}
+                        </p>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={submitting}
+                            className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {submitting ? '保存中...' : '完成签到'}
+                        </button>
                     </div>
                 </div>
 
-                <div className="space-y-5">
-                    <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 xl:auto-rows-fr">
                         {SLIDER_KEYS.map((key) => {
                             const meta = SLIDER_LABELS[key];
                             const value = values[key];
                             const percent = value * 10;
                             return (
-                                <div key={key} className="rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.28)]">
+                                <div key={key} className="flex flex-col justify-between rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.28)]">
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                            <span className="text-slate-500">{meta.icon}</span>
+                                            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700">{meta.icon}</span>
                                             {meta.label}
                                         </div>
-                                        <span className="text-sm font-semibold text-slate-950">{value}/10</span>
+                                        <span className="text-3xl font-semibold leading-none text-slate-950 tabular-nums">{value}<span className="ml-0.5 text-sm font-medium text-slate-400">/10</span></span>
                                     </div>
                                     <div className="mt-4 h-3 rounded-full bg-slate-100">
                                         <div
@@ -291,47 +312,6 @@ function CheckinCard({ onDone }: { onDone: () => void }) {
                                 </div>
                             );
                         })}
-                    </div>
-
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.28)]">
-                        <label className="block text-sm font-semibold text-slate-700" htmlFor="today-note">
-                            一句话记录今天的感受
-                        </label>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">可选。简短写下你此刻的状态，便于之后回看变化。</p>
-                        <textarea
-                            id="today-note"
-                            value={note}
-                            onChange={(event) => setNote(event.target.value)}
-                            placeholder="例如：今天有点紧张，但整体还能稳住。"
-                            rows={4}
-                            className="mt-4 w-full resize-none rounded-[1.3rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-cyan-300 focus:ring-4 focus:ring-cyan-100"
-                        />
-                        {feedback ? (
-                            <div
-                                className={`mt-4 rounded-[1.2rem] border px-4 py-3 text-sm ${
-                                    feedback.kind === 'success'
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                        : 'border-rose-200 bg-rose-50 text-rose-700'
-                                }`}
-                            >
-                                {feedback.message}
-                            </div>
-                        ) : null}
-                        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-xs leading-5 text-slate-500">
-                                {isLoggedIn
-                                    ? '提交后会自动刷新今日推荐与近 7 天趋势。'
-                                    : '未登录时也可以先记录，数据会保存在当前浏览器。'}
-                            </p>
-                            <button
-                                onClick={handleSubmit}
-                                disabled={submitting}
-                                className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                {submitting ? '保存中...' : '完成签到'}
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </motion.section>
@@ -351,7 +331,7 @@ function CheckinSummary({ checkin }: { checkin: CheckinData }) {
         <motion.section
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="desktop-section"
+            className="desktop-section h-full"
         >
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_340px] xl:items-start">
                 <div>
@@ -411,7 +391,7 @@ function CheckinSummary({ checkin }: { checkin: CheckinData }) {
     );
 }
 
-function RecommendationCards({ onOpenTool }: { onOpenTool: (tool: ToolItem) => void }) {
+function RecommendationCards({ onOpenTool, onBrowseAll }: { onOpenTool: (tool: ToolItem) => void; onBrowseAll: () => void }) {
     const { recommendations, hasCheckedIn } = useCheckinStore();
     const [toolsMap, setToolsMap] = useState<Record<string, ToolItem>>({});
 
@@ -431,7 +411,7 @@ function RecommendationCards({ onOpenTool }: { onOpenTool: (tool: ToolItem) => v
     }, []);
 
     return (
-        <section className="desktop-section">
+        <section className="desktop-section flex h-full flex-col">
             <PanelTitle
                 icon={<IconMeditation className="h-5 w-5" />}
                 eyebrow="推荐内容"
@@ -439,7 +419,7 @@ function RecommendationCards({ onOpenTool }: { onOpenTool: (tool: ToolItem) => v
                 description={hasCheckedIn ? '基于你刚刚的签到状态，为你优先排列更适合今天的工具。' : '完成签到后，这里会自动刷新更贴合你状态的推荐。'}
             />
 
-            <div className="mt-6 space-y-3">
+            <div className="mt-6 flex-1 space-y-3">
                 {recommendations.length === 0 ? (
                     <div className="rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center text-sm leading-6 text-slate-500">
                         {hasCheckedIn ? '今天暂未生成推荐，可先进入工具箱自由选择练习。' : '先完成上方签到，再生成更个性化的今日推荐。'}
@@ -497,6 +477,19 @@ function RecommendationCards({ onOpenTool }: { onOpenTool: (tool: ToolItem) => v
                     );
                 })}
             </div>
+
+            <button
+                onClick={onBrowseAll}
+                className="group mt-6 flex w-full items-center justify-between gap-3 rounded-[1.5rem] bg-[#DBECFC] px-5 py-4 text-left transition hover:bg-[#cfe4fa]"
+            >
+                <span>
+                    <span className="block text-sm font-semibold text-gray-900">浏览全部练习</span>
+                    <span className="mt-0.5 block text-xs text-gray-600">工具箱里有 6 个主题的呼吸、正念与认知练习</span>
+                </span>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-gray-800 transition group-hover:translate-x-0.5">
+                    <IconArrow className="h-4 w-4" />
+                </span>
+            </button>
         </section>
     );
 }
@@ -584,7 +577,7 @@ function TaskCard({
 }) {
     return (
         <div
-            className={`nexar-fade-up rounded-[20px] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-6 sm:py-5 ${tilt ? 'lg:rotate-[2deg]' : ''}`}
+            className={`nexar-fade-up flex h-full flex-col rounded-[20px] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-6 sm:py-5 ${tilt ? 'lg:rotate-[2deg] 2xl:rotate-[1.5deg]' : ''}`}
             style={{ animationDelay: `${delay}s` }}
         >
             <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-3">
@@ -602,7 +595,7 @@ function TaskCard({
                     </div>
                 ))}
             </div>
-            <div className="flex items-center justify-between gap-3 pt-3">
+            <div className="mt-auto flex items-center justify-between gap-3 pt-3">
                 <div className="min-w-0 text-sm text-gray-500">{bottom}</div>
                 <button
                     onClick={onAction}
@@ -688,10 +681,16 @@ function NexarDashboard({
                     </button>
 
                     <div className="nexar-fade-up" style={{ animationDelay: '0.3s' }}>
-                        <div className="text-[96px] leading-none tracking-[-0.04em] text-black tabular-nums sm:text-[110px] xl:text-[132px]">
+                        <div className={`leading-none tracking-[-0.04em] tabular-nums ${wellnessScore === null ? 'text-[72px] text-black/25 sm:text-[84px] xl:text-[96px]' : 'text-[96px] text-black sm:text-[110px] xl:text-[132px]'}`}>
                             {wellnessScore === null ? '--' : wellnessScore}
                         </div>
                         <p className="mt-2 text-[15px] text-black/70">今日综合状态分{wellnessScore === null ? '（签到后生成）' : ''}</p>
+                        {wellnessScore === null ? (
+                            <button onClick={onCheckin} className="mt-3 inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
+                                去签到，生成今日分数
+                                <IconArrow className="h-4 w-4" />
+                            </button>
+                        ) : null}
                     </div>
 
                     <div
@@ -722,7 +721,7 @@ function NexarDashboard({
 
                 {/* Center column */}
                 <div className="lg:col-span-6">
-                    <div className="flex flex-col gap-4 lg:mx-auto lg:w-[85%] 2xl:w-[70%]">
+                    <div className="grid gap-4 lg:mx-auto lg:w-[85%] 2xl:w-full 2xl:grid-cols-2 2xl:gap-5">
                         <TaskCard
                             icon={<IconJournal className="h-5 w-5" />}
                             title="1 分钟状态签到"
@@ -866,6 +865,25 @@ function TrendChart() {
         ];
     }, [chartData]);
 
+    const lastSevenDays = useMemo(() => {
+        const recorded = new Set(
+            history
+                .map((record) => (record.created_at ? new Date(record.created_at).toDateString() : ''))
+                .filter(Boolean),
+        );
+        return Array.from({ length: 7 }, (_, index) => {
+            const day = new Date();
+            day.setDate(day.getDate() - (6 - index));
+            return {
+                key: day.toDateString(),
+                label: index === 6 ? '今天' : `${day.getMonth() + 1}/${day.getDate()}`,
+                recorded: recorded.has(day.toDateString()),
+                isToday: index === 6,
+            };
+        });
+    }, [history]);
+    const recordedDays = lastSevenDays.filter((day) => day.recorded).length;
+
     return (
         <section className="desktop-section">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
@@ -893,12 +911,35 @@ function TrendChart() {
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
                     </div>
                 ) : chartData.length < 2 ? (
-                    <div className="flex h-[300px] flex-col items-center justify-center text-center">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
-                            <IconChart className="h-7 w-7" />
+                    <div className="flex flex-col gap-6 px-2 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+                        <div className="flex items-start gap-4">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+                                <IconChart className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="text-base font-semibold text-slate-900">趋势图会在至少 2 天记录后出现</p>
+                                <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">近 7 天已记录 {recordedDays} 天。继续完成每日签到，这里就会画出心情、压力、精力和睡眠的变化曲线。</p>
+                            </div>
                         </div>
-                        <p className="mt-5 text-base font-semibold text-slate-900">趋势图会在至少 2 天记录后出现</p>
-                        <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">继续完成每日签到，系统就能开始为你展示更稳定的变化曲线。</p>
+                        <div className="grid grid-cols-7 gap-2 sm:gap-3 lg:w-[520px] lg:shrink-0">
+                            {lastSevenDays.map((day) => (
+                                <div key={day.key} className="flex flex-col items-center gap-2">
+                                    <span
+                                        className={`flex h-11 w-full max-w-[56px] items-center justify-center rounded-2xl text-sm ${
+                                            day.recorded
+                                                ? 'bg-slate-950 text-white'
+                                                : day.isToday
+                                                    ? 'border-2 border-dashed border-cyan-300 bg-cyan-50 text-cyan-600'
+                                                    : 'border border-dashed border-slate-200 bg-slate-50 text-slate-300'
+                                        }`}
+                                        aria-label={`${day.label}${day.recorded ? '已签到' : '未签到'}`}
+                                    >
+                                        {day.recorded ? '✓' : day.isToday ? '+' : ''}
+                                    </span>
+                                    <span className={`text-xs ${day.isToday ? 'font-semibold text-slate-900' : 'text-slate-500'}`}>{day.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={320}>
@@ -967,8 +1008,8 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
                 onCheckin={scrollToCheckin}
             />
 
-            <div className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-                <div className="space-y-6">
+            <div className="mt-10 space-y-6">
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
                     <div ref={checkinRef} className="scroll-mt-28">
                     <AnimatePresence mode="wait">
                         {!checkinComplete ? (
@@ -979,34 +1020,32 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
                     </AnimatePresence>
                     </div>
 
-                    <AnimatePresence>
-                        {justCheckedIn ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="rounded-[28px] bg-white px-5 py-4 text-sm font-medium text-gray-900 shadow-sm"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
-                                        <IconCelebration className="h-5 w-5" />
-                                    </span>
-                                    <div>
-                                        <div>签到成功，今日推荐与趋势已刷新。</div>
-                                        <div className="mt-1 text-xs text-gray-500">现在可以去完成一个练习，或者和 AI 聊一聊。</div>
-                                    </div>
+                    <RecommendationCards onOpenTool={onOpenTool} onBrowseAll={() => onNavigate('toolbox')} />
+                </div>
+
+                <AnimatePresence>
+                    {justCheckedIn ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="rounded-[28px] bg-white px-5 py-4 text-sm font-medium text-gray-900 shadow-sm"
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
+                                    <IconCelebration className="h-5 w-5" />
+                                </span>
+                                <div>
+                                    <div>签到成功，今日推荐与趋势已刷新。</div>
+                                    <div className="mt-1 text-xs text-gray-500">现在可以去完成一个练习，或者和 AI 聊一聊。</div>
                                 </div>
-                            </motion.div>
-                        ) : null}
-                    </AnimatePresence>
+                            </div>
+                        </motion.div>
+                    ) : null}
+                </AnimatePresence>
 
-                    <TrendChart />
-                </div>
-
-                <div className="space-y-6">
-                    <RecommendationCards onOpenTool={onOpenTool} />
-                </div>
+                <TrendChart />
             </div>
         </div>
     );
