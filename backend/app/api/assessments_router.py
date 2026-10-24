@@ -101,6 +101,27 @@ SEED_CATALOG = [
 ]
 
 
+# SUS（研究用可用性问卷）：直接在代码里补进目录，不需要改数据库里的目录表
+SUS_CATALOG_ITEM = {
+    "key": "sus", "title": "SUS", "subtitle": "系统可用性量表（平台内测）",
+    "description": "10 道题评价你刚才使用 NeuraSense 的感受，用于研究和改进平台。",
+    "category": "research", "estimated_minutes": 3, "icon": "🧭",
+    "gradient": "from-emerald-500 to-teal-600",
+    "tags": ["可用性", "内测", "评估"], "question_count": 10, "score_range": "0-100",
+    "enabled": True, "sort_order": 6,
+}
+
+
+def _with_sus(catalog: list, category: Optional[str] = None) -> list:
+    if any(c.get("key") == "sus" for c in catalog):
+        return catalog
+    if category and category != SUS_CATALOG_ITEM["category"]:
+        return catalog
+    merged = catalog + [SUS_CATALOG_ITEM]
+    merged.sort(key=lambda c: c.get("sort_order", 0))
+    return merged
+
+
 # ================ 路由 ================
 
 @router.get("/catalog")
@@ -120,12 +141,14 @@ async def list_catalog(category: Optional[str] = None):
             catalog = [c for c in catalog if c.get("category") == category]
         catalog.sort(key=lambda c: c.get("sort_order", 0))
 
-    return {"success": True, "catalog": catalog}
+    return {"success": True, "catalog": _with_sus(catalog, category)}
 
 
 @router.get("/catalog/{key}")
 async def get_catalog_item(key: str):
     """获取单个测评详情"""
+    if key == "sus":
+        return {"success": True, "assessment": SUS_CATALOG_ITEM}
     if is_supabase_available():
         sb = get_supabase_client()
         result = sb.table("assessments_catalog").select("*").eq("key", key).execute()

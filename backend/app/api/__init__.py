@@ -50,6 +50,8 @@ from app.api.memory_router import router as memory_router
 from app.api.notifications_router import router as notifications_router
 # Import Senior Mode router
 from app.api.senior_router import router as senior_router
+# Import SUS (research usability questionnaire) router
+from app.api.sus_router import router as sus_router
 
 router = APIRouter()
 
@@ -87,6 +89,8 @@ router.include_router(memory_router)
 router.include_router(notifications_router)
 # Include Senior Mode sub-router
 router.include_router(senior_router)
+# Include SUS sub-router
+router.include_router(sus_router)
 
 # Initialize services
 clock_scorer = ClockDrawingScorer()

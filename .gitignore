@@ -38,6 +38,7 @@ backend/data/daily_checkins.json
 backend/data/assessment_history.json
 backend/data/community_posts.json
 backend/data/user_profiles.json
+backend/data/sus_responses.json
 backend/data/notifications.json
 backend/data/tool_completions.json
 backend/data/tool_favorites.json
