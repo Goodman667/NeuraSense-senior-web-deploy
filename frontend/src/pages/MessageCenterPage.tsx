@@ -38,7 +38,7 @@ function timeAgo(dateStr: string, lang: 'zh' | 'en'): string {
     return new Date(dateStr).toLocaleDateString();
 }
 
-export default function MessageCenterPage({ onBack, authToken }: MessageCenterPageProps) {
+export default function MessageCenterPage({ authToken }: MessageCenterPageProps) {
     const { lang } = useI18n();
     const { notifications, unreadCount, isLoading, loadNotifications, markRead, markAllRead } = useNotificationStore();
     const [filter, setFilter] = useState('all');
@@ -66,11 +66,6 @@ export default function MessageCenterPage({ onBack, authToken }: MessageCenterPa
             {/* 顶栏 */}
             <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-3">
-                    <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-gray-700 transition-colors">
-                        <svg className="w-5 h-5 text-warm-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
                     <h2 className="text-xl font-bold text-warm-800 dark:text-gray-100">
                         {lang === 'zh' ? '消息中心' : 'Messages'}
                     </h2>

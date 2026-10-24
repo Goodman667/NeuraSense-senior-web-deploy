@@ -12,6 +12,7 @@ Key features:
 - Long-term memory via vector store
 """
 
+from app.utils.lang import apply_lang, has_en_crisis
 from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
@@ -167,7 +168,7 @@ class CounselorService:
         检查危机信号
         """
         text_lower = text.lower()
-        return any(keyword in text_lower for keyword in self.CRISIS_KEYWORDS)
+        return any(keyword in text_lower for keyword in self.CRISIS_KEYWORDS) or has_en_crisis(text)
     
     async def generate_response(
         self,
@@ -347,7 +348,7 @@ class CounselorService:
             # 调用 GLM-4 API
             response = client.chat.completions.create(
                 model=self.LLM_MODEL,
-                messages=messages,
+                messages=apply_lang(messages),
                 temperature=0.75,
                 max_tokens=900,
             )

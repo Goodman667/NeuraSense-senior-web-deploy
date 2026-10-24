@@ -8,6 +8,7 @@ import {
 import { ArrowRight, ArrowDown, ChevronUp, Info, X } from "lucide-react";
 import { useVideoScrub } from "../hooks/useVideoScrub";
 import "./LandingPage.css";
+import { isEnglish, setLangAndReload } from "../i18n/autoTranslate";
 
 // Original footage from the second user-supplied MotionSites reference.
 const VIDEO_SRC =
@@ -179,6 +180,13 @@ export default function LandingPage({
               ))}
             </nav>
             <div className="ns-cloud-nav-right">
+              <button
+                data-no-translate
+                lang={isEnglish() ? "zh-CN" : "en"}
+                onClick={() => setLangAndReload(isEnglish() ? "zh" : "en")}
+              >
+                {isEnglish() ? "中文" : "English"}
+              </button>
               <button onClick={onLogin}>
                 登录{" "}
                 <span className="ns-cloud-info">
@@ -343,6 +351,13 @@ export default function LandingPage({
             ))}
           </nav>
           <div className="ns-cloud-menu-footer">
+            <button
+              data-no-translate
+              lang={isEnglish() ? "zh-CN" : "en"}
+              onClick={() => setLangAndReload(isEnglish() ? "zh" : "en")}
+            >
+              {isEnglish() ? "中文" : "English"}
+            </button>
             <button
               onClick={() => {
                 dialogRef.current?.close();

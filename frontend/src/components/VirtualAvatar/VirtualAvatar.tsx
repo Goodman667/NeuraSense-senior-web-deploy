@@ -15,6 +15,7 @@ import {
 } from 'react';
 import type { VirtualAvatarProps, VirtualAvatarRef, EmotionType, MotionGroup } from './types';
 import { API_BASE } from '../../config/api';
+import { speechLang } from '../../i18n/autoTranslate';
 
 /**
  * Map emotion types to motion groups.
@@ -526,7 +527,7 @@ export const VirtualAvatar = forwardRef<VirtualAvatarRef, VirtualAvatarProps>(
                 return new Promise<void>((resolve, reject) => {
                     window.speechSynthesis.cancel();
                     const utterance = new SpeechSynthesisUtterance(speechText);
-                    utterance.lang = 'zh-CN';
+                    utterance.lang = speechLang();
                     utterance.rate = 0.95;
                     utterance.pitch = 1.1;
                     utterance.volume = 0.9;

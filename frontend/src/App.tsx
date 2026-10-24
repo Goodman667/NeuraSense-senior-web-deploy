@@ -767,6 +767,51 @@ function App() {
         if (voiceAnalyzer.isRunning) voiceAnalyzer.stopAnalyzer();
     };
 
+    // ===== Page history for the universal back button =====
+    type NavEntry = { tab: TabId; sub: string | null; tool: ToolItem | null };
+    const navStackRef = useRef<NavEntry[]>([]);
+    const lastNavRef = useRef<NavEntry>({ tab: activeTab, sub: subView, tool: activeTool });
+    const poppingRef = useRef(false);
+    useEffect(() => {
+        const prev = lastNavRef.current;
+        const cur: NavEntry = { tab: activeTab, sub: subView, tool: activeTool };
+        if (prev.tab === cur.tab && prev.sub === cur.sub) { lastNavRef.current = cur; return; }
+        if (!poppingRef.current) {
+            navStackRef.current.push(prev);
+            if (navStackRef.current.length > 40) navStackRef.current.shift();
+        }
+        poppingRef.current = false;
+        lastNavRef.current = cur;
+    }, [activeTab, subView, activeTool]);
+
+    // Development-only hook used by the automated page checker (never in production builds).
+    useEffect(() => {
+        if (!import.meta.env.DEV) return;
+        (window as unknown as { __nav: (tab: TabId, sub?: string | null) => void }).__nav = (tab, sub = null) => {
+            setActiveTab(tab);
+            setSubView(sub);
+        };
+    }, []);
+
+    const goBackPage = () => {
+        stopAllSpeech();
+        setShowMonitors(false);
+        if (oculometricSensor.isRunning) oculometricSensor.stopTracking();
+        if (voiceAnalyzer.isRunning) voiceAnalyzer.stopAnalyzer();
+        let prev = navStackRef.current.pop();
+        while (prev && prev.sub === 'tool-runner' && !prev.tool) prev = navStackRef.current.pop();
+        poppingRef.current = true;
+        if (!prev) {
+            setActiveTool(null);
+            setSubView(null);
+            setActiveTab('today');
+            return;
+        }
+        setActiveTab(prev.tab);
+        setActiveTool(prev.tool);
+        setSubView(prev.sub);
+    };
+
     const handleTabChange = (tab: TabId) => {
         if (tab !== 'chat') stopAllSpeech();
         setSubView(null);
@@ -783,22 +828,9 @@ function App() {
         }
     };
 
-    // Render sub-view back button
-    const SubViewHeader = ({ title }: { title: string }) => (
-        <div className="app-surface mb-6 flex items-center gap-4 rounded-[1.75rem] px-5 py-4">
-            <button
-                onClick={goBack}
-                aria-label={`返回${title}`}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:-translate-y-0.5 hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus-visible:ring-4 focus-visible:ring-cyan-200/70"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
-            <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">功能详情</p>
-                <h2 className="font-display text-2xl text-slate-950">{title}</h2>
-            </div>
-        </div>
-    );
+    // Sub-view title + back button now live in the shell header (DesktopShell),
+    // so every page gets the same back button. Kept as a no-op for existing call sites.
+    const SubViewHeader = (_props: { title: string }) => null;
 
     // Determine if TabBar should show
     const showTabBar = !isPlayingImmersive && mode !== 'senior';
@@ -1019,6 +1051,9 @@ function App() {
                         setMode('standard');
                     }
                 }}
+                showPageHeader={!!subView || activeTab !== 'today'}
+                onBack={goBackPage}
+                onLogout={handleLogout}
             >
                 {/* ============================================================ */}
                 {/* MAIN CONTENT AREA                                            */}

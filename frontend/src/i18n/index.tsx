@@ -4,7 +4,8 @@
  * Simple context-based i18n for Chinese/English
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { setLangAndReload } from './autoTranslate';
 
 type Language = 'zh' | 'en';
 
@@ -141,15 +142,20 @@ interface I18nContextType {
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
-    const [lang, setLang] = useState<Language>(() => {
+    const [lang] = useState<Language>(() => {
         const saved = localStorage.getItem('language');
         return (saved as Language) || 'zh';
     });
 
     useEffect(() => {
         localStorage.setItem('language', lang);
-        document.documentElement.lang = lang;
+        document.documentElement.lang = lang === 'en' ? 'en' : 'zh-CN';
     }, [lang]);
+
+    // Switching language reloads the page so every screen (old and new) renders in it.
+    const switchLang = (next: Language) => {
+        if (next !== lang) setLangAndReload(next);
+    };
 
     const t = (key: string): string => {
         const translation = translations[key];
@@ -161,7 +167,7 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <I18nContext.Provider value={{ lang, setLang, t }}>
+        <I18nContext.Provider value={{ lang, setLang: switchLang, t }}>
             {children}
         </I18nContext.Provider>
     );

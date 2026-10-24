@@ -13,7 +13,9 @@ POST /sus/delete?token=...       -> 研究者删除选中的问卷（例如自�
   子量表（Lewis & Sauro, 2009）: 可用性 = 第 1,2,3,5,6,7,8,9 题贡献和 × 3.125；
   易学性 = 第 4,10 题贡献和 × 12.5。
 
-存储：优先写入 Supabase 表 sus_responses（见 backend/sql/011_sus_responses.sql）；
+语言：language 记录参与者填写的是中文版还是英文版（zh / en），导出时为单独一列。
+
+存储：优先写入 Supabase 表 sus_responses（见 backend/sql/011_sus_responses.sql、012_sus_language.sql）；
 表不存在或 Supabase 不可用时写入本地 data/sus_responses.json，导出时两处合并。
 """
 
@@ -31,6 +33,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 
 from app.services.auth import auth_service
+from app.utils.lang import get_lang
 from app.services.database.supabase_client import get_supabase_client, is_supabase_available
 
 router = APIRouter(prefix="/sus", tags=["sus"])
@@ -56,6 +59,7 @@ class SUSResponseRequest(BaseModel):
     age_group: str
     answers: list[int]
     consent: bool
+    language: Optional[str] = None  # 'zh' or 'en': which language version the participant answered
 
 
 def sus_scores(answers: list[int]) -> dict:
@@ -109,6 +113,7 @@ async def save_response(body: SUSResponseRequest, token: str):
         "username": user.get("username", ""),
         "mode": body.mode,
         "age_group": body.age_group,
+        "language": "en" if (body.language or get_lang()).lower().startswith("en") else "zh",
         "answers": body.answers,
         **sus_scores(body.answers),
         "consent": True,
@@ -170,7 +175,7 @@ async def export_csv(token: str):
 
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(["id", "user_id", "username", "mode", "age_group",
+    w.writerow(["id", "user_id", "username", "mode", "age_group", "language",
                 *[f"q{i}" for i in range(1, 11)],
                 "raw_score", "sus_score", "usability", "learnability", "created_at_utc"])
     for r in _all_rows():
@@ -178,7 +183,7 @@ async def export_csv(token: str):
         if isinstance(answers, str):
             answers = json.loads(answers)
         w.writerow([r.get("id"), r.get("user_id"), r.get("username"), r.get("mode"),
-                    r.get("age_group"), *answers, r.get("raw_score"), r.get("sus_score"),
+                    r.get("age_group"), r.get("language") or "zh", *answers, r.get("raw_score"), r.get("sus_score"),
                     r.get("usability"), r.get("learnability"), r.get("created_at")])
 
     stamp = datetime.utcnow().strftime("%Y%m%d")
@@ -193,7 +198,7 @@ async def export_csv(token: str):
 async def list_responses(token: str):
     _researcher(token)
     rows = [
-        {k: r.get(k) for k in ("id", "username", "mode", "age_group", "sus_score", "created_at")}
+        {k: r.get(k) for k in ("id", "username", "mode", "age_group", "language", "sus_score", "created_at")}
         for r in _all_rows()
     ]
     rows.reverse()  # 最新的在前

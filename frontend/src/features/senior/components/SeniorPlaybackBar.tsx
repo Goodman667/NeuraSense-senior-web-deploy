@@ -16,14 +16,14 @@ export function SeniorPlaybackBar() {
         {status}
       </p>
       {error ? <p className={`mt-1 px-1 text-sm ${fallbackMode === 'browser' ? 'text-[var(--sn-ink-3)]' : 'text-[var(--sn-help)]'}`}>{error}</p> : null}
-      <div className="mt-2 grid grid-cols-3 gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {isPlaying ? (
-          <button onClick={pause} className="sn-btn sn-btn-quiet !min-h-[2.8rem] !px-1 !text-[1.05rem]">暂停</button>
+          <button onClick={pause} className="sn-btn sn-btn-quiet !min-h-[2.8rem] min-w-[4.2rem] grow shrink-0 !px-2 !text-[1.05rem] whitespace-nowrap">暂停</button>
         ) : (
-          <button onClick={resume} disabled={!currentText} className="sn-btn sn-btn-quiet !min-h-[2.8rem] !px-1 !text-[1.05rem]">继续</button>
+          <button onClick={resume} disabled={!currentText} className="sn-btn sn-btn-quiet !min-h-[2.8rem] min-w-[4.2rem] grow shrink-0 !px-2 !text-[1.05rem] whitespace-nowrap">继续</button>
         )}
-        <button onClick={replay} disabled={!currentText} className="sn-btn sn-btn-quiet !min-h-[2.8rem] !px-1 !text-[1.05rem]">重听</button>
-        <button onClick={handleStop} className="sn-btn sn-btn-quiet !min-h-[2.8rem] !px-1 !text-[1.05rem]">停止</button>
+        <button onClick={replay} disabled={!currentText} className="sn-btn sn-btn-quiet !min-h-[2.8rem] min-w-[4.2rem] grow shrink-0 !px-2 !text-[1.05rem] whitespace-nowrap">重听</button>
+        <button onClick={handleStop} className="sn-btn sn-btn-quiet !min-h-[2.8rem] min-w-[4.2rem] grow shrink-0 !px-2 !text-[1.05rem] whitespace-nowrap">停止</button>
       </div>
     </div>
   );

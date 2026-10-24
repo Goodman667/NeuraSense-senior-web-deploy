@@ -177,7 +177,7 @@ const CommunityExercise = ({ onFinish }: { onFinish: () => void }) => {
             <div className="space-y-3">
                 {posts.map((post, i) => (
                     <div key={i} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                        <p className="text-warm-700">{post.content}</p>
+                        <p data-no-translate className="text-warm-700">{post.content}</p>
                         <div className="flex items-center mt-2 text-sm text-warm-500">
                             <span>❤️ {post.likes}</span>
                         </div>

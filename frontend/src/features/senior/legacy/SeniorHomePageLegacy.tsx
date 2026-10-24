@@ -4,6 +4,7 @@ import { useCheckinStore, type CheckinData } from '../../../store/useCheckinStor
 import { useUIModeStore } from '../../../store/useUIModeStore';
 import { markDailyTaskCompleted } from '../../../lib/dailyProgress';
 import type { ToolItem } from '../../../pages/ToolboxPage';
+import { speechLang } from '../../../i18n/autoTranslate';
 
 type SeniorView = 'home' | 'voice' | 'status' | 'result' | 'help';
 
@@ -167,7 +168,7 @@ function speak(text: string) {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-CN';
+    utterance.lang = speechLang();
     utterance.rate = 0.92;
     utterance.pitch = 1;
     window.speechSynthesis.speak(utterance);
@@ -409,7 +410,7 @@ export default function SeniorHomePage({
         }
 
         const recognition = new SpeechRecognition();
-        recognition.lang = 'zh-CN';
+        recognition.lang = speechLang();
         recognition.continuous = false;
         recognition.interimResults = true;
         recognition.onresult = (event: any) => {

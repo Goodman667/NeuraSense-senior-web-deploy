@@ -303,7 +303,7 @@ export const CommunityFeed = ({ maxPosts = 10, fullPage = false, onStartMessage,
                                             </span>
                                             <span className="text-xs text-warm-400">{timeAgo(post.created_at || post.createdAt || new Date().toISOString())}</span>
                                         </div>
-                                        <p className="text-warm-700 whitespace-pre-wrap break-words">{post.content}</p>
+                                        <p data-no-translate className="text-warm-700 whitespace-pre-wrap break-words">{post.content}</p>
 
                                         {/* Actions */}
                                         <div className="flex items-center space-x-6 mt-3">

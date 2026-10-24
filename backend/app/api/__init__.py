@@ -8,6 +8,7 @@ business logic to the services layer.
 
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
+from app.utils.lang import is_english
 from pydantic import BaseModel
 from typing import Optional
 
@@ -907,7 +908,7 @@ async def generate_pdf_report(request: PDFReportRequest):
         return {
             "success": True,
             "pdf_base64": pdf_base64,
-            "filename": f"心理评估报告_{request.scale_type.upper()}_{datetime.now().strftime('%Y%m%d')}.pdf",
+            "filename": f"{'Assessment_Report' if is_english() else '心理评估报告'}_{request.scale_type.upper()}_{datetime.now().strftime('%Y%m%d')}.pdf",
         }
     except HTTPException:
         raise

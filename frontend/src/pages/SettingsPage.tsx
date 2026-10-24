@@ -16,7 +16,7 @@ const FREQ_OPTIONS = [
     { value: 'hourly', label_zh: '每小时', label_en: 'Hourly' },
 ];
 
-export default function SettingsPage({ onBack, authToken }: SettingsPageProps) {
+export default function SettingsPage({ authToken }: SettingsPageProps) {
     const { lang, setLang, t } = useI18n();
     const { darkMode, setDarkMode, profile, updateProfile } = useProfileStore();
 
@@ -67,11 +67,6 @@ export default function SettingsPage({ onBack, authToken }: SettingsPageProps) {
         <div className="space-y-5 animate-fadeIn">
             {/* 顶栏 */}
             <div className="flex items-center gap-3 mb-2">
-                <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-warm-100 dark:hover:bg-gray-700 transition-colors">
-                    <svg className="w-5 h-5 text-warm-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                    </svg>
-                </button>
                 <h2 className="text-xl font-bold text-warm-800 dark:text-gray-100">
                     {lang === 'zh' ? '设置' : 'Settings'}
                 </h2>

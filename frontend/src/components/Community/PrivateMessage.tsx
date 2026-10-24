@@ -289,7 +289,7 @@ export const PrivateMessage = ({ onClose, preSelectedUser, currentUser }: Privat
                                         className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'} `}
                                     >
                                         <div className={`max - w - [70 %] ${msg.from === 'me' ? 'order-2' : 'order-1'} `}>
-                                            <div
+                                            <div data-no-translate
                                                 className={`px - 4 py - 2 rounded - 2xl ${msg.from === 'me'
                                                     ? 'bg-primary-500 text-white rounded-br-md'
                                                     : 'bg-warm-100 dark:bg-gray-700 text-warm-800 dark:text-white rounded-bl-md'

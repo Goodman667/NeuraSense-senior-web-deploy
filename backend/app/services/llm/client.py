@@ -10,6 +10,8 @@ from typing import Any
 
 import httpx
 
+from app.utils.lang import apply_lang
+
 
 DEFAULT_LLM_MODEL = "gpt-6-luna"
 DEFAULT_LLM_PROVIDER = "responses"
@@ -56,7 +58,8 @@ def normalize_messages(messages: list[dict[str, Any]]) -> list[dict[str, str]]:
         content = str(content).strip()
         if content:
             normalized.append({"role": role, "content": content})
-    return normalized
+    # English mode: ask the model to answer in English.
+    return apply_lang(normalized)
 
 
 def extract_text_from_llm_response(data: dict[str, Any]) -> str:

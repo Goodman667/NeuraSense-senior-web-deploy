@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { speechLang } from '../../../i18n/autoTranslate';
 
 export type SpeechStatus = 'idle' | 'unsupported' | 'listening' | 'recognized' | 'error' | 'permission_denied';
 
@@ -22,7 +23,7 @@ export function useSeniorSpeechRecognition(onText: (text: string) => void) {
     }
     try {
       const recognition = new SpeechRecognition();
-      recognition.lang = 'zh-CN';
+      recognition.lang = speechLang();
       recognition.continuous = false;
       recognition.interimResults = true;
       recognition.onresult = (event: any) => {

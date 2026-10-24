@@ -6,6 +6,7 @@ import { mergeContacts, readStoredContacts, writeStoredContacts } from '../lib/l
 import { seniorApi } from '../services/seniorApi';
 import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 import type { SeniorPreference, SeniorSupportContact } from '../types/senior';
+import { isEnglish, setLangAndReload } from '../../../i18n/autoTranslate';
 
 const defaultPref: SeniorPreference = {
   user_id: '', auto_enter_senior: false, font_scale: 'large', senior_voice_enabled: true, senior_voice_speed: 0.9, senior_voice_name: 'xiaoyi', text_fallback_enabled: true, caregiver_notify_enabled: false, preferred_region: 'CN',
@@ -216,6 +217,12 @@ export function SeniorSettings({ userId, required = false, onSaved, autoOpenCont
         <section className="sn-sheet p-6 md:p-7">
           <h2 className="sn-h2 flex items-center gap-3"><SeniorIcon name="settings" className="h-7 w-7 text-[var(--sn-teal)]" />显示和朗读</h2>
           <p className="sn-body mt-1">先把字和声音调舒服，再开始用。</p>
+
+          <p className="mt-6 text-[1.2rem]">语言 / Language</p>
+          <div className="mt-2 grid grid-cols-2 gap-2" role="group" aria-label="语言 / Language" data-no-translate>
+            <button lang="zh-CN" onClick={() => { if (isEnglish()) setLangAndReload('zh'); }} aria-pressed={!isEnglish()} className="sn-chip justify-center whitespace-nowrap !rounded-[14px] !px-2">中文</button>
+            <button lang="en" onClick={() => { if (!isEnglish()) setLangAndReload('en'); }} aria-pressed={isEnglish()} className="sn-chip justify-center whitespace-nowrap !rounded-[14px] !px-2">English</button>
+          </div>
 
           <p className="mt-6 text-[1.2rem]">字体大小</p>
           <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="字体大小">
