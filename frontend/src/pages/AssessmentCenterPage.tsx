@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useMemo, type ComponentType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { API_BASE } from '../config/api';
 import { markDailyTaskCompleted } from '../lib/dailyProgress';
 import { MarkdownText } from '../components/Assessment/MarkdownText';
@@ -107,13 +108,146 @@ function getSeverityColor(severity: string): string {
 }
 
 /* ============================================================
-   SUSExportButton — 仅研究者账号可见，导出全部参与者的 SUS 数据
+   SUS 研究者工具 — 仅研究者账号可见：导出全部数据、管理（删除）数据
    ============================================================ */
-function SUSExportButton() {
+interface SUSRow {
+    id: string;
+    username: string;
+    mode: string;
+    age_group: string;
+    sus_score: number;
+    created_at: string;
+}
+
+const SUS_MODE_LABEL: Record<string, string> = { standard: '标准版', companion: '陪伴版' };
+
+function formatLocalTime(iso: string) {
+    const d = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+function SUSManageDialog({ token, onClose, onChanged }: { token: string; onClose: () => void; onChanged: (remaining: number) => void }) {
+    const [rows, setRows] = useState<SUSRow[] | null>(null);
+    const [selected, setSelected] = useState<Set<string>>(new Set());
+    const [confirming, setConfirming] = useState(false);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const load = async () => {
+        setError(null);
+        try {
+            const res = await fetch(`${API_BASE}/sus/list?token=${encodeURIComponent(token)}`);
+            if (!res.ok) throw new Error();
+            const json = await res.json();
+            setRows(json.responses || []);
+        } catch {
+            setError('加载失败，请稍后重试');
+            setRows([]);
+        }
+    };
+
+    useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const toggle = (id: string) => {
+        const next = new Set(selected);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        setSelected(next);
+        setConfirming(false);
+    };
+    const allSelected = !!rows && rows.length > 0 && selected.size === rows.length;
+    const toggleAll = () => {
+        setSelected(allSelected || !rows ? new Set() : new Set(rows.map((r) => r.id)));
+        setConfirming(false);
+    };
+
+    const remove = async () => {
+        setBusy(true);
+        setError(null);
+        try {
+            const res = await fetch(`${API_BASE}/sus/delete?token=${encodeURIComponent(token)}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [...selected] }),
+            });
+            const json = await res.json().catch(() => ({}));
+            if (!res.ok || !json.success) throw new Error();
+            setSelected(new Set());
+            setConfirming(false);
+            onChanged(json.remaining ?? 0);
+            await load();
+        } catch {
+            setError('删除失败，请稍后重试');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="管理 SUS 数据">
+            <div className="flex max-h-[88vh] w-full max-w-2xl flex-col rounded-t-[24px] bg-white shadow-xl sm:rounded-[24px]">
+                <div className="flex items-start justify-between gap-4 border-b border-black/10 px-5 py-4 sm:px-6">
+                    <div>
+                        <h3 className="text-lg font-semibold text-gray-900">管理 SUS 数据</h3>
+                        <p className="mt-1 text-xs text-gray-500">勾选要删除的问卷，例如自己测试时填的数据。删除后无法恢复，建议先导出备份。</p>
+                    </div>
+                    <button onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-black/15 text-gray-600 hover:border-black/40" aria-label="关闭">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" /></svg>
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-5 py-3 sm:px-6">
+                    {rows === null ? (
+                        <p className="py-10 text-center text-sm text-gray-400">加载中…</p>
+                    ) : rows.length === 0 ? (
+                        <p className="py-10 text-center text-sm text-gray-400">还没有 SUS 数据</p>
+                    ) : (
+                        <>
+                            <label className="flex cursor-pointer items-center gap-3 border-b border-black/5 py-3 text-sm text-gray-600">
+                                <input type="checkbox" className="h-4 w-4 accent-black" checked={allSelected} onChange={toggleAll} />
+                                全选（共 {rows.length} 份）
+                            </label>
+                            {rows.map((r) => (
+                                <label key={r.id} className="flex cursor-pointer items-center gap-3 border-b border-black/5 py-3 text-sm">
+                                    <input type="checkbox" className="h-4 w-4 shrink-0 accent-black" checked={selected.has(r.id)} onChange={() => toggle(r.id)} />
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate font-medium text-gray-900">{r.username || '（无用户名）'}</span>
+                                        <span className="block text-xs text-gray-500">{formatLocalTime(r.created_at)} · {SUS_MODE_LABEL[r.mode] || r.mode} · {r.age_group} 岁</span>
+                                    </span>
+                                    <span className="shrink-0 text-base font-semibold text-gray-900">{r.sus_score}</span>
+                                </label>
+                            ))}
+                        </>
+                    )}
+                </div>
+
+                <div className="border-t border-black/10 px-5 py-4 sm:px-6">
+                    {error && <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+                    {confirming ? (
+                        <div className="flex flex-wrap items-center gap-3">
+                            <p className="flex-1 text-sm text-red-700">确定删除选中的 {selected.size} 份问卷吗？删除后无法恢复。</p>
+                            <button onClick={() => setConfirming(false)} disabled={busy} className="rounded-full border border-black/15 px-5 py-2.5 text-sm text-gray-700">取消</button>
+                            <button onClick={remove} disabled={busy} className="rounded-full bg-red-600 px-5 py-2.5 text-sm text-white hover:bg-red-700 disabled:opacity-50">{busy ? '删除中…' : '确认删除'}</button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-gray-500">已选 {selected.size} 份</span>
+                            <button onClick={() => setConfirming(true)} disabled={selected.size === 0} className="rounded-full bg-black px-5 py-2.5 text-sm text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40">删除所选</button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>,
+        document.body,
+    );
+}
+
+function SUSResearcherTools() {
     const token = localStorage.getItem('token');
     const [count, setCount] = useState<number | null>(null);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [managing, setManaging] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -150,18 +284,24 @@ function SUSExportButton() {
         }
     };
 
+    const pill = 'flex items-center gap-2 whitespace-nowrap rounded-full border border-black/15 px-4 py-2 text-sm text-gray-800 transition hover:border-black/40 disabled:opacity-50';
+
     return (
-        <button
-            onClick={download}
-            disabled={busy}
-            title={error || '下载全部参与者的 SUS 问卷结果（CSV，可用 Excel 打开）'}
-            className="flex items-center gap-2 whitespace-nowrap rounded-full border border-black/15 px-4 py-2 text-sm text-gray-800 transition hover:border-black/40 disabled:opacity-50"
-        >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
-            </svg>
-            {busy ? '导出中…' : error ? error : `导出 SUS 数据（${count} 份）`}
-        </button>
+        <>
+            <button onClick={download} disabled={busy} title={error || '下载全部参与者的 SUS 问卷结果（CSV，可用 Excel 打开）'} className={pill}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+                </svg>
+                {busy ? '导出中…' : error ? error : `导出 SUS 数据（${count} 份）`}
+            </button>
+            <button onClick={() => setManaging(true)} className={pill}>
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M10 11v6m4-6v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" />
+                </svg>
+                管理 SUS 数据
+            </button>
+            {managing && <SUSManageDialog token={token} onClose={() => setManaging(false)} onChanged={setCount} />}
+        </>
     );
 }
 
@@ -214,7 +354,7 @@ function CatalogView({
                         </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                    <SUSExportButton />
+                    <SUSResearcherTools />
                     <button
                         onClick={onShowHistory}
                         className="flex items-center gap-2 whitespace-nowrap rounded-full bg-black px-4 py-2 text-sm text-white transition hover:bg-gray-800"
