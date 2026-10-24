@@ -4,6 +4,8 @@ SUS Router — 系统可用性量表（研究用）
 POST /sus/responses?token=...   -> 保存一份 SUS 问卷（需登录、需知情同意）
 GET  /sus/researcher?token=...   -> 当前账号是否为研究者，以及已收集的问卷份数
 GET  /sus/export?token=...       -> 研究者导出全部参与者的 SUS 结果（CSV，仅研究者账号）
+GET  /sus/list?token=...         -> 研究者查看全部问卷（不含逐题答案），用于管理
+POST /sus/delete?token=...       -> 研究者删除选中的问卷（例如自己测试时填的数据），不可恢复
 
 计分（Brooke, 1996）:
   奇数题贡献 = 得分 - 1，偶数题贡献 = 5 - 得分；10 题贡献之和为原始分 (0-40)，
@@ -43,6 +45,10 @@ RESEARCHERS = {
     u.strip() for u in os.getenv("SUS_RESEARCHERS", "ggxxmm25").split(",") if u.strip()
 }
 AGE_GROUPS = ["18-29", "30-44", "45-59", "60-69", "70-79", "80+"]
+
+
+class SUSDeleteRequest(BaseModel):
+    ids: list[str]
 
 
 class SUSResponseRequest(BaseModel):
@@ -146,7 +152,7 @@ def _researcher(token: str) -> dict:
     if not user:
         raise HTTPException(status_code=401, detail="请先登录")
     if user.get("username") not in RESEARCHERS:
-        raise HTTPException(status_code=403, detail="只有研究者账号可以导出数据")
+        raise HTTPException(status_code=403, detail="只有研究者账号可以使用此功能")
     return user
 
 
@@ -181,3 +187,38 @@ async def export_csv(token: str):
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="sus_responses_{stamp}.csv"'},
     )
+
+
+@router.get("/list")
+async def list_responses(token: str):
+    _researcher(token)
+    rows = [
+        {k: r.get(k) for k in ("id", "username", "mode", "age_group", "sus_score", "created_at")}
+        for r in _all_rows()
+    ]
+    rows.reverse()  # 最新的在前
+    return {"success": True, "responses": rows}
+
+
+@router.post("/delete")
+async def delete_responses(body: SUSDeleteRequest, token: str):
+    _researcher(token)
+    ids = {str(i) for i in body.ids if i}
+    if not ids:
+        raise HTTPException(status_code=400, detail="没有选择要删除的问卷")
+
+    if is_supabase_available():
+        try:
+            get_supabase_client().table(TABLE).delete().in_("id", list(ids)).execute()
+        except Exception as exc:
+            print(f"[sus] Supabase delete skipped: {exc}")
+
+    local = _read_local()
+    kept = [r for r in local if str(r.get("id")) not in ids]
+    if len(kept) != len(local):
+        DATA_DIR.mkdir(exist_ok=True)
+        LOCAL_FILE.write_text(json.dumps(kept, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    remaining = _all_rows()
+    left = ids & {str(r.get("id")) for r in remaining}
+    return {"success": not left, "deleted": len(ids) - len(left), "remaining": len(remaining)}
