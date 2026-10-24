@@ -8,10 +8,12 @@
  * "Pre-Testing the Chinese Version of the System Usability Scale (C-SUS)", ICCE 2017。
  * 原文为繁体中文，这里只做了繁简字转换；第 5 题原文“许有多”为排印错误，按原意改为“有许多”。
  * 原量表：Brooke (1996)。奇数题为正向表述，偶数题为反向表述。
+ * 英文模式下显示 Brooke (1996) 原版英文题目（见 i18n/en.json），并在提交时记录 language = 'en'。
  */
 
 import { useState } from 'react';
 import { API_BASE } from '../../config/api';
+import { isEnglish } from '../../i18n/autoTranslate';
 
 const SUS_ITEMS = [
     '我觉得我会常使用这个系统。',
@@ -75,7 +77,7 @@ export const SUSScale = ({ onClose }: SUSScaleProps) => {
             const res = await fetch(`${API_BASE}/sus/responses?token=${encodeURIComponent(token)}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode, age_group: ageGroup, answers, consent: true }),
+                body: JSON.stringify({ mode, age_group: ageGroup, answers, consent: true, language: isEnglish() ? 'en' : 'zh' }),
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data.detail || '提交失败');

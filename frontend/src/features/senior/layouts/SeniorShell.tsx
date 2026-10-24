@@ -40,6 +40,8 @@ export function SeniorShell({
   onSwitchToStandard,
   currentUserName,
   contactRequired = false,
+  onBack,
+  onLogout,
   children,
 }: {
   page: SeniorPage;
@@ -47,6 +49,10 @@ export function SeniorShell({
   onSwitchToStandard: () => void;
   currentUserName?: string;
   contactRequired?: boolean;
+  /** Back to the previous page; shown above the content on every page except home. */
+  onBack?: () => void;
+  /** Log out; shown in the header with a confirmation. */
+  onLogout?: () => void;
   children: ReactNode;
 }) {
   const [fontScale, setFontScale] = useState(() => localStorage.getItem(FONT_SCALE_STORAGE) || 'large');
@@ -94,6 +100,14 @@ export function SeniorShell({
               <SeniorIcon name="phone" />需要帮助
             </button>
             <button onClick={onSwitchToStandard} className="sn-btn sn-btn-outline">完整功能</button>
+            {onLogout ? (
+              <button
+                onClick={() => { if (window.confirm('确定要退出登录吗？')) onLogout(); }}
+                className="sn-btn sn-btn-outline"
+              >
+                退出登录
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
@@ -125,6 +139,11 @@ export function SeniorShell({
 
         <main id="senior-main" className="min-w-0 pb-10" tabIndex={-1}>
           <div className="mb-5 lg:hidden"><SeniorPlaybackBar /></div>
+          {onBack && page !== 'home' ? (
+            <button onClick={onBack} className="sn-btn sn-btn-outline mb-5" aria-label="返回上一页">
+              <SeniorIcon name="arrow" className="h-6 w-6 rotate-180" />返回上一页
+            </button>
+          ) : null}
           {children}
         </main>
       </div>

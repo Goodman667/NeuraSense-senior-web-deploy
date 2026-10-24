@@ -115,6 +115,7 @@ interface SUSRow {
     username: string;
     mode: string;
     age_group: string;
+    language?: string;
     sus_score: number;
     created_at: string;
 }
@@ -212,7 +213,7 @@ function SUSManageDialog({ token, onClose, onChanged }: { token: string; onClose
                                     <input type="checkbox" className="h-4 w-4 shrink-0 accent-black" checked={selected.has(r.id)} onChange={() => toggle(r.id)} />
                                     <span className="min-w-0 flex-1">
                                         <span className="block truncate font-medium text-gray-900">{r.username || '（无用户名）'}</span>
-                                        <span className="block text-xs text-gray-500">{formatLocalTime(r.created_at)} · {SUS_MODE_LABEL[r.mode] || r.mode} · {r.age_group} 岁</span>
+                                        <span className="block text-xs text-gray-500">{formatLocalTime(r.created_at)} · {SUS_MODE_LABEL[r.mode] || r.mode} · {r.age_group} 岁 · {r.language === 'en' ? '英文版' : '中文版'}</span>
                                     </span>
                                     <span className="shrink-0 text-base font-semibold text-gray-900">{r.sus_score}</span>
                                 </label>
@@ -312,12 +313,11 @@ function CatalogView({
     catalog,
     onSelect,
     onShowHistory,
-    onClose,
 }: {
     catalog: CatalogItem[];
     onSelect: (item: CatalogItem) => void;
     onShowHistory: () => void;
-    onClose: () => void;
+    onClose?: () => void;
 }) {
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -345,9 +345,6 @@ function CatalogView({
             <section className="rounded-[20px] bg-white px-5 py-5 shadow-sm sm:rounded-[28px] sm:px-8 sm:py-7">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full border border-black/15 text-gray-700 transition hover:border-black/40" aria-label="返回">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M15 18l-6-6 6-6" /></svg>
-                        </button>
                         <div>
                             <h2 className="font-display-cn text-[28px] leading-none text-black md:text-[34px]">测评中心</h2>
                             <p className="mt-2 text-sm text-black/55">标准量表自评，结果仅供自我了解，不作诊断。</p>

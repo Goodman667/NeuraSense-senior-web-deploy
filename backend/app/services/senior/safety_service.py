@@ -17,17 +17,25 @@ MEDICAL_PATTERNS = [
     r"突然.*(麻|无力)|半边.*(麻|无力)",
     r"吃多了药|药吃多了|过量服药|多吃了.*药",
     r"(吃|吞|喝).*很多.*药|想.*(吃|吞|喝).*药",
+    r"(?i)chest (pain|hurts|is tight|feels tight)|can'?t breathe|short(ness)? of breath|trouble breathing",
+    r"(?i)\b(i|i've|i have) (fell|fallen)\b|fell (down|over)|fainted|passed out|unconscious|slurred speech",
+    r"(?i)suddenly .{0,20}(numb|weak)|one side .{0,20}(numb|weak)",
+    r"(?i)took too many (pills|tablets)|overdos(e|ed)|too much (medicine|medication)",
 ]
 
 URGENT_PATTERNS = [
     r"不想活|想死|自杀|自残|伤害自己|结束生命|跳楼|割腕",
     r"活着没意思|不如死了|死了算了",
     r"准备.*(死|自杀|跳楼|割腕)|已经.*(刀|绳|药)",
+    r"(?i)suicid|kill(ing)? myself|end(ing)? (my life|it all)|take my (own )?life|want(ed)? to die|don'?t want to (live|be alive)",
+    r"(?i)self[- ]?harm|hurt(ing)? myself|cut(ting)? myself|better off dead|no reason to live|not worth living",
 ]
 
 ELEVATED_PATTERNS = [
     r"撑不住|受不了|太痛苦|很绝望|没人管|没人理",
     r"活不下去|没有希望|不想见人|什么都没意义",
+    r"(?i)can'?t (cope|take it|take this|go on)|unbearable|hopeless|no hope|nobody cares|no one cares",
+    r"(?i)don'?t want to see anyone|nothing (matters|means anything)|everything is pointless",
 ]
 
 WATCH_PATTERNS = [
@@ -35,6 +43,10 @@ WATCH_PATTERNS = [
     r"孤单|孤独|一个人|没人陪",
     r"担心|焦虑|烦|害怕|压力|累|没精神|难过|低落",
     r"眼睛.*(痛|疼|酸|胀)|头痛|头疼|胃痛|腰痛|不舒服",
+    r"(?i)can'?t sleep|insomnia|wak(e|ing) up (at night|in the night|too early)",
+    r"(?i)lonely|on my own|no one to talk",
+    r"(?i)worr|anxious|stress|scared|afraid|tired|exhausted|\bsad\b|feeling (low|down)",
+    r"(?i)(eyes?) (hurt|ache|sore)|headache|stomach ?ache|back ?ache|not feeling well|unwell",
 ]
 
 

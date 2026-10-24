@@ -17,6 +17,12 @@ interface DesktopShellProps {
     onOpenSettings: () => void;
     onSwitchToSenior?: () => void;
     onSwitchToStandard?: () => void;
+    /** Show the page title row (every page except the Today home). */
+    showPageHeader?: boolean;
+    /** Back to the previous page; shown in the page title row. */
+    onBack?: () => void;
+    /** Log out; shown in the top bar when someone is signed in. */
+    onLogout?: () => void;
     children: ReactNode;
 }
 
@@ -46,6 +52,20 @@ const IconBell = () => (
     </svg>
 );
 
+const IconBack = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
+        <path d="M15 18l-6-6 6-6" />
+    </svg>
+);
+
+const IconLogout = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+        <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" />
+        <path d="M10 17l-5-5 5-5" />
+        <path d="M5 12h11" />
+    </svg>
+);
+
 const IconSettings = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
         <circle cx="12" cy="12" r="3" />
@@ -63,9 +83,15 @@ export default function DesktopShell({
     onOpenMessages,
     onOpenSettings,
     onSwitchToSenior,
+    showPageHeader,
+    onBack,
+    onLogout,
     children,
 }: DesktopShellProps) {
-    const displayName = currentUser?.nickname || currentUser?.username || '访客';
+    const isLoggedIn = !!(currentUser?.username || currentUser?.nickname);
+    const confirmLogout = () => {
+        if (onLogout && window.confirm('确定要退出登录吗？')) onLogout();
+    };
 
     return (
         <>
@@ -123,20 +149,54 @@ export default function DesktopShell({
                             <button onClick={onOpenMessages} className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white transition hover:bg-gray-800" aria-label="消息中心">
                                 <IconBell />
                             </button>
+                            {isLoggedIn && onLogout ? (
+                                <button
+                                    onClick={confirmLogout}
+                                    className="flex h-9 items-center gap-1.5 rounded-full border border-black/15 px-3 text-sm text-gray-700 transition hover:border-black/40 hover:text-black"
+                                    aria-label="退出登录"
+                                    title="退出登录"
+                                >
+                                    <IconLogout />
+                                    <span className="hidden whitespace-nowrap sm:inline">退出登录</span>
+                                </button>
+                            ) : null}
                         </div>
                     </div>
                 </header>
 
-                {activeTab !== 'today' ? (
-                    <div className="mx-auto hidden w-full max-w-[1800px] px-4 pt-6 sm:px-6 lg:block lg:px-8">
-                        <div className="flex items-end justify-between gap-6 border-b border-black/10 pb-5">
-                            <div className="flex items-center gap-4">
-                                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-orange-500 text-lg text-white">{displayName.slice(0, 1).toUpperCase()}</span>
-                                <h1 className="font-display-cn text-[40px] leading-none text-black">{pageTitle}</h1>
+                {showPageHeader ? (
+                    <>
+                        <div className="mx-auto hidden w-full max-w-[1800px] px-4 pt-6 sm:px-6 lg:block lg:px-8">
+                            <div className="flex items-end justify-between gap-6 border-b border-black/10 pb-5">
+                                <div className="flex items-center gap-4">
+                                    {onBack ? (
+                                        <button
+                                            onClick={onBack}
+                                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/15 bg-white text-gray-800 transition hover:border-black/40"
+                                            aria-label="返回上一页"
+                                            title="返回上一页"
+                                        >
+                                            <IconBack />
+                                        </button>
+                                    ) : null}
+                                    <h1 className="font-display-cn text-[40px] leading-none text-black">{pageTitle}</h1>
+                                </div>
+                                {pageDescription ? <p className="max-w-xl pb-1 text-right text-[15px] leading-6 text-black/60">{pageDescription}</p> : null}
                             </div>
-                            {pageDescription ? <p className="max-w-xl pb-1 text-right text-[15px] leading-6 text-black/60">{pageDescription}</p> : null}
                         </div>
-                    </div>
+                        <div className="mx-auto flex w-full items-center gap-3 px-4 pt-4 sm:px-6 lg:hidden">
+                            {onBack ? (
+                                <button
+                                    onClick={onBack}
+                                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-black/15 bg-white text-gray-800"
+                                    aria-label="返回上一页"
+                                >
+                                    <IconBack />
+                                </button>
+                            ) : null}
+                            <h1 className="font-display-cn truncate text-[26px] leading-none text-black">{pageTitle}</h1>
+                        </div>
+                    </>
                 ) : null}
 
                 {children}

@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { API_BASE } from '../../config/api';
+import { speechLang } from '../../i18n/autoTranslate';
 
 // ==================== Types ====================
 
@@ -1422,7 +1423,7 @@ export const PsyChat = ({
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = false;
             recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = 'zh-CN';
+            recognitionRef.current.lang = speechLang();
 
             recognitionRef.current.onresult = (event: any) => {
                 const transcript = Array.from(event.results)
@@ -1848,7 +1849,7 @@ export const PsyChat = ({
                                             ) : (
                                                 <div className="max-w-[72%]">
                                                     <div className="rounded-[1.35rem] rounded-tr-md bg-slate-900 px-5 py-3.5 text-[15px] leading-7 text-white shadow-lg shadow-slate-900/10">
-                                                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                                                        <p data-no-translate className="whitespace-pre-wrap">{msg.text}</p>
                                                     </div>
                                                     <div className="mt-1 pr-1 text-right text-xs text-slate-400">{formatTime(msg.timestamp)}</div>
                                                 </div>

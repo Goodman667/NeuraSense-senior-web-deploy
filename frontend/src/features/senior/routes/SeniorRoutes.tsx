@@ -170,6 +170,26 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
     return () => window.clearTimeout(timer);
   }, [contactsReady, currentUserName, latestSummary, page, speak]);
   const goTop = () => window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+  // Page history for the "返回上一页" button.
+  const historyRef = useRef<SeniorPage[]>([]);
+  const lastPageRef = useRef<SeniorPage>(page);
+  const poppingRef = useRef(false);
+  useEffect(() => {
+    if (lastPageRef.current === page) return;
+    if (!poppingRef.current) {
+      historyRef.current.push(lastPageRef.current);
+      if (historyRef.current.length > 30) historyRef.current.shift();
+    }
+    poppingRef.current = false;
+    lastPageRef.current = page;
+  }, [page]);
+  const handleBack = () => {
+    stopAndClearAudio();
+    const prev = historyRef.current.pop() || 'home';
+    poppingRef.current = prev !== page;
+    setPage(prev);
+    goTop();
+  };
   const handleNavigate = (next: SeniorPage) => { stopAndClearAudio(); setPage(next); goTop(); };
   const handleStartTopic = (prompt: string) => { stopAndClearAudio(); setChatSeed(prompt); setPage('chat'); goTop(); };
   const handleSummary = (summary: SeniorSummary) => {
@@ -208,5 +228,5 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
       default: return <SeniorHome userId={storageUserId} currentUserName={currentUserName} latestSummary={latestSummary} onNavigate={handleNavigate} onStartTopic={handleStartTopic} />;
     }
   })();
-  return <SeniorShell page={page} onNavigate={handleNavigate} onSwitchToStandard={onSwitchToStandard} currentUserName={currentUserName} contactRequired={!contactsReady}>{content}</SeniorShell>;
+  return <SeniorShell page={page} onNavigate={handleNavigate} onSwitchToStandard={onSwitchToStandard} currentUserName={currentUserName} contactRequired={!contactsReady} onBack={handleBack} onLogout={onLogout}>{content}</SeniorShell>;
 }

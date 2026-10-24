@@ -22,6 +22,7 @@ PHQ-9 Dimensions:
 9. Suicidal Ideation (自杀意念) [CRITICAL]
 """
 
+from app.utils.lang import apply_lang
 from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
@@ -152,6 +153,8 @@ class CrisisKeywordTrie:
         "kill myself", "suicide", "end my life", "want to die",
         "better off dead", "no reason to live", "suicidal",
         "self-harm", "cut myself", "overdose",
+        "self harm", "hurt myself", "end it all", "don't want to live",
+        "dont want to live", "not worth living", "take my own life", "suicide note",
     ]
     
     def __init__(self):
@@ -410,7 +413,7 @@ class AssessmentManager:
             client = ZhipuAI(api_key=self.llm_api_key)
             response = client.chat.completions.create(
                 model=self.llm_model,
-                messages=messages,
+                messages=apply_lang(messages),
                 temperature=0.7,
                 max_tokens=900,
             )

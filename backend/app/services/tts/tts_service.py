@@ -22,6 +22,28 @@ VOICE_OPTIONS = {
     "yunxia": "zh-CN-YunxiaNeural",          # 儿童女声
 }
 
+# English voices used when the app is in English mode (same character as the Chinese ones)
+EN_VOICE_OPTIONS = {
+    "xiaoxiao": "en-US-JennyNeural",
+    "xiaoyi": "en-US-AriaNeural",
+    "yunjian": "en-US-GuyNeural",
+    "yunxi": "en-US-ChristopherNeural",
+    "yunxia": "en-US-AnaNeural",
+}
+
+_CJK_RE = re.compile(r"[\u3400-\u9fff]")
+
+
+def _wants_english(text: str) -> bool:
+    """English voice when the request is in English mode, or the text has no Chinese at all."""
+    try:
+        from app.utils.lang import is_english
+        if is_english():
+            return True
+    except Exception:
+        pass
+    return bool(text) and not _CJK_RE.search(text)
+
 # 情感风格映射
 EMOTION_STYLES = {
     "calm": "calm",
@@ -67,15 +89,20 @@ def sanitize_tts_text(text: str) -> str:
     cleaned = re.sub(r"[*_`~]+", "", cleaned)
 
     # Tables/separators and miscellaneous visual delimiters.
-    cleaned = cleaned.replace("|", "，")
-    cleaned = re.sub(r"[-—]{3,}", "。", cleaned)
+    english = not _CJK_RE.search(cleaned)
+    cleaned = cleaned.replace("|", ", " if english else "，")
+    cleaned = re.sub(r"[-—]{3,}", ". " if english else "。", cleaned)
     cleaned = re.sub(r"[<>#]+", "", cleaned)
 
     # Collapse whitespace while preserving natural sentence pauses.
     cleaned = re.sub(r"[ \t\f\v]+", " ", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    cleaned = re.sub(r"\s*\n\s*", "。", cleaned)
-    cleaned = re.sub(r"。{2,}", "。", cleaned)
+    if english:
+        cleaned = re.sub(r"([.!?])?\s*\n\s*", lambda m: (m.group(1) or ".") + " ", cleaned)
+        cleaned = re.sub(r"(\.\s*){2,}", ". ", cleaned)
+    else:
+        cleaned = re.sub(r"\s*\n\s*", "。", cleaned)
+        cleaned = re.sub(r"。{2,}", "。", cleaned)
 
     return cleaned.strip()
 
@@ -119,10 +146,14 @@ class TTSService:
             MP3 音频数据
         """
         text = sanitize_tts_text(text)
+        english = _wants_english(text)
         if not text:
-            text = "我在这里。"
+            text = "I'm here." if english else "我在这里。"
 
-        voice_id = VOICE_OPTIONS.get(voice, self.default_voice)
+        if english:
+            voice_id = EN_VOICE_OPTIONS.get(voice, EN_VOICE_OPTIONS["xiaoxiao"])
+        else:
+            voice_id = VOICE_OPTIONS.get(voice, self.default_voice)
         cache_key = self._get_cache_key(text, voice_id, rate, pitch)
         cache_path = self._get_cache_path(cache_key)
         

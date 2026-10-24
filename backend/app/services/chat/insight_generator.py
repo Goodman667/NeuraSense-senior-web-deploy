@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.utils.lang import apply_lang
+
 import json
 import os
 import re
@@ -89,7 +91,7 @@ class InsightGeneratorService:
         "anxiety": re.compile(r"焦虑|紧张|心慌|喘不过气|胸口闷|害怕|不安"),
         "pressure": re.compile(r"压力|崩溃|压得|顶不住|撑不下去|好烦|好痛苦|太难了"),
         "hopeless": re.compile(r"没希望|没有希望|活着没意思|不想继续|不如消失|放弃算了"),
-        "crisis": re.compile(r"自杀|自残|不想活|想死|死了算了|结束生命|伤害自己|一了百了|遗书"),
+        "crisis": re.compile(r"自杀|自残|不想活|想死|死了算了|结束生命|伤害自己|一了百了|遗书|suicid|kill(ing)? myself|end(ing)? (my life|it all)|want(ed)? to die|don'?t want to (live|be alive)|self[- ]?harm|hurt(ing)? myself|cut(ting)? myself|better off dead|no reason to live", re.IGNORECASE),
     }
 
     TOPIC_LABELS = {
@@ -258,7 +260,7 @@ class InsightGeneratorService:
             client = ZhipuAI(api_key=self.LLM_API_KEY)
             response = client.chat.completions.create(
                 model=self.LLM_MODEL,
-                messages=messages,
+                messages=apply_lang(messages),
                 temperature=0.5,
                 max_tokens=700,
             )

@@ -151,6 +151,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Request language (X-Lang: en in English mode) for AI replies and read-aloud
+from app.utils.lang import LangMiddleware
+app.add_middleware(LangMiddleware)
+
 # Include API router
 app.include_router(api_router, prefix="/api/v1")
 
