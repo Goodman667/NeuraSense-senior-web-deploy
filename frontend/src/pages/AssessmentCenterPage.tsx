@@ -19,6 +19,7 @@ import { GAD7Scale } from '../components/Assessment/GAD7Scale';
 import { SDSScale } from '../components/Assessment/SDSScale';
 import { SASScale } from '../components/Assessment/SASScale';
 import { PSSScale } from '../components/Assessment/PSSScale';
+import { SUSScale } from '../components/Assessment/SUSScale';
 import { PDFDownloadButton } from '../components/Assessment/PDFDownloadButton';
 import { standardAssets } from '../lib/standardAssets';
 
@@ -66,6 +67,7 @@ const SCALE_MAP: Record<string, ComponentType<{ onComplete?: (result: any) => vo
     sds: SDSScale,
     sas: SASScale,
     pss10: PSSScale,
+    sus: SUSScale,
 };
 
 /* ============================================================
@@ -102,6 +104,65 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 function getSeverityColor(severity: string): string {
     return SEVERITY_COLORS[severity] || 'bg-warm-100 text-warm-600';
+}
+
+/* ============================================================
+   SUSExportButton — 仅研究者账号可见，导出全部参与者的 SUS 数据
+   ============================================================ */
+function SUSExportButton() {
+    const token = localStorage.getItem('token');
+    const [count, setCount] = useState<number | null>(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!token) return;
+        (async () => {
+            try {
+                const res = await fetch(`${API_BASE}/sus/researcher?token=${encodeURIComponent(token)}`);
+                if (!res.ok) return;
+                const json = await res.json();
+                if (json.is_researcher) setCount(json.count ?? 0);
+            } catch { /* offline */ }
+        })();
+    }, [token]);
+
+    if (!token || count === null) return null;
+
+    const download = async () => {
+        setBusy(true);
+        setError(null);
+        try {
+            const res = await fetch(`${API_BASE}/sus/export?token=${encodeURIComponent(token)}`);
+            if (!res.ok) throw new Error();
+            const blob = await res.blob();
+            const name = res.headers.get('content-disposition')?.match(/filename="([^"]+)"/)?.[1] || `sus_responses_${new Date().toISOString().slice(0, 10).replace(/-/g, '')}.csv`;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = name;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            setError('导出失败，请稍后重试');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <button
+            onClick={download}
+            disabled={busy}
+            title={error || '下载全部参与者的 SUS 问卷结果（CSV，可用 Excel 打开）'}
+            className="flex items-center gap-2 whitespace-nowrap rounded-full border border-black/15 px-4 py-2 text-sm text-gray-800 transition hover:border-black/40 disabled:opacity-50"
+        >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+            </svg>
+            {busy ? '导出中…' : error ? error : `导出 SUS 数据（${count} 份）`}
+        </button>
+    );
 }
 
 /* ============================================================
@@ -152,6 +213,8 @@ function CatalogView({
                             <p className="mt-2 text-sm text-black/55">标准量表自评，结果仅供自我了解，不作诊断。</p>
                         </div>
                     </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                    <SUSExportButton />
                     <button
                         onClick={onShowHistory}
                         className="flex items-center gap-2 whitespace-nowrap rounded-full bg-black px-4 py-2 text-sm text-white transition hover:bg-gray-800"
@@ -161,6 +224,7 @@ function CatalogView({
                         </svg>
                         测评记录
                     </button>
+                    </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -318,7 +382,7 @@ function HistoryView({
                 >
                     全部
                 </button>
-                {catalog.filter((c) => c.enabled).map((c) => (
+                {catalog.filter((c) => c.enabled && c.category !== 'research').map((c) => (
                     <button
                         key={c.key}
                         onClick={() => setFilterKey(c.key)}
