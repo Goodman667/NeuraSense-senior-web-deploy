@@ -147,7 +147,7 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
         <section className="sn-sheet mb-5 p-6">
           <p className="sn-kicker"><SeniorIcon name="clipboard" className="h-5 w-5" />小测做完了</p>
           <h1 className="sn-h1 mt-2">今天的建议已经整理好</h1>
-          <p className="sn-body mt-2">下面一张一张看，每张只讲一件事：先照顾哪里、现在做什么、更不舒服时找谁。</p>
+          <p className="sn-body mt-2">下面一张一张看，每张讲一件事：为什么会这样，可以怎么做。最要紧的放在第一张。</p>
           {tones.length ? (
             <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {tones.map(item => (

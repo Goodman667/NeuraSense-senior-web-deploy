@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from app.schemas.senior import (
+    SeniorInsightCard,
     SeniorQuestionAnswer,
     SeniorSummaryDimension,
     SeniorSummaryResponse,
@@ -11,8 +12,7 @@ from app.schemas.senior import (
     SeniorNextAction,
 )
 from app.services.llm import CounselorService
-from app.services.mental_health import build_ai_context
-from app.services.senior.advice_guidelines import CARD_PLAN, PRACTICAL_ADVICE_RULES
+from app.services.senior.advice_guidelines import SENIOR_ADVICE_SYSTEM, build_senior_advice_prompt, normalize_ai_cards, stricter_risk, topics_from_text
 from app.services.senior.card_service import build_family_message, build_insight_cards, recommend_exercise
 from app.services.senior.memory_service import get_senior_memory, update_senior_memory
 from app.services.senior.safety_service import detect_senior_safety
@@ -362,7 +362,7 @@ def _is_generic_summary(summary: SeniorSummaryResponse, source_text: str) -> boo
     too_generic = sum(1 for phrase in generic_phrases if phrase in combined) >= 3
     lacks_action = not any(cue in combined for cue in concrete_cues)
     leaks_project_language = any(term in combined for term in user_facing_banned)
-    missing_cards = len(summary.insight_cards or []) < 5
+    missing_cards = len(summary.insight_cards or []) < 2
     missing_family = not summary.family_message or len(summary.family_message.strip()) < 12
     return leaks_project_language or repeated_source or missing_cards or missing_family or (too_generic and lacks_action)
 
@@ -380,7 +380,7 @@ def _coerce_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, inter
         rec_raw = data.get("recommendation") or fallback.recommendation.model_dump()
         rec_type = rec_raw.get("type") if rec_raw.get("type") in {"relax", "chat", "help", "rest"} else fallback.recommendation.type
         next_raw = data.get("next_action") or fallback.next_action.model_dump()
-        risk = data.get("risk_level") if data.get("risk_level") in {"normal", "watch", "elevated", "urgent", "medical_emergency"} else fallback.risk_level
+        risk = stricter_risk(data.get("risk_level"), fallback.risk_level)
         rec = SeniorRecommendation(
             type=rec_type,
             title=str(rec_raw.get("title") or fallback.recommendation.title),
@@ -417,28 +417,8 @@ def _coerce_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, inter
         family_message = str(data.get("family_message") or fallback.family_message)
         summary_title = str(data.get("summary_title") or fallback.summary_title)
         plain_summary = str(data.get("plain_summary") or fallback.plain_summary)
-        cards_raw = data.get("insight_cards") or data.get("cards") or []
-        cards = []
-        if isinstance(cards_raw, list):
-            allowed_ids = {"priority", "first_action", "why", "safety", "family"}
-            for raw in cards_raw:
-                if not isinstance(raw, dict):
-                    continue
-                card_id = str(raw.get("id") or "")
-                if card_id not in allowed_ids:
-                    continue
-                cards.append({
-                    "id": card_id,
-                    "eyebrow": str(raw.get("eyebrow") or fallback.insight_cards[min(len(cards), len(fallback.insight_cards)-1)].eyebrow),
-                    "title": str(raw.get("title") or fallback.insight_cards[min(len(cards), len(fallback.insight_cards)-1)].title),
-                    "body": str(raw.get("body") or fallback.insight_cards[min(len(cards), len(fallback.insight_cards)-1)].body),
-                    "action": raw.get("action") or fallback.insight_cards[min(len(cards), len(fallback.insight_cards)-1)].action,
-                    "tone": raw.get("tone") if raw.get("tone") in {"normal", "watch", "elevated", "urgent", "medical_emergency"} else risk,
-                    "icon": raw.get("icon") or fallback.insight_cards[min(len(cards), len(fallback.insight_cards)-1)].icon,
-                    "bullets": [str(item) for item in (raw.get("bullets") or [])][:4],
-                    "speak_text": raw.get("speak_text") or raw.get("speakText") or raw.get("body"),
-                })
-        if len(cards) < 5:
+        cards = [SeniorInsightCard(**card) for card in normalize_ai_cards(data.get("insight_cards") or data.get("cards"), risk)]
+        if len(cards) < 2:
             cards = build_insight_cards(
                 summary_title=summary_title,
                 plain_summary=plain_summary,
@@ -472,62 +452,24 @@ def _coerce_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, inter
 
 def _build_senior_summary_prompt(
     answers: list[SeniorQuestionAnswer],
-    checkin: dict[str, Any] | None = None,
-    recent_context: dict[str, Any] | None = None,
+    risk_level: str,
+    risk_reasons: list[str] | None = None,
+    memory: Any | None = None,
 ) -> str:
-    project_context = build_ai_context(
-        user_mode="senior",
-        interaction_kind="daily_summary",
-        questions_answers=answers,
-        recent_context={"today_checkin": checkin or {}, "recent_context": recent_context or {}},
+    qa_lines = [f"{item.question_text}：{item.answer_text or '没有回答'}" for item in answers]
+    memory_lines: list[str] = []
+    if memory is not None:
+        concerns = [c for c in (getattr(memory, "frequent_concerns", None) or []) if c][:4]
+        if concerns:
+            memory_lines.append("以前常提到：" + "、".join(concerns))
+    return build_senior_advice_prompt(
+        kind="daily",
+        qa_lines=qa_lines,
+        risk_level=risk_level,
+        risk_reasons=risk_reasons,
+        memory_lines=memory_lines,
+        topics=topics_from_text(_joined_text(answers)),
     )
-    return f"""
-{project_context}
-
-【输出任务】
-根据上面的系统问题和老人的回答，写给老人本人看的今日建议。
-
-{PRACTICAL_ADVICE_RULES}
-
-{CARD_PLAN}
-
-【格式和安全要求】
-必须输出严格 JSON，不要 Markdown，不要解释，不要代码块。
-给老人或家人看的字段里不要出现 NeuraSense、关怀模式、项目、平台、AI、PHQ、GAD、抑郁症、焦虑症、诊断、评分、分数、量表、风险等级、算法、模型 等词。
-不要复述老人的原话来凑字数。
-plain_summary：先点名今天最需要照顾的具体情况，再说最关键的一个办法怎么做，最后一句说出现什么信号时找谁。
-family_message 必须像老人可以直接复制发给家人的一句话，说清楚想请家人帮什么，不共享完整聊天原文。
-recommended_exercise 只能从这些 id 选择：breathing_5min（慢呼吸）、mindful_breath_5min（正念呼吸）、body_relax_5min（身体放松）、grounding_54321（5-4-3-2-1 安心练习）、eye_rest_10min、worry_note、connection_message；步骤要贴合这位老人提到的情况。
-play_prompt 写一个轻微有趣但不幼稚的小玩法；stop_rule 写清楚什么时候停止练习并找真人帮助。
-如果是 urgent 或 medical_emergency，next_action.route 必须是 help，卡片重点放在现实帮助，不要继续普通建议。
-
-请输出如下 JSON：
-{{
-  "summary_title": "不超过18字",
-  "plain_summary": "100-160字，生活化，有具体办法",
-  "dimensions": {{
-    "sleep": {{"label":"睡眠", "status":"较平稳/一般/需要关注", "text":"一句话"}},
-    "mood": {{"label":"心情", "status":"较平稳/有些低落/需要陪伴", "text":"一句话"}},
-    "stress": {{"label":"压力", "status":"较轻/中等/偏高", "text":"一句话"}},
-    "social_support": {{"label":"支持", "status":"暂时平稳/建议联系家人/需要马上求助", "text":"一句话"}}
-  }},
-  "risk_level": "normal/watch/elevated/urgent/medical_emergency",
-  "risk_explanation": "只写触发建议的生活线索，例如睡不好、胸口不舒服、想有人陪；不要写项目、诊断或风险等级",
-  "recommendation": {{"type":"relax/chat/help/rest", "title":"一个下一步，像给用户看的按钮", "reason":"用生活化语言说明为什么现在适合做这一步", "tool_id":"可选"}},
-  "next_action": {{"label":"按钮文案", "route":"relax/chat/help/summary"}},
-  "insight_cards": [
-    {{"id":"priority","eyebrow":"今天先照顾这件事","title":"短标题，点名具体情况","body":"一句话：是什么、为什么先照顾它","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":[]}},
-    {{"id":"first_action","eyebrow":"可以这样做","title":"短标题","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["怎么做1","怎么做2","怎么做3"]}},
-    {{"id":"why","eyebrow":"还可以试试","title":"短标题，针对第二件事","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["怎么做1","怎么做2"]}},
-    {{"id":"safety","eyebrow":"这些情况要找人帮忙","title":"短标题","body":"一句话","action":"打开帮助","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["具体信号1","具体信号2","具体信号3"]}},
-    {{"id":"family","eyebrow":"可以发给家人的话","title":"短标题","body":"可直接发给家人的一句话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":[]}}
-  ],
-  "family_message": "可直接复制给家人的短句",
-  "safety": {{"level":"normal/watch/elevated/urgent/medical_emergency","title":"短标题","message":"给用户看的安全说明","steps":["一步","一步","一步"],"should_contact_family":false,"emergency_note":"可选"}},
-  "recommended_exercise": {{"id":"breathing_3min","title":"练习名","reason":"为什么推荐","duration_label":"3 分钟","steps":["一步","一步","一步"],"play_prompt":"一个轻微有趣的小玩法","stop_rule":"什么时候停止并找人"}},
-  "tts_text": "适合直接朗读的一小段，内容和 plain_summary 一致"
-}}
-""".strip()
 
 async def generate_senior_summary(
     user_id: str,
@@ -539,16 +481,11 @@ async def generate_senior_summary(
     memory_before = get_senior_memory(user_id)
     fallback = build_fallback_summary(answers, interview_id=interview_id, memory_snapshot=memory_before)
     source_text = _joined_text(answers)
-    enriched_recent_context = {
-        "client_context": recent_context or {},
-        "senior_memory": memory_before.model_dump(),
-        # Only the safety level: passing the canned fallback text made the model copy its generic tone.
-        "safety_hint": {"level": fallback.risk_level},
-    }
     prompt = _build_senior_summary_prompt(
         answers=answers,
-        checkin=checkin,
-        recent_context=enriched_recent_context,
+        risk_level=fallback.risk_level,
+        risk_reasons=detect_senior_safety(source_text).reasons,
+        memory=memory_before,
     )
     summary = fallback
     try:
@@ -558,7 +495,9 @@ async def generate_senior_summary(
             user_id=user_id,
             conversation_history=[],
             emotion_context={"skip_project_context": True, "skip_memory": True, "neurasense_mode": "senior"},
-            max_tokens=2600,
+            max_tokens=3200,
+            task_system_prompt=SENIOR_ADVICE_SYSTEM,
+            task_crisis=fallback.risk_level in {"urgent", "medical_emergency"},
         )
         data = _extract_json(response.message)
         if data:

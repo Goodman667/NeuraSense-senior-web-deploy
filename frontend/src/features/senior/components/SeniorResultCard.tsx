@@ -97,7 +97,7 @@ function slideFromInsightCard(card: SeniorInsightCard): ResultSlide {
 }
 
 function buildSlides(summary: SeniorSummary): ResultSlide[] {
-  if (summary.insight_cards && summary.insight_cards.length >= 5) {
+  if (summary.insight_cards && summary.insight_cards.length >= 2) {
     return summary.insight_cards.map(slideFromInsightCard);
   }
   const dimensions = Object.values(summary.dimensions || {});
