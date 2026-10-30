@@ -23,6 +23,7 @@ import { PSSScale } from '../components/Assessment/PSSScale';
 import { SUSScale } from '../components/Assessment/SUSScale';
 import { PDFDownloadButton } from '../components/Assessment/PDFDownloadButton';
 import { standardAssets } from '../lib/standardAssets';
+import { useStudyTourStore } from '../features/studyTour/useStudyTourStore';
 
 /* ============================================================
    Types
@@ -402,6 +403,7 @@ function CatalogView({
                     return (
                         <motion.button
                             key={item.key}
+                            data-tour={`scale-${item.key}`}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => hasComponent && onSelect(item)}
                             disabled={!hasComponent}
@@ -635,9 +637,17 @@ function HistoryView({
 type View = 'catalog' | 'taking' | 'history';
 
 export default function AssessmentCenterPage({ onClose }: AssessmentCenterPageProps) {
-    const [view, setView] = useState<View>('catalog');
+    // At the end of the guided study tour the SUS opens directly, with the version fixed.
+    const tourSus = useStudyTourStore((s) => s.active && s.mode === 'standard' && s.phase === 'sus');
+    const [view, setView] = useState<View>(() => (tourSus ? 'taking' : 'catalog'));
     const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-    const [activeKey, setActiveKey] = useState<string | null>(null);
+    const [activeKey, setActiveKey] = useState<string | null>(() => (tourSus ? 'sus' : null));
+
+    useEffect(() => {
+        if (!tourSus) return;
+        setActiveKey('sus');
+        setView('taking');
+    }, [tourSus]);
     const [loading, setLoading] = useState(true);
 
     // 加载目录
@@ -710,10 +720,14 @@ export default function AssessmentCenterPage({ onClose }: AssessmentCenterPagePr
         }
         return (
             <div className="animate-fadeIn">
-                <ScaleComponent
-                    onComplete={handleComplete}
-                    onClose={handleScaleClose}
-                />
+                {activeKey === 'sus' ? (
+                    <SUSScale onClose={handleScaleClose} fixedMode={tourSus ? 'standard' : undefined} />
+                ) : (
+                    <ScaleComponent
+                        onComplete={handleComplete}
+                        onClose={handleScaleClose}
+                    />
+                )}
             </div>
         );
     }

@@ -86,7 +86,7 @@ export function SeniorShell({
     <div className="sn senior-ui min-h-screen">
       <a href="#senior-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-[#13282B] focus:px-5 focus:py-3 focus:text-white">跳到主要内容</a>
 
-      <header className="sticky top-0 z-30 border-b border-[var(--sn-line)] bg-[rgba(241,235,228,0.92)] backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-[var(--sn-line)] bg-[rgba(241,235,228,0.92)] backdrop-blur-md" data-tour-shell-header>
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-3 lg:px-8">
           <button onClick={() => go('home')} className="flex items-center gap-3 text-[var(--sn-teal-deep)]" aria-label="回到今天">
             <BrandMark className="h-11 w-9" />
@@ -96,7 +96,7 @@ export function SeniorShell({
             </span>
           </button>
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => onNavigate('help')} className="sn-btn sn-btn-help">
+            <button onClick={() => onNavigate('help')} className="sn-btn sn-btn-help" data-tour="senior-help-button" data-tour-always>
               <SeniorIcon name="phone" />需要帮助
             </button>
             <button onClick={onSwitchToStandard} className="sn-btn sn-btn-outline">完整功能</button>
@@ -121,6 +121,7 @@ export function SeniorShell({
                 <button
                   key={item.page}
                   onClick={() => go(item.page)}
+                  data-tour={`senior-nav-${item.page}`}
                   aria-current={item.page === page ? 'page' : undefined}
                   data-locked={locked ? 'true' : undefined}
                   className="sn-nav-item max-lg:flex-col max-lg:justify-center max-lg:gap-1 max-lg:py-2 max-lg:text-base"
@@ -137,7 +138,7 @@ export function SeniorShell({
           <div className="mt-5 hidden lg:block"><SeniorPlaybackBar /></div>
         </aside>
 
-        <main id="senior-main" className="min-w-0 pb-10" tabIndex={-1}>
+        <main id="senior-main" className="min-w-0 pb-10" tabIndex={-1} data-tour-page={page}>
           <div className="mb-5 lg:hidden"><SeniorPlaybackBar /></div>
           {onBack && page !== 'home' ? (
             <button onClick={onBack} className="sn-btn sn-btn-outline mb-5" aria-label="返回上一页">

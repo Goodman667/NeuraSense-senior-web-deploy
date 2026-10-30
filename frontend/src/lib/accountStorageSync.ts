@@ -7,6 +7,7 @@ import { ACCOUNT_CHANGED_EVENT, hasScopedValue } from './userScopedStorage';
 import { useCheckinStore } from '../store/useCheckinStore';
 import { useGamificationStore } from '../store/useGamificationStore';
 import { useProfileStore } from '../store/useProfileStore';
+import { useStudyTourStore } from '../features/studyTour/useStudyTourStore';
 
 type PersistedStore = {
     getInitialState?: () => unknown;
@@ -16,7 +17,7 @@ type PersistedStore = {
 
 // The onboarding store binds itself to the account (bindToUser), and the UI mode follows the
 // account's profile, so both are left to App.
-const STORES = [useCheckinStore, useGamificationStore, useProfileStore] as unknown as PersistedStore[];
+const STORES = [useCheckinStore, useGamificationStore, useProfileStore, useStudyTourStore] as unknown as PersistedStore[];
 
 let started = false;
 export function startAccountStorageSync() {

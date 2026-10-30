@@ -50,6 +50,9 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import type { ToolItem } from './pages/ToolboxPage';
 import SeniorRoutes from './features/senior/routes/SeniorRoutes';
 import { startAccountStorageSync } from './lib/accountStorageSync';
+import { StudyTourOverlay } from './features/studyTour/StudyTourOverlay';
+import { useStudyTourStore, useTourRunning } from './features/studyTour/useStudyTourStore';
+import { onTourCommand } from './features/studyTour/tourBus';
 
 startAccountStorageSync();
 
@@ -600,8 +603,9 @@ function App() {
     const [guestId] = useState(() => `guest_${Date.now()}`);
     const userId = currentUser?.id || guestId;
 
-    // JITAI
-    const jitai = useJITAI(userId, Boolean(currentUser && hasCheckedIn), 300000);
+    // JITAI (no pop-ups while the guided study tour is running)
+    const tourRunning = useTourRunning();
+    const jitai = useJITAI(userId, Boolean(currentUser && hasCheckedIn) && !tourRunning, 300000);
 
     // Immersive Mode
     const [isPlayingImmersive, setIsPlayingImmersive] = useState(false);
@@ -796,6 +800,30 @@ function App() {
         };
     }, []);
 
+    // Guided study tour: it asks the shell to open pages and to switch versions.
+    useEffect(() => onTourCommand((cmd) => {
+        if (cmd.type === 'navigate') {
+            stopAllSpeech();
+            setActiveTool(null);
+            setActiveTab(cmd.tab as TabId);
+            setSubView(cmd.sub ?? null);
+        } else if (cmd.type === 'switch-mode') {
+            stopAllSpeech();
+            setSubView(null);
+            setActiveTab('today');
+            if (cmd.mode === 'companion') {
+                setMode('senior');
+            } else {
+                if (window.location.pathname.startsWith('/senior')) window.history.replaceState(null, '', '/');
+                setMode('standard');
+            }
+        }
+    }), [setMode]);
+
+    useEffect(() => {
+        if (appView === 'main' && mode !== 'senior') useStudyTourStore.getState().startIfPending('standard');
+    }, [appView, mode]);
+
     const goBackPage = () => {
         stopAllSpeech();
         setShowMonitors(false);
@@ -924,7 +952,14 @@ function App() {
     if (appView === 'onboarding') {
         return (
             <Suspense fallback={<PageSkeleton />}>
-                <OnboardingWizard onComplete={() => setAppView('main')} onBack={() => setAppView('landing')} />
+                <OnboardingWizard
+                    onComplete={() => {
+                        // New accounts go straight into the guided tour of the version their age picked.
+                        useStudyTourStore.getState().requestAutoStart();
+                        setAppView('main');
+                    }}
+                    onBack={() => setAppView('landing')}
+                />
             </Suspense>
         );
     }
@@ -950,6 +985,7 @@ function App() {
                     }}
                 />
                 <PWAInstallPrompt />
+                <StudyTourOverlay uiMode="companion" />
             </>
         );
     }
@@ -986,7 +1022,7 @@ function App() {
 
             {/* Crisis Alert Modal */}
             {showCrisisAlert && (
-                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
+                <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4" data-tour-pause>
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
                         <div className="text-center mb-6">
                             <div className="w-20 h-20 bg-red-100 rounded-full mx-auto flex items-center justify-center mb-4"><span className="text-4xl">❤️</span></div>
@@ -1061,7 +1097,7 @@ function App() {
                 {/* ============================================================ */}
                 {/* MAIN CONTENT AREA                                            */}
                 {/* ============================================================ */}
-                <main className={`mx-auto w-full max-w-[1800px] flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8 ${showTabBar ? 'pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-10' : ''}`}>
+                <main data-tour-page={subView || activeTab} className={`mx-auto w-full max-w-[1800px] flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8 ${showTabBar ? 'pb-[calc(7rem+env(safe-area-inset-bottom,0px))] lg:pb-10' : ''}`}>
 
                     {/* ===== SUB-VIEWS (overlay current tab) ===== */}
                     {subView === 'clock' && (
@@ -1358,6 +1394,8 @@ function App() {
             <div className="lg:hidden">
                 <PWAInstallPrompt />
             </div>
+
+            <StudyTourOverlay uiMode="standard" />
         </div>
     );
 }

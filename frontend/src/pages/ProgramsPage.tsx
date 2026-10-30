@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { emitStudyEvent } from '../lib/studyEvents';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '../config/api';
 import type { ToolItem } from './ToolboxPage';
@@ -562,6 +563,7 @@ function ProgramList({
                             return (
                                 <motion.button
                                     key={program.id}
+                                    data-tour={`program-${program.id}`}
                                     initial={{ opacity: 0, y: 18 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.42, ease: 'easeOut', delay: Math.min(index * 0.05, 0.2) }}
@@ -1829,6 +1831,7 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
                     }
                     setView('detail');
                     setSelectedDay(null);
+                    emitStudyEvent('program-day-done', { programId, day: dayNum });
                     return;
                 }
             } catch {
@@ -1859,6 +1862,7 @@ export default function ProgramsPage({ onOpenTool }: ProgramsPageProps) {
 
         setView('detail');
         setSelectedDay(null);
+        emitStudyEvent('program-day-done', { programId, day: dayNum });
     }, [token, selectedProgram, selectedDay]);
 
     const handleOpenTool = useCallback((toolId: string, onComplete: () => void) => {

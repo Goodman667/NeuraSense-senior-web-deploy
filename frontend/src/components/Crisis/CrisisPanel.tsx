@@ -80,6 +80,7 @@ export const CrisisPanel = ({ autoShow = false, onDismiss }: CrisisPanelProps) =
             {!isExpanded && (
                 <button
                     onClick={() => setIsExpanded(true)}
+                    data-tour-always
                     className="fixed bottom-6 right-6 z-40 flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
                 >
                     <span className="text-xl">❤️</span>
@@ -89,7 +90,7 @@ export const CrisisPanel = ({ autoShow = false, onDismiss }: CrisisPanelProps) =
 
             {/* Expanded Panel */}
             {isExpanded && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4" data-tour-pause>
                     <div className="bg-white rounded-t-3xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden animate-slide-up">
                         {/* Header */}
                         <div className="bg-gradient-to-r from-red-500 to-pink-500 p-6 text-white">

@@ -16,6 +16,9 @@ import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { mergeContacts, readStoredContacts, writeStoredContacts } from '../lib/localSupportContacts';
 import { seniorApi } from '../services/seniorApi';
+import { emitStudyEvent } from '../../../lib/studyEvents';
+import { tourAllowsSeniorPage, useStudyTourStore } from '../../studyTour/useStudyTourStore';
+import { onTourCommand } from '../../studyTour/tourBus';
 
 interface SeniorRoutesProps {
   userId: string;
@@ -165,6 +168,8 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
     if (page === 'companion') return;
     if (page === 'summary' && latestSummary) return;
     if (page === 'settings') return;
+    // The guided study tour reads its own instructions; don't talk over it.
+    if (useStudyTourStore.getState().active) return;
     const guide = getPageVoiceGuide(page, currentUserName);
     if (!guide) return;
     const timer = window.setTimeout(() => speak(guide, { voice: 'xiaoyi', emotion: 'friendly' }), 520);
@@ -191,12 +196,31 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
     setPage(prev);
     goTop();
   };
-  const handleNavigate = (next: SeniorPage) => { stopAndClearAudio(); setPage(next); goTop(); };
-  const handleStartTopic = (prompt: string) => { stopAndClearAudio(); setChatSeed(prompt); setPage('chat'); goTop(); };
+  const handleNavigate = (next: SeniorPage) => {
+    // During the guided study tour, links inside a step's page do not lead away from the step.
+    if (!tourAllowsSeniorPage(next)) return;
+    stopAndClearAudio(); setPage(next); goTop();
+  };
+  const handleStartTopic = (prompt: string) => {
+    if (!tourAllowsSeniorPage('chat')) return;
+    stopAndClearAudio(); setChatSeed(prompt); setPage('chat'); goTop();
+  };
   const handleSummary = (summary: SeniorSummary) => {
     setLatestSummary(summary);
     localStorage.setItem(storageUserKey(STORAGE_SUMMARY, storageUserId), JSON.stringify(summary));
+    emitStudyEvent('senior-greeting-done');
   };
+  // The guided tour opens pages itself (e.g. the questionnaire after step 6).
+  useEffect(() => onTourCommand((cmd) => {
+    if (cmd.type !== 'senior-navigate' || !pages.includes(cmd.page as SeniorPage)) return;
+    stopAndClearAudio();
+    setPage(cmd.page as SeniorPage);
+    goTop();
+  }), [stopAndClearAudio]);
+  // New accounts (and "继续体验陪伴版") start the tour once the first-use contact step is done.
+  useEffect(() => {
+    if (!contactsChecking && contactsReady) useStudyTourStore.getState().startIfPending('companion');
+  }, [contactsChecking, contactsReady]);
   const handleContactSaved = () => {
     setContactsReady(true);
     localStorage.setItem(storageUserKey(CONTACT_READY_STORAGE, storageUserId), 'true');

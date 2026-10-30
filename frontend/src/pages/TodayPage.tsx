@@ -12,9 +12,10 @@ import {
 } from 'recharts';
 import { useCheckinStore, getRecordDayKey, parseCheckinTime, type CheckinData } from '../store/useCheckinStore';
 import { API_BASE } from '../config/api';
-import { DAILY_PROGRESS_EVENT, isDailyTaskCompleted, readToolCompletionCount } from '../lib/dailyProgress';
+import { emitStudyEvent } from '../lib/studyEvents';
+import { useStudyTourStore } from '../features/studyTour/useStudyTourStore';
+import { STANDARD_STEPS } from '../features/studyTour/tourSteps';
 import type { ToolItem } from './ToolboxPage';
-import { standardAssets } from '../lib/standardAssets';
 
 const IconMood = ({ className = 'w-5 h-5' }: { className?: string }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
@@ -220,7 +221,10 @@ function CheckinCard({ onDone }: { onDone: () => void }) {
         const result = await submitCheckin({ ...values, note: note || undefined } as CheckinData);
         setSubmitting(false);
         setFeedback({ kind: result.ok ? 'success' : 'error', message: result.message });
-        if (result.ok) onDone();
+        if (result.ok) {
+            onDone();
+            emitStudyEvent('checkin-done');
+        }
     };
 
     return (
@@ -494,39 +498,6 @@ function RecommendationCards({ onOpenTool, onBrowseAll }: { onOpenTool: (tool: T
     );
 }
 
-function useDailyTaskFlags() {
-    const [doneTool, setDoneTool] = useState(false);
-    const [doneChat, setDoneChat] = useState(false);
-    const [doneAssessment, setDoneAssessment] = useState(false);
-    const [toolCount, setToolCount] = useState(0);
-
-    useEffect(() => {
-        const syncCompletions = () => {
-            const count = readToolCompletionCount();
-            setToolCount(count);
-            setDoneTool(count > 0);
-            setDoneChat(isDailyTaskCompleted('chat'));
-            setDoneAssessment(isDailyTaskCompleted('assessment'));
-        };
-        const handleVisible = () => {
-            if (!document.hidden) syncCompletions();
-        };
-        syncCompletions();
-        window.addEventListener('focus', syncCompletions);
-        window.addEventListener('storage', syncCompletions);
-        window.addEventListener(DAILY_PROGRESS_EVENT, syncCompletions as EventListener);
-        document.addEventListener('visibilitychange', handleVisible);
-        return () => {
-            window.removeEventListener('focus', syncCompletions);
-            window.removeEventListener('storage', syncCompletions);
-            window.removeEventListener(DAILY_PROGRESS_EVENT, syncCompletions as EventListener);
-            document.removeEventListener('visibilitychange', handleVisible);
-        };
-    }, []);
-
-    return { doneTool, doneChat, doneAssessment, toolCount };
-}
-
 function readDisplayName() {
     try {
         const raw = window.localStorage.getItem('user');
@@ -537,298 +508,127 @@ function readDisplayName() {
     }
 }
 
-type TagTone = 'green' | 'yellow' | 'red';
-const tagClass: Record<TagTone, string> = {
-    green: 'bg-green-500 text-white',
-    yellow: 'bg-yellow-400 text-gray-900',
-    red: 'bg-red-500 text-white',
-};
-const buttonClass = {
-    dark: 'bg-[#ECECEC] text-gray-900 hover:bg-[#e2e2e2]',
-    black: 'bg-black text-white hover:bg-gray-800',
-    light: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
-} as const;
-
-// Nexar TaskCard: three rows separated by hairlines.
-function TaskCard({
-    icon,
-    title,
-    tagText,
-    tagTone,
-    details,
-    bottom,
-    buttonText,
-    buttonVariant,
-    onAction,
-    tilt = false,
-    delay = 0,
-}: {
-    icon: ReactNode;
-    title: string;
-    tagText: string;
-    tagTone: TagTone;
-    details: Array<{ label: string; value: string }>;
-    bottom: ReactNode;
-    buttonText: string;
-    buttonVariant: keyof typeof buttonClass;
-    onAction?: () => void;
-    tilt?: boolean;
-    delay?: number;
-}) {
+function IconProgram({ className = 'w-5 h-5' }: { className?: string }) {
     return (
-        <div
-            className={`nexar-fade-up flex h-full flex-col rounded-[20px] bg-white px-4 py-4 shadow-sm sm:rounded-[28px] sm:px-6 sm:py-5 ${tilt ? 'lg:rotate-[2deg] 2xl:rotate-[1.5deg]' : ''}`}
-            style={{ animationDelay: `${delay}s` }}
-        >
-            <div className="flex items-center justify-between gap-3 border-b border-black/10 pb-3">
-                <div className="flex items-center gap-2.5 text-[17px] font-medium text-gray-900">
-                    <span className="text-gray-700">{icon}</span>
-                    {title}
-                </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-medium ${tagClass[tagTone]}`}>{tagText}</span>
-            </div>
-            <div className="flex gap-4 border-b border-black/10 py-3">
-                {details.map((detail, index) => (
-                    <div key={detail.label} className={index === 2 ? 'max-w-[120px] flex-[0.5]' : 'min-w-0 flex-1'}>
-                        <div className="text-xs text-gray-500">{detail.label}</div>
-                        <div className="mt-1 text-sm font-medium leading-5 text-gray-900">{detail.value}</div>
-                    </div>
-                ))}
-            </div>
-            <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-                <div className="min-w-0 text-sm text-gray-500">{bottom}</div>
-                <button
-                    onClick={onAction}
-                    disabled={!onAction}
-                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition disabled:cursor-default ${buttonClass[buttonVariant]}`}
-                >
-                    {buttonText}
-                </button>
-            </div>
-        </div>
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        </svg>
     );
 }
 
-const WAVE = [8, 16, 12, 28, 20, 36, 42, 24, 40, 16, 44, 32, 48, 28, 20, 36, 14, 32, 22, 40, 18, 30, 12, 26, 16, 34, 20, 38, 24, 28, 16, 22, 12, 20, 8];
-
-function AvatarStack({ count }: { count: number }) {
+function IconUser({ className = 'w-5 h-5' }: { className?: string }) {
     return (
-        <span className="flex items-center gap-2">
-            <span className="flex -space-x-2">
-                {standardAssets.avatars.slice(0, count).map((src) => (
-                    <img key={src} src={src} alt="" className="h-7 w-7 rounded-full border-2 border-white object-cover" loading="lazy" />
-                ))}
-            </span>
-        </span>
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+        </svg>
     );
 }
 
-function NexarDashboard({
-    checkinComplete,
-    wellnessScore,
-    historyCount,
-    onStartChat,
-    onNavigate,
-    onCheckin,
-}: {
-    checkinComplete: boolean;
-    wellnessScore: number | null;
-    historyCount: number;
-    onStartChat: () => void;
-    onNavigate: (view: string) => void;
-    onCheckin: () => void;
-}) {
-    const { doneTool, doneChat, doneAssessment, toolCount } = useDailyTaskFlags();
+const STEP_ICONS = [IconJournal, IconAssessment, IconChat, IconMeditation, IconProgram, IconUser];
+
+function IconCheck({ className = 'h-4 w-4' }: { className?: string }) {
+    return (
+        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.6}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m5 13 4 4L19 7" />
+        </svg>
+    );
+}
+
+function TodayHeader() {
     const name = readDisplayName();
-    const doneCount = [checkinComplete, doneTool, doneChat, doneAssessment].filter(Boolean).length;
     const hour = new Date().getHours();
     const hello = hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+    return (
+        <div className="nexar-fade-up flex flex-wrap items-end justify-between gap-3 border-b border-black/10 pb-4 sm:pb-5">
+            <div className="min-w-0">
+                <h1 className="font-display-cn text-[28px] leading-tight text-black sm:text-[34px]">{hello}{name ? `，${name}` : ''}</h1>
+                <p className="mt-1 text-sm text-black/60">{getDailyQuote()}</p>
+            </div>
+            <span className="text-sm text-black/60">{formatDateCN()}</span>
+        </div>
+    );
+}
+
+/**
+ * The six steps of the guided study tour, shown as the top of the Today page. Ticks come from
+ * the tour; when no tour is running each step opens its module directly.
+ */
+function StudyStepBar({ onOpenStep }: { onOpenStep: (index: number) => void }) {
+    const tour = useStudyTourStore();
+    const finished = tour.finishedModes.includes('standard');
+    const inStandard = tour.mode === 'standard';
+    const isDone = (i: number) => finished || (inStandard && tour.completed.includes(i));
+    const doneCount = STANDARD_STEPS.filter((_, i) => isDone(i)).length;
+    const running = tour.active && inStandard;
+    const interrupted = !tour.active && inStandard && !finished && (tour.phase === 'steps' || tour.phase === 'sus');
+    const current = running || interrupted ? tour.stepIndex : -1;
+
+    let cta: { label: string; run: () => void } | null = null;
+    if (!running) {
+        if (interrupted) cta = { label: `继续体验流程（第 ${tour.stepIndex + 1} 步）`, run: tour.resume };
+        else if (finished) cta = { label: '重新体验', run: () => tour.start('standard') };
+        else cta = { label: '开始体验流程', run: () => tour.start('standard') };
+    }
 
     return (
-        <div>
-            {/* Section header row */}
-            <div className="mb-4 grid items-end gap-4 border-b border-black/10 pb-4 sm:mb-6 sm:pb-6 lg:grid-cols-12">
-                <div className="nexar-fade-up flex items-center gap-3 lg:col-span-3" style={{ animationDelay: '0.1s' }}>
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-red-400 to-orange-500 text-white">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 20a8 8 0 0 1 16 0" /></svg>
-                    </span>
-                    <h1 className="font-display-cn text-[28px] leading-tight text-black sm:text-[34px] 2xl:text-[42px]">{hello}{name ? `，${name}` : ''}</h1>
+        <section className="nexar-fade-up rounded-[20px] bg-white p-5 shadow-sm sm:rounded-[28px] sm:p-6" style={{ animationDelay: '0.1s' }} data-tour="today-steps">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                    <p className="text-xs text-gray-500">体验流程 · {doneCount}/{STANDARD_STEPS.length}</p>
+                    <h2 className="font-display-cn mt-1 text-[1.6rem] leading-tight text-black sm:text-[1.9rem]">6 步用一遍主要功能</h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-gray-500">
+                        {finished
+                            ? '你已经走完了全部 6 步，也填写了使用感受问卷。可以随时点下面任意一步直接进入。'
+                            : '跟着引导一步一步做：签到、心理自评、AI 陪伴、放松练习、课程和个人中心。做完后有一份 10 道题的使用感受问卷。'}
+                    </p>
                 </div>
-                <div className="nexar-fade-up lg:col-span-6" style={{ animationDelay: '0.15s' }}>
-                    <div className="lg:mx-auto lg:w-[85%] 2xl:w-[70%]">
-                        <p className="text-[20px] tracking-[-0.04em] text-black sm:text-[24px] lg:text-[26px]">今日安排</p>
-                        <p className="mt-1 text-sm text-black/60">{getDailyQuote()}</p>
-                    </div>
-                </div>
-                <div className="nexar-fade-up flex items-center gap-2 text-sm text-black/70 lg:col-span-3 lg:justify-end" style={{ animationDelay: '0.2s' }}>
-                    <span>{formatDateCN()}</span>
-                    <span className="rounded-full bg-black px-2.5 py-1 text-xs text-white">{doneCount}/4 已完成</span>
-                </div>
-            </div>
-
-            <div className="flex flex-col gap-4 sm:gap-6 lg:grid lg:grid-cols-12 lg:gap-7">
-                {/* Left column */}
-                <div className="flex flex-col gap-5 lg:col-span-3">
-                    <button onClick={onCheckin} className="nexar-fade-up flex items-center gap-3 rounded-full bg-[#DBECFC] py-2 pl-2 pr-5 text-left" style={{ animationDelay: '0.25s' }}>
-                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
-                            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="#EAB308" strokeWidth="3.5" strokeLinecap="round" /></svg>
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            <span className="block text-[15px] font-medium text-gray-900">{checkinComplete ? '今日签到已完成' : '今日还没签到'}</span>
-                            <span className="block text-xs text-gray-600">心情 · 压力 · 精力 · 睡眠</span>
-                        </span>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4 text-gray-700" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                    </button>
-
-                    <div className="nexar-fade-up" style={{ animationDelay: '0.3s' }}>
-                        <div className={`leading-none tracking-[-0.04em] tabular-nums ${wellnessScore === null ? 'text-[72px] text-black/25 sm:text-[84px] xl:text-[96px]' : 'text-[96px] text-black sm:text-[110px] xl:text-[132px]'}`}>
-                            {wellnessScore === null ? '--' : wellnessScore}
-                        </div>
-                        <p className="mt-2 text-[15px] text-black/70">今日综合状态分{wellnessScore === null ? '（签到后生成）' : ''}</p>
-                        {wellnessScore === null ? (
-                            <button onClick={onCheckin} className="mt-3 inline-flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800">
-                                去签到，生成今日分数
-                                <IconArrow className="h-4 w-4" />
-                            </button>
-                        ) : null}
-                    </div>
-
-                    <div
-                        className="nexar-fade-up relative rounded-[20px] bg-cover bg-top p-5 pb-8 sm:rounded-[28px]"
-                        style={{ backgroundImage: `url(${standardAssets.metricsCard})`, animationDelay: '0.35s' }}
+                {cta ? (
+                    <button
+                        onClick={cta.run}
+                        className={`inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition ${finished ? 'border border-black/15 text-gray-900 hover:border-black/40' : 'bg-black text-white hover:bg-gray-800'}`}
+                        data-tour="today-tour-start"
                     >
-                        <div className="flex items-center justify-between">
-                            <span className="text-[17px] font-medium text-gray-900">本周记录</span>
-                            <span className="rounded-full bg-white/80 px-3 py-1 text-xs text-gray-800">近 7 天</span>
-                        </div>
-                        <div className="mt-5 grid grid-cols-3 gap-2">
-                            {[
-                                { value: historyCount, unit: '次', label: '状态签到' },
-                                { value: toolCount, unit: '次', label: '今日练习' },
-                                { value: doneCount, unit: '/4', label: '今日任务' },
-                            ].map((item) => (
-                                <div key={item.label}>
-                                    <div className="text-[30px] leading-none tracking-[-0.03em] text-gray-900 tabular-nums">{item.value}<span className="ml-0.5 text-base">{item.unit}</span></div>
-                                    <div className="mt-1 text-xs text-gray-700">{item.label}</div>
-                                </div>
-                            ))}
-                        </div>
-                        <button onClick={() => onNavigate('trend')} className="absolute -bottom-4 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full bg-white shadow-md" aria-label="查看历史记录">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Center column */}
-                <div className="lg:col-span-6">
-                    <div className="grid gap-4 lg:mx-auto lg:w-[85%] 2xl:w-full 2xl:grid-cols-2 2xl:gap-5">
-                        <TaskCard
-                            icon={<IconJournal className="h-5 w-5" />}
-                            title="1 分钟状态签到"
-                            tagText={checkinComplete ? '已完成' : '待完成'}
-                            tagTone={checkinComplete ? 'green' : 'yellow'}
-                            details={[
-                                { label: '记录', value: '心情、压力、精力、睡眠' },
-                                { label: '作用', value: '刷新今日推荐' },
-                                { label: '用时', value: '1 分钟' },
-                            ]}
-                            bottom={checkinComplete ? '今日基线已建立' : '先签到，推荐会更准'}
-                            buttonText={checkinComplete ? '查看结果' : '开始签到'}
-                            buttonVariant="dark"
-                            onAction={onCheckin}
-                            delay={0.3}
-                        />
-                        <TaskCard
-                            icon={<IconChat className="h-5 w-5" />}
-                            title="和 AI 聊一次"
-                            tagText={doneChat ? '已完成' : 'AI 陪伴'}
-                            tagTone={doneChat ? 'green' : 'yellow'}
-                            details={[
-                                { label: '方式', value: '文字或语音' },
-                                { label: '内容', value: '说说今天最在意的一件事' },
-                                { label: '用时', value: '5 分钟' },
-                            ]}
-                            bottom={<span className="flex items-center gap-2"><AvatarStack count={2} /><span>支持性回应，不做诊断</span></span>}
-                            buttonText="开始对话"
-                            buttonVariant="black"
-                            onAction={onStartChat}
-                            tilt
-                            delay={0.4}
-                        />
-                        <TaskCard
-                            icon={<IconMeditation className="h-5 w-5" />}
-                            title="完成 1 个练习"
-                            tagText={doneTool ? '已完成' : '推荐'}
-                            tagTone={doneTool ? 'green' : 'yellow'}
-                            details={[
-                                { label: '来源', value: '工具箱' },
-                                { label: '建议', value: '呼吸、正念或认知练习' },
-                                { label: '用时', value: '3–10 分钟' },
-                            ]}
-                            bottom={<span className="flex items-center gap-2"><AvatarStack count={3} /><span>按签到结果推荐</span></span>}
-                            buttonText="打开工具箱"
-                            buttonVariant="light"
-                            onAction={() => onNavigate('toolbox')}
-                            delay={0.5}
-                        />
-                        <TaskCard
-                            icon={<IconAssessment className="h-5 w-5" />}
-                            title="做 1 次心理自评"
-                            tagText={doneAssessment ? '已完成' : '可选'}
-                            tagTone={doneAssessment ? 'green' : 'red'}
-                            details={[
-                                { label: '量表', value: 'PHQ-9 · GAD-7 等' },
-                                { label: '结果', value: '自动保存到历史' },
-                                { label: '用时', value: '3 分钟' },
-                            ]}
-                            bottom="结果仅供自我了解"
-                            buttonText="进入测评"
-                            buttonVariant="dark"
-                            onAction={() => onNavigate('scale')}
-                            delay={0.6}
-                        />
-                    </div>
-                </div>
-
-                {/* Right column */}
-                <div className="flex flex-col gap-5 lg:col-span-3">
-                    <div className="nexar-fade-up" style={{ animationDelay: '0.45s' }}>
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3">
-                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-lg" aria-hidden="true">✦</span>
-                                <h2 className="whitespace-nowrap text-[20px] tracking-[-0.04em] text-black sm:text-[24px] xl:text-[28px]">快捷入口</h2>
-                            </div>
-                            <button onClick={() => onNavigate('toolbox')} className="whitespace-nowrap rounded-full bg-white/70 px-3 py-1.5 text-sm text-gray-900 hover:bg-white">全部工具</button>
-                        </div>
-                        <div className="mt-4">
-                            {[
-                                { text: '跟着 3D 呼吸球慢慢呼吸，平复紧张', action: () => onNavigate('breathing') },
-                                { text: '用 PHQ-9 / GAD-7 看看最近两周的状态', action: () => onNavigate('scale') },
-                                { text: '回看最近 7 天的情绪与睡眠变化', action: () => onNavigate('trend') },
-                            ].map((item) => (
-                                <button key={item.text} onClick={item.action} className="flex w-full items-center justify-between gap-4 border-t border-black/10 py-4 text-left text-[15px] leading-6 text-gray-900 hover:text-black">
-                                    <span>{item.text}</span>
-                                    <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 fill-gray-700" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5Z" /></svg>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="nexar-fade-up relative rounded-[20px] bg-[#DBECFC] p-5 pb-10 sm:rounded-[28px]" style={{ animationDelay: '0.55s' }}>
-                        <span className="inline-block rounded-full bg-blue-500 px-3 py-1 text-xs text-white">语音输入</span>
-                        <h3 className="font-display-cn mt-3 text-[26px] leading-tight text-black">说出来，AI 陪你理一理</h3>
-                        <div className="mt-5 flex h-12 items-center justify-center gap-[3px]" aria-hidden="true">
-                            {WAVE.map((h, i) => (
-                                <span key={i} className="w-0.5 rounded-full bg-blue-400" style={{ height: `${h * 0.8}px` }} />
-                            ))}
-                        </div>
-                        <button onClick={onStartChat} className="absolute -bottom-5 left-1/2 flex h-12 w-12 -translate-x-1/2 items-center justify-center rounded-full bg-white shadow-md" aria-label="开始语音对话">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
-                        </button>
-                    </div>
-                </div>
+                        {cta.label}
+                        <IconArrow className="h-4 w-4" />
+                    </button>
+                ) : (
+                    <span className="rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700">引导进行中</span>
+                )}
             </div>
-        </div>
+
+            <ol className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                {STANDARD_STEPS.map((step, i) => {
+                    const Icon = STEP_ICONS[i] || IconMeditation;
+                    const done = isDone(i);
+                    const isCurrent = i === current && !done;
+                    return (
+                        <li key={step.key}>
+                            <button
+                                onClick={() => onOpenStep(i)}
+                                className={`group flex h-full w-full flex-col gap-3 rounded-[18px] border p-4 text-left transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-100 ${
+                                    done ? 'border-emerald-200 bg-emerald-50/70' : isCurrent ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-slate-50/60 hover:border-slate-300'
+                                }`}
+                            >
+                                <span className="flex items-center justify-between gap-2">
+                                    <span
+                                        className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                                            done ? 'bg-emerald-500 text-white' : isCurrent ? 'bg-sky-600 text-white' : 'bg-white text-slate-700 ring-1 ring-slate-200'
+                                        }`}
+                                    >
+                                        {done ? <IconCheck /> : i + 1}
+                                    </span>
+                                    <Icon className={`h-5 w-5 ${done ? 'text-emerald-600' : isCurrent ? 'text-sky-700' : 'text-slate-400 group-hover:text-slate-700'}`} />
+                                </span>
+                                <span>
+                                    <span className="block text-[15px] font-semibold text-slate-900">{step.label}</span>
+                                    <span className="mt-0.5 block text-xs leading-5 text-slate-500">{done ? '已完成' : step.desc}</span>
+                                </span>
+                            </button>
+                        </li>
+                    );
+                })}
+            </ol>
+        </section>
     );
 }
 
@@ -973,7 +773,7 @@ function TrendChart() {
 }
 
 export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: TodayPageProps) {
-    const { hasCheckedIn, todayCheckin, history, loadHistory, loadRecommendations } = useCheckinStore();
+    const { hasCheckedIn, todayCheckin, loadHistory, loadRecommendations } = useCheckinStore();
     const [justCheckedIn, setJustCheckedIn] = useState(false);
     const checkinRef = useRef<HTMLDivElement | null>(null);
 
@@ -996,24 +796,28 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
         checkinRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, []);
 
-    const checkinComplete = hasCheckedIn || justCheckedIn;
-    const wellnessScore = getWellnessScore(todayCheckin);
+    const openStep = useCallback((index: number) => {
+        switch (STANDARD_STEPS[index]?.key) {
+            case 'checkin': scrollToCheckin(); break;
+            case 'assessment': onNavigate('scale'); break;
+            case 'chat': onStartChat(); break;
+            case 'tools': onNavigate('toolbox'); break;
+            case 'program': onNavigate('programs'); break;
+            case 'me': onNavigate('me'); break;
+            default: break;
+        }
+    }, [onNavigate, onStartChat, scrollToCheckin]);
 
+    const checkinComplete = hasCheckedIn || justCheckedIn;
 
     return (
-        <div className="mx-auto w-full max-w-[1800px] pb-10">
-            <NexarDashboard
-                checkinComplete={checkinComplete}
-                wellnessScore={wellnessScore}
-                historyCount={history.length}
-                onStartChat={onStartChat}
-                onNavigate={onNavigate}
-                onCheckin={scrollToCheckin}
-            />
+        <div className="mx-auto w-full max-w-[1800px] space-y-6 pb-10">
+            <TodayHeader />
 
-            <div className="mt-10 space-y-6">
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-                    <div ref={checkinRef} className="scroll-mt-28">
+            <StudyStepBar onOpenStep={openStep} />
+
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
+                <div ref={checkinRef} className="scroll-mt-28" data-tour="today-checkin">
                     <AnimatePresence mode="wait">
                         {!checkinComplete ? (
                             <CheckinCard key="checkin" onDone={handleCheckinDone} />
@@ -1021,35 +825,34 @@ export default function TodayPage({ onNavigate, onStartChat, onOpenTool }: Today
                             <CheckinSummary key="summary" checkin={todayCheckin} />
                         ) : null}
                     </AnimatePresence>
-                    </div>
-
-                    <RecommendationCards onOpenTool={onOpenTool} onBrowseAll={() => onNavigate('toolbox')} />
                 </div>
 
-                <AnimatePresence>
-                    {justCheckedIn ? (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="rounded-[28px] bg-white px-5 py-4 text-sm font-medium text-gray-900 shadow-sm"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
-                                    <IconCelebration className="h-5 w-5" />
-                                </span>
-                                <div>
-                                    <div>签到成功，今日推荐与趋势已刷新。</div>
-                                    <div className="mt-1 text-xs text-gray-500">现在可以去完成一个练习，或者和 AI 聊一聊。</div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    ) : null}
-                </AnimatePresence>
-
-                <TrendChart />
+                <RecommendationCards onOpenTool={onOpenTool} onBrowseAll={() => onNavigate('toolbox')} />
             </div>
+
+            <AnimatePresence>
+                {justCheckedIn ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="rounded-[28px] bg-white px-5 py-4 text-sm font-medium text-gray-900 shadow-sm"
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white">
+                                <IconCelebration className="h-5 w-5" />
+                            </span>
+                            <div>
+                                <div>签到成功，今日推荐与趋势已刷新。</div>
+                                <div className="mt-1 text-xs text-gray-500">现在可以去完成一个练习，或者和 AI 聊一聊。</div>
+                            </div>
+                        </div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
+
+            <TrendChart />
         </div>
     );
 }

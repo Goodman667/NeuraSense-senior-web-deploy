@@ -115,7 +115,7 @@ export const MoodJournal = ({ onComplete, onClose }: MoodJournalProps) => {
     }, [selectedMood, journalText, gratitudeItems, completeTask]);
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" data-tour-pause>
             <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden">
                 {/* Header */}
                 <div className={`p-6 text-white bg-gradient-to-r ${selectedMood?.gradient || 'from-primary-500 to-accent-500'}`}>

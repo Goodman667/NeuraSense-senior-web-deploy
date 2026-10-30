@@ -8,6 +8,27 @@ import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { useSeniorOnlineStatus } from '../hooks/useSeniorOnlineStatus';
 import { useSeniorDailyProgress } from '../hooks/useSeniorDailyProgress';
 import { seniorAssets } from '../lib/seniorAssets';
+import { useStudyTourStore } from '../../studyTour/useStudyTourStore';
+
+/** Start (or resume) the guided study tour of the companion version. */
+function TourStartCard() {
+  const active = useStudyTourStore((s) => s.active);
+  const finished = useStudyTourStore((s) => s.finishedModes.includes('companion'));
+  const start = useStudyTourStore((s) => s.start);
+  if (active || finished) return null;
+  return (
+    <section className="sn-sheet flex flex-wrap items-center justify-between gap-4 p-5 md:p-6">
+      <div>
+        <p className="sn-kicker"><SeniorIcon name="spark" className="h-5 w-5" />第一次用？</p>
+        <h2 className="sn-h2 mt-1">跟着引导，一步一步体验</h2>
+        <p className="sn-body mt-1">一共 6 步，每一步只要点亮起来的地方，最后填一份 10 道题的问卷。大约 20 分钟。</p>
+      </div>
+      <button onClick={() => start('companion')} className="sn-btn sn-btn-primary sn-btn-lg" data-tour="senior-tour-start">
+        开始体验流程<SeniorIcon name="arrow" />
+      </button>
+    </section>
+  );
+}
 
 function PhotoCard({ image, icon, tag, title, desc, onClick, help = false }: { image: string; icon: SeniorIconName; tag: string; title: string; desc: string; onClick: () => void; help?: boolean }) {
   return (
@@ -112,6 +133,7 @@ export function SeniorHome({
 
   return (
     <div className="space-y-8">
+      <TourStartCard />
       <section
         className="sn-media sn-rise rounded-[28px] border border-[var(--sn-line)]"
         style={{ backgroundColor: '#EAE3DE', backgroundImage: `url(${seniorAssets.inkLandscapePoster})`, backgroundSize: 'cover', backgroundPosition: 'center bottom' }}
@@ -124,7 +146,7 @@ export function SeniorHome({
           <h1 className="sn-display mt-2 max-w-3xl">{title}</h1>
           <p className="sn-lede mt-3 max-w-2xl text-[#2D5258]">{desc}</p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <button onClick={() => onNavigate('companion')} className="sn-btn sn-btn-primary sn-btn-lg">
+            <button onClick={() => onNavigate('companion')} className="sn-btn sn-btn-primary sn-btn-lg" data-tour="senior-start-greeting">
               {summary ? '重新回答一轮' : '开始今天的问候'}
               <SeniorIcon name="arrow" />
             </button>
