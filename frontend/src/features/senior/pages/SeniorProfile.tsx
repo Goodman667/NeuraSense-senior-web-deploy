@@ -47,6 +47,11 @@ export function SeniorProfile({
             <button onClick={() => setConfirmingLogout(true)} className="sn-btn sn-btn-help-quiet">退出当前账号</button>
           </div>
         </section>
+        <section className="sn-sheet p-6 md:col-span-2">
+          <h2 className="sn-h3 flex items-center gap-2"><SeniorIcon name="check" className="h-6 w-6 text-[var(--sn-teal)]" />使用感受问卷</h2>
+          <p className="sn-body mt-2">10 道题，约 3 分钟，说说您用陪伴版的感受，帮助我们把页面改得更好用。</p>
+          <button onClick={() => onNavigate('sus')} className="sn-btn sn-btn-quiet mt-5">填写问卷</button>
+        </section>
       </div>
       {confirmingLogout ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(19,40,43,0.45)] p-4" role="dialog" aria-modal="true" aria-labelledby="sn-logout-title">

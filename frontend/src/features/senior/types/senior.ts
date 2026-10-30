@@ -1,4 +1,4 @@
-export type SeniorPage = 'home' | 'companion' | 'chat' | 'summary' | 'relax' | 'help' | 'settings' | 'checkup' | 'profile';
+export type SeniorPage = 'home' | 'companion' | 'chat' | 'summary' | 'relax' | 'help' | 'settings' | 'checkup' | 'profile' | 'sus';
 export type SeniorRiskLevel = 'normal' | 'watch' | 'elevated' | 'urgent' | 'medical_emergency';
 export type SeniorInputMode = 'voice' | 'text' | 'choice' | 'mixed';
 

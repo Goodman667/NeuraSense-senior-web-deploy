@@ -8,7 +8,7 @@
 import { useState, useCallback } from 'react';
 import { API_BASE } from '../../config/api';
 import { PDFDownloadButton } from './PDFDownloadButton';
-import { MarkdownText } from './MarkdownText';
+import { ScaleAdviceCard, DimensionScores, buildScoreBreakdown, type ScaleItemDef, type ScaleGroupDef } from './ScaleResultParts';
 
 const PSS_QUESTIONS = [
     { id: 1, text: "在过去一个月里，您有多少次因为发生了意想不到的事情而感到心烦意乱？", reverse: false },
@@ -21,6 +21,14 @@ const PSS_QUESTIONS = [
     { id: 8, text: "在过去一个月里，您有多少次发现自己无法处理所有必须做的事情？", reverse: false },
     { id: 9, text: "在过去一个月里，您有多少次能够控制生活中的烦心事？", reverse: true },
     { id: 10, text: "在过去一个月里，您有多少次感到困难积累太多而无法克服？", reverse: false },
+];
+
+// Item names and groups for the result page and the PDF report
+const PSS_ITEMS: ScaleItemDef[] = ['意外事情心烦', '无法控制重要事情', '紧张和有压力', '处理日常琐事', '应对重要变化', '处理问题的自信', '事情朝有利方向', '应付不过来', '控制烦心事', '困难堆积']
+    .map((label, i) => ({ label, text: PSS_QUESTIONS[i].text, reverse: PSS_QUESTIONS[i].reverse }));
+const PSS_GROUPS: ScaleGroupDef[] = [
+    { label: '压力感受（负向题）', items: PSS_QUESTIONS.map((q, i) => (q.reverse ? -1 : i)).filter((i) => i >= 0) },
+    { label: '应对能力不足（正向题，反向计分）', items: PSS_QUESTIONS.map((q, i) => (q.reverse ? i : -1)).filter((i) => i >= 0) },
 ];
 
 const OPTIONS = [
@@ -53,6 +61,7 @@ export interface PSSResult {
 export const PSSScale = ({ onComplete, onClose }: PSSScaleProps) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<(number | null)[]>(new Array(10).fill(null));
+    const breakdown = buildScoreBreakdown(PSS_ITEMS, answers, 0, 4, PSS_GROUPS);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [aiInterpretation, setAiInterpretation] = useState<string | null>(null);
@@ -242,12 +251,9 @@ ${totalScore >= 27 ? '### 专业资源\n（推荐就医和心理援助热线 400
                         </div>
                     </div>
 
-                    {aiInterpretation && (
-                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
-                            <h3 className="font-bold text-lg mb-3">💬 小心的建议</h3>
-                            <MarkdownText text={aiInterpretation} />
-                        </div>
-                    )}
+                    {aiInterpretation && <ScaleAdviceCard text={aiInterpretation} title="小心的建议" />}
+
+                    <DimensionScores breakdown={breakdown} groupNote="正向题已反向计分：分数越高，表示压力越大、越觉得应对不过来。" />
 
                     {/* PDF 下载按钮 */}
                     <PDFDownloadButton
@@ -255,6 +261,7 @@ ${totalScore >= 27 ? '### 专业资源\n（推荐就医和心理援助热线 400
                         totalScore={totalScore}
                         answers={answers as number[]}
                         aiInterpretation={aiInterpretation || undefined}
+                        breakdown={breakdown}
                         className="w-full mb-4"
                     />
 

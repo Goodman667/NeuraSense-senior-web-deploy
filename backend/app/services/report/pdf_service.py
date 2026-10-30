@@ -21,6 +21,7 @@ try:
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+    from reportlab.graphics.shapes import Drawing, Rect, String, Polygon
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
@@ -37,6 +38,9 @@ if REPORTLAB_AVAILABLE:
             'C:/Windows/Fonts/msyh.ttf',
             'C:/Windows/Fonts/simhei.ttf',
             'C:/Windows/Fonts/simsun.ttc',
+            # Linux servers (embedded in the PDF, so it looks the same in every viewer)
+            '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',
+            '/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc',
         ]
         
         for font_path in msyh_paths:
@@ -86,22 +90,22 @@ SCALE_INFO = {
     },
     'sds': {
         'name': 'SDS 抑郁自评量表',
-        'max_score': 80,
+        'max_score': 100,
         'levels': [
             (0, 49, '正常', '无明显抑郁症状'),
             (50, 59, '轻度', '轻度抑郁'),
             (60, 69, '中度', '中度抑郁'),
-            (70, 80, '重度', '重度抑郁'),
+            (70, 100, '重度', '重度抑郁'),
         ]
     },
     'sas': {
         'name': 'SAS 焦虑自评量表',
-        'max_score': 80,
+        'max_score': 100,
         'levels': [
             (0, 49, '正常', '无明显焦虑症状'),
             (50, 59, '轻度', '轻度焦虑'),
             (60, 69, '中度', '中度焦虑'),
-            (70, 80, '重度', '重度焦虑'),
+            (70, 100, '重度', '重度焦虑'),
         ]
     },
     'pss10': {
@@ -140,7 +144,9 @@ _EN = {
     '压力水平良好': 'Stress level is fine', '存在一定压力': 'Some stress present', '压力较大，建议调节': 'High stress; consider ways to ease it',
     '心理评估报告': 'Psychological Assessment Report',
     '评估日期': 'Date', '评估对象': 'Name', '匿名用户': 'Anonymous user', '总分': 'Total score', '评估结果': 'Result',
-    '评估解读': 'Interpretation', 'AI 专业建议': 'AI suggestions', '后续建议': 'Next steps', '免责声明': 'Disclaimer',
+    '评估解读': 'Interpretation',
+    '得分位置': 'Where your score falls', '各维度得分': 'Dimension scores', '逐题得分': 'Item scores',
+    '题号': 'No.', '题目': 'Item', '得分': 'Score', 'AI 专业建议': 'AI suggestions', '后续建议': 'Next steps', '免责声明': 'Disclaimer',
     '本报告仅供参考，不能作为临床诊断依据。如您正在经历严重心理困扰，请及时寻求专业心理咨询或医疗帮助。24小时心理援助热线：400-161-9995':
         'This report is for reference only and is not a clinical diagnosis. If you are in serious distress, please seek '
         'professional counselling or medical help promptly. 24-hour psychological support hotline (mainland China): '
@@ -174,6 +180,45 @@ def _t(text: str) -> str:
     return text
 
 
+# Colours for score levels, low to high (same as the web result page)
+_LEVEL_HEX = ['#4ADE80', '#FACC15', '#FB923C', '#EF4444']
+_LEVEL_TINT = ['#DCFCE7', '#FEF9C3', '#FFEDD5', '#FEE2E2']
+
+
+def _level_index(fraction: float) -> int:
+    if fraction < 0.25:
+        return 0
+    if fraction < 0.5:
+        return 1
+    if fraction < 0.75:
+        return 2
+    return 3
+
+
+def _band_colours(n: int) -> list:
+    return {3: ['#4ADE80', '#FACC15', '#EF4444'], 4: ['#4ADE80', '#FACC15', '#FB923C', '#EF4444']}.get(
+        n, ['#4ADE80', '#FACC15', '#FB923C', '#F87171', '#DC2626'][:max(n, 1)])
+
+
+def _markdown_to_para(text: str) -> str:
+    """AI text uses light Markdown; turn it into the small HTML subset Paragraph understands."""
+    import re as _re
+    lines = []
+    for raw in (text or '').splitlines():
+        line = raw.strip()
+        if not line:
+            lines.append('')
+            continue
+        line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        line = _re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', line)
+        if _re.match(r'^#{1,6}\s+', line):
+            line = '<b>' + _re.sub(r'^#{1,6}\s+', '', line) + '</b>'
+        elif _re.match(r'^[-*•]\s+', line):
+            line = '• ' + _re.sub(r'^[-*•]\s+', '', line)
+        lines.append(line)
+    return '<br/>'.join(lines)
+
+
 class PDFReportService:
     """PDF 报告生成服务"""
 
@@ -197,8 +242,9 @@ class PDFReportService:
         answers: list,
         ai_interpretation: Optional[str] = None,
         user_name: Optional[str] = None,
+        breakdown: Optional[dict] = None,
     ) -> bytes:
-        """生成 PDF 报告"""
+        """生成 PDF 报告（含得分位置、各维度得分图和逐题得分表）"""
 
         buffer = BytesIO()
         doc = SimpleDocTemplate(
@@ -214,7 +260,7 @@ class PDFReportService:
         font_name = FONT_NAME
         if _t('总分') == 'Total score':
             import re as _re
-            if not _re.search(r'[\u3400-\u9fff]', f"{user_name or ''}{ai_interpretation or ''}"):
+            if not _re.search(r'[\u3400-\u9fff]', f"{user_name or ''}{ai_interpretation or ''}{breakdown or ''}"):
                 font_name = 'Helvetica'
 
         # 构建使用中文字体的样式
@@ -279,7 +325,27 @@ class PDFReportService:
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
         ]))
         story.append(info_table)
-        story.append(Spacer(1, 20))
+        story.append(Spacer(1, 14))
+
+        # 得分位置（色带 + 标记）
+        if scale_info.get('levels'):
+            story.append(Paragraph(_t("得分位置"), heading_style))
+            story.append(self._severity_drawing(scale_info, total_score, font_name))
+            story.append(Spacer(1, 10))
+
+        # 各维度得分（条形图）与逐题得分（表格）
+        groups = (breakdown or {}).get('groups') or []
+        items = (breakdown or {}).get('items') or []
+        if groups or items:
+            story.append(Paragraph(_t("各维度得分"), heading_style))
+            story.append(self._bars_drawing(groups if groups else items, font_name))
+            story.append(Spacer(1, 10))
+        if items and groups:
+            story.append(Paragraph(_t("逐题得分"), heading_style))
+            cell_style = ParagraphStyle('ItemCell', fontName=font_name, fontSize=9, leading=12,
+                                        textColor=colors.HexColor('#374151'))
+            story.append(self._items_table(items, font_name, cell_style))
+            story.append(Spacer(1, 14))
 
         # 结果解读
         story.append(Paragraph(_t("评估解读"), heading_style))
@@ -290,7 +356,7 @@ class PDFReportService:
         if ai_interpretation:
             story.append(Paragraph(_t("AI 专业建议"), heading_style))
             # 处理AI解读中的换行
-            ai_text = ai_interpretation.replace('\n', '<br/>')
+            ai_text = _markdown_to_para(ai_interpretation)
             story.append(Paragraph(ai_text, normal_style))
             story.append(Spacer(1, 15))
 
@@ -315,6 +381,79 @@ class PDFReportService:
         buffer.close()
 
         return pdf_bytes
+
+    @staticmethod
+    def _severity_drawing(scale_info: dict, score: float, font: str):
+        """Coloured band for the score levels, with a marker at the participant's score."""
+        width, height = 16 * cm, 2.3 * cm
+        d = Drawing(width, height)
+        max_score = float(scale_info.get('max_score') or 100)
+        levels = scale_info.get('levels') or []
+        bar_y, bar_h = 1.0 * cm, 0.42 * cm
+        band = _band_colours(len(levels))
+        for idx, (lo, hi, name, _desc) in enumerate(levels):
+            x0 = lo / max_score * width
+            x1 = (levels[idx + 1][0] if idx + 1 < len(levels) else max_score) / max_score * width
+            d.add(Rect(x0, bar_y, x1 - x0, bar_h, fillColor=colors.HexColor(band[idx % len(band)]), strokeColor=None))
+            # narrow bands: put every other label on a second line so they do not overlap
+            label_y = 0.55 * cm if (x1 - x0) >= 2.6 * cm or idx % 2 == 0 else 0.12 * cm
+            d.add(String((x0 + x1) / 2, label_y, f"{_t(name)} ({lo}–{hi})", fontName=font, fontSize=7,
+                         fillColor=colors.HexColor('#4B5563'), textAnchor='middle'))
+        x = max(0.0, min(float(score), max_score)) / max_score * width
+        top = bar_y + bar_h
+        d.add(Polygon([x - 5, top + 9, x + 5, top + 9, x, top + 1], fillColor=colors.HexColor('#1F2937'), strokeColor=None))
+        d.add(String(min(max(x, 8), width - 8), top + 11, str(int(score) if float(score).is_integer() else score),
+                     fontName=font, fontSize=9, fillColor=colors.HexColor('#1F2937'), textAnchor='middle'))
+        return d
+
+    @staticmethod
+    def _bars_drawing(rows: list, font: str):
+        """Horizontal bars: label, coloured bar, score/max."""
+        row_h = 0.62 * cm
+        width = 16 * cm
+        label_w, bar_w = 5.6 * cm, 8.4 * cm
+        height = row_h * len(rows) + 0.1 * cm
+        d = Drawing(width, height)
+        for i, row in enumerate(rows):
+            y = height - (i + 1) * row_h + 0.12 * cm
+            label = str(row.get('label', ''))
+            if len(label) > 22:
+                label = label[:21] + '…'
+            lo, hi, score = float(row.get('min', 0)), float(row.get('max', 1)), float(row.get('score', 0))
+            frac = 0.0 if hi == lo else max(0.0, min(1.0, (score - lo) / (hi - lo)))
+            d.add(String(0, y + 0.07 * cm, label, fontName=font, fontSize=8.5, fillColor=colors.HexColor('#374151')))
+            d.add(Rect(label_w, y, bar_w, 0.32 * cm, fillColor=colors.HexColor('#F1F5F9'), strokeColor=None))
+            if frac > 0:
+                d.add(Rect(label_w, y, max(bar_w * frac, 2), 0.32 * cm,
+                           fillColor=colors.HexColor(_LEVEL_HEX[_level_index(frac)]), strokeColor=None))
+            d.add(String(label_w + bar_w + 0.25 * cm, y + 0.05 * cm, f"{int(score)}/{int(hi)}", fontName=font,
+                         fontSize=8.5, fillColor=colors.HexColor('#111827')))
+        return d
+
+    @staticmethod
+    def _items_table(items: list, font: str, style):
+        data = [[_t('题号'), _t('题目'), _t('得分')]]
+        tints = []
+        for i, row in enumerate(items, start=1):
+            lo, hi, score = float(row.get('min', 0)), float(row.get('max', 1)), float(row.get('score', 0))
+            frac = 0.0 if hi == lo else (score - lo) / (hi - lo)
+            label, text = str(row.get('label', '')), str(row.get('text') or '')
+            cell = label if not text or text == label else f"<b>{label}</b>　{text}"
+            data.append([str(i), Paragraph(cell, style), f"{int(score)}/{int(hi)}"])
+            tints.append(('BACKGROUND', (2, i), (2, i), colors.HexColor(_LEVEL_TINT[_level_index(frac)])))
+        table = Table(data, colWidths=[1.2 * cm, 12.6 * cm, 2.2 * cm], repeatRows=1)
+        table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), font),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F3F4F6')),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#E5E7EB')),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ] + tints))
+        return table
 
     def _get_recommendations(self, severity: str) -> list:
         """根据严重程度获取建议"""
@@ -353,6 +492,7 @@ class PDFReportService:
         answers: list,
         ai_interpretation: Optional[str] = None,
         user_name: Optional[str] = None,
+        breakdown: Optional[dict] = None,
     ) -> str:
         """生成 Base64 编码的 PDF"""
         pdf_bytes = self.generate_report(
@@ -361,6 +501,7 @@ class PDFReportService:
             answers=answers,
             ai_interpretation=ai_interpretation,
             user_name=user_name,
+            breakdown=breakdown,
         )
         return base64.b64encode(pdf_bytes).decode('utf-8')
 

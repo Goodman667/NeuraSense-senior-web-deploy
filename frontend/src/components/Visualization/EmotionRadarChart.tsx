@@ -107,7 +107,6 @@ export const EmotionRadarChart = ({
             {/* Radar Chart */}
             <div className={sizeClasses[size]}>
                 <ResponsiveContainer width="100%" height="100%">
-                    {/* @ts-expect-error recharts type incompatibility with React 19 */}
                     <RadarChart data={chartData}>
                         <PolarGrid
                             stroke="#E5E7EB"

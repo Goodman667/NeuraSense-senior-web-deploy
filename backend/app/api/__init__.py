@@ -879,6 +879,8 @@ class PDFReportRequest(BaseModel):
     answers: list = []
     ai_interpretation: Optional[str] = None
     user_name: Optional[str] = None
+    # {"groups": [{label, score, min, max}], "items": [{label, text, score, min, max}]}
+    breakdown: Optional[dict] = None
 
 
 @router.post("/report/pdf")
@@ -903,6 +905,7 @@ async def generate_pdf_report(request: PDFReportRequest):
             answers=request.answers,
             ai_interpretation=request.ai_interpretation,
             user_name=request.user_name,
+            breakdown=request.breakdown,
         )
         
         return {

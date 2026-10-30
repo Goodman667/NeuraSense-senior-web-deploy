@@ -36,11 +36,11 @@ def recommend_exercise(
         )
     if any(word in combined for word in ["睡", "累", "疲惫", "没精神", "乏"]):
         return SeniorRecommendedExercise(
-            id="rest_15min",
-            title="短休息 15 分钟",
-            reason="睡眠和疲惫线索比较明显，先补一点精神。",
-            duration_label="15 分钟",
-            steps=["找一个安全位置坐下或躺下", "把屏幕放远，闭眼休息", "十五分钟后喝一口水"],
+            id="body_relax_5min",
+            title="身体放松 5 分钟",
+            reason="睡眠和疲惫线索比较明显，先让身体松一松。",
+            duration_label="5 分钟",
+            steps=["坐稳，慢慢呼吸三次", "握拳、耸肩、绷紧小腿，再慢慢松开", "动一动手指和脚趾，喝一口水"],
             play_prompt="这次的目标不是睡着，只是让身体少用一点力。",
             stop_rule="如果身体不适加重，请停止练习并联系身边的人。",
         )

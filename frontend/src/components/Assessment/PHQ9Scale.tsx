@@ -8,7 +8,7 @@
 import { useState, useCallback } from 'react';
 import { API_BASE } from '../../config/api';
 import { PDFDownloadButton } from './PDFDownloadButton';
-import { MarkdownText } from './MarkdownText';
+import { ScaleAdviceCard, DimensionScores, buildScoreBreakdown, type ScaleItemDef, type ScaleGroupDef } from './ScaleResultParts';
 
 // PHQ-9 问题定义
 const PHQ9_QUESTIONS = [
@@ -24,6 +24,11 @@ const PHQ9_QUESTIONS = [
 ];
 
 // 选项定义
+// Item names and groups for the result page and the PDF report
+const PHQ9_ITEMS: ScaleItemDef[] = ['兴趣', '心情', '睡眠', '精力', '食欲', '自我评价', '专注', '行动', '自伤念头']
+    .map((label, i) => ({ label, text: PHQ9_QUESTIONS[i] }));
+const PHQ9_GROUPS: ScaleGroupDef[] = [];
+
 const OPTIONS = [
     { value: 0, label: "完全不会", description: "过去2周内完全没有发生" },
     { value: 1, label: "好几天", description: "一周内有几天" },
@@ -56,6 +61,7 @@ export interface PHQ9Result {
 export const PHQ9Scale = ({ onComplete, onClose }: PHQ9ScaleProps) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<(number | null)[]>(new Array(9).fill(null));
+    const breakdown = buildScoreBreakdown(PHQ9_ITEMS, answers, 0, 3, PHQ9_GROUPS);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [aiInterpretation, setAiInterpretation] = useState<string | null>(null);
@@ -366,64 +372,9 @@ ${totalScore >= 10 ? '### 专业资源\n（说明为什么建议咨询心理咨�
                         </div>
                     </div>
 
-                    {/* AI 智能解读卡片 */}
-                    {aiInterpretation && (
-                        <div className="bg-gradient-to-br from-primary-500 to-accent-600 rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-start space-x-4">
-                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <span className="text-2xl">💬</span>
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-lg mb-3">小心的专业建议</h3>
-                                    <MarkdownText text={aiInterpretation} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {aiInterpretation && <ScaleAdviceCard text={aiInterpretation} title="小心的专业建议" />}
 
-                    {/* 各维度得分图表 */}
-                    <div className="bg-white rounded-2xl shadow-lg p-6 border border-warm-100">
-                        <h3 className="font-bold text-warm-800 mb-4 flex items-center">
-                            <span className="text-xl mr-2">📊</span>
-                            各维度得分分析
-                        </h3>
-
-                        <div className="space-y-4">
-                            {PHQ9_QUESTIONS.map((q, i) => {
-                                const score = answers[i] ?? 0;
-                                const percentage = (score / 3) * 100;
-                                const labels = ['兴趣', '心情', '睡眠', '精力', '食欲', '自我评价', '专注', '行动', '自伤念头'];
-
-                                return (
-                                    <div key={i} className="group">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-sm font-medium text-warm-700">{labels[i]}</span>
-                                            <span className={`text-sm font-bold ${score === 0 ? 'text-green-600' :
-                                                score === 1 ? 'text-yellow-600' :
-                                                    score === 2 ? 'text-orange-600' :
-                                                        'text-red-600'
-                                                }`}>
-                                                {score}/3
-                                            </span>
-                                        </div>
-                                        <div className="h-3 bg-warm-100 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-500 ${score === 0 ? 'bg-green-400' :
-                                                    score === 1 ? 'bg-yellow-400' :
-                                                        score === 2 ? 'bg-orange-400' :
-                                                            'bg-red-500'
-                                                    }`}
-                                                style={{ width: `${percentage}%` }}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-warm-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                                            {q}
-                                        </p>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                    <DimensionScores breakdown={breakdown} />
 
                     {/* 建议行动卡片 */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -458,6 +409,7 @@ ${totalScore >= 10 ? '### 专业资源\n（说明为什么建议咨询心理咨�
                         totalScore={totalScore}
                         answers={answers as number[]}
                         aiInterpretation={aiInterpretation || undefined}
+                        breakdown={breakdown}
                         className="w-full mb-4"
                     />
 

@@ -49,6 +49,9 @@ import LazyErrorBoundary from './components/LazyErrorBoundary';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import type { ToolItem } from './pages/ToolboxPage';
 import SeniorRoutes from './features/senior/routes/SeniorRoutes';
+import { startAccountStorageSync } from './lib/accountStorageSync';
+
+startAccountStorageSync();
 
 // Lazy-loaded pages — 按需加载，减小首屏体积
 // lazyRetry: 动态导入失败时自动重试，避免快速切换Tab导致白屏

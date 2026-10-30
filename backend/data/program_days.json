@@ -5,8 +5,8 @@
     "title": "认识压力 — 身体信号觉察",
     "learn_text": "压力并不总是坏事。适度的压力（良性压力 eustress）能激发潜能，但长期的慢性压力会损害身心健康。\n\n今天的目标是觉察压力在你身体上的表现：肩膀紧绷？胃部不适？呼吸变浅？\n\n了解自己的压力信号是管理压力的第一步。",
     "tool_id": "mindfulness_body_scan",
-    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
-    "video_title": "正念入门 — 身体扫描冥想引导",
+    "video_url": "https://www.bilibili.com/video/BV1sp4y1k7q3/",
+    "video_title": "冥想入门引导 — 6 分钟呼吸冥想",
     "review_question": "完成身体扫描后，你注意到身体哪个部位最紧张？",
     "tip": "不需要改变什么，只是观察和感受。"
   },
@@ -76,7 +76,6 @@
     "review_question": "这 7 天里，哪个工具对你帮助最大？你打算如何在日常中继续使用它？",
     "tip": "结束不是终点，而是新习惯的开始。"
   },
-
   {
     "program_id": "sleep-7",
     "day_number": 1,
@@ -154,15 +153,14 @@
     "review_question": "这 7 天里哪个助眠工具对你最有效？你打算怎么坚持使用？",
     "tip": "好的睡眠是练出来的，不是等出来的。"
   },
-
   {
     "program_id": "focus-7",
     "day_number": 1,
     "title": "注意力是肌肉 — 觉察你的分心模式",
     "learn_text": "注意力不是天赋，而是可以训练的「肌肉」。就像去健身房锻炼一样，每次你发现自己走神并主动拉回来，就等于做了一个「注意力仰卧起坐」。\n\n今天的练习是 1 分钟正念——最短的注意力训练。目标不是不走神，而是尽早发现走神。",
     "tool_id": "mindfulness_1min",
-    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
-    "video_title": "正念冥想入门 — 觉察呼吸练习",
+    "video_url": "https://www.bilibili.com/video/BV1F44y1D7CL/",
+    "video_title": "正念呼吸冥想 — 10 分钟观呼吸练习",
     "review_question": "1 分钟里你走神了几次？每次是什么把你拉走的？",
     "tip": "发现走神的那个瞬间，才是真正的「训练」。"
   },
@@ -172,8 +170,8 @@
     "title": "数息法 — 古老的注意力训练",
     "learn_text": "数息法是最古老的冥想入门技术：每次呼气数一个数，从 1 到 10 再重来。听起来简单，但你很快会发现自己数到 3 就走神了。\n\n这不是失败——走神再回来的过程，就是在增强前额叶皮层（负责注意力控制的脑区）的连接。",
     "tool_id": "breathing_counted",
-    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
-    "video_title": "正念入门 — 数息与觉察",
+    "video_url": "https://www.bilibili.com/video/BV1XD4y1S7rx/",
+    "video_title": "三分钟呼吸空间 — 正念引导练习",
     "review_question": "你最长连续数到了几？什么让你的注意力跑掉了？",
     "tip": "不是数到 10 就赢了，而是每次「回来」都赢了。"
   },
@@ -232,15 +230,14 @@
     "review_question": "30 分钟不碰手机，你感觉如何？焦虑还是平静？",
     "tip": "你和自己独处的能力，就是你最大的竞争力。"
   },
-
   {
     "program_id": "emotion-7",
     "day_number": 1,
     "title": "认识情绪 — 情绪不是敌人",
     "learn_text": "情绪是进化赋予我们的「快速反应系统」。恐惧帮我们躲避危险，愤怒帮我们设定边界，悲伤帮我们获得支持。\n\n问题不是有情绪，而是被情绪「劫持」——来不及思考就做出了后悔的反应。\n\n今天我们练习 STOP 技能：在情绪升起和行动之间插入一个「暂停键」。",
     "tool_id": "dbt_stop",
-    "video_url": "https://www.bilibili.com/video/BV1NM4y1d7aC/",
-    "video_title": "正念冥想入门 — 情绪觉察",
+    "video_url": "https://www.bilibili.com/video/BV1WL411b7Ew/",
+    "video_title": "5 分钟冥想 — 呼吸放松身体",
     "review_question": "今天有没有一个时刻你成功在情绪和行动之间按下了暂停键？",
     "tip": "暂停 3 秒就够了——这 3 秒能改变结果。"
   },

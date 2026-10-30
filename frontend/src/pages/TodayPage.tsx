@@ -10,7 +10,7 @@ import {
     ResponsiveContainer,
     Legend,
 } from 'recharts';
-import { useCheckinStore, type CheckinData } from '../store/useCheckinStore';
+import { useCheckinStore, getRecordDayKey, parseCheckinTime, type CheckinData } from '../store/useCheckinStore';
 import { API_BASE } from '../config/api';
 import { DAILY_PROGRESS_EVENT, isDailyTaskCompleted, readToolCompletionCount } from '../lib/dailyProgress';
 import type { ToolItem } from './ToolboxPage';
@@ -836,13 +836,17 @@ function TrendChart() {
     const { history, isLoading } = useCheckinStore();
 
     const chartData = useMemo(() => {
-        const sorted = [...history]
-            .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))
-            .slice(-7);
+        // One point per day (the latest check-in of that day), for the last 7 days.
+        const byDay = new Map<string, (typeof history)[number]>();
+        for (const record of [...history].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))) {
+            const key = getRecordDayKey(record);
+            if (key) byDay.set(key, record);
+        }
+        const sorted = Array.from(byDay.entries()).sort(([a], [b]) => a.localeCompare(b)).slice(-7).map(([, r]) => r);
 
         return sorted.map((record) => ({
             date: record.created_at
-                ? new Date(record.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
+                ? parseCheckinTime(record.created_at).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' })
                 : '',
             心情: record.mood,
             压力: record.stress,
@@ -868,7 +872,7 @@ function TrendChart() {
     const lastSevenDays = useMemo(() => {
         const recorded = new Set(
             history
-                .map((record) => (record.created_at ? new Date(record.created_at).toDateString() : ''))
+                .map((record) => (record.created_at ? parseCheckinTime(record.created_at).toDateString() : ''))
                 .filter(Boolean),
         );
         return Array.from({ length: 7 }, (_, index) => {
@@ -910,14 +914,14 @@ function TrendChart() {
                     <div className="flex h-[300px] items-center justify-center">
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
                     </div>
-                ) : chartData.length < 2 ? (
+                ) : chartData.length === 0 ? (
                     <div className="flex flex-col gap-6 px-2 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-10">
                         <div className="flex items-start gap-4">
                             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
                                 <IconChart className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="text-base font-semibold text-slate-900">趋势图会在至少 2 天记录后出现</p>
+                                <p className="text-base font-semibold text-slate-900">完成第一次签到后，这里会画出趋势图</p>
                                 <p className="mt-1 max-w-md text-sm leading-6 text-slate-500">近 7 天已记录 {recordedDays} 天。继续完成每日签到，这里就会画出心情、压力、精力和睡眠的变化曲线。</p>
                             </div>
                         </div>
@@ -943,7 +947,6 @@ function TrendChart() {
                     </div>
                 ) : (
                     <ResponsiveContainer width="100%" height={320}>
-                        {/* @ts-expect-error recharts + React 19 type compat */}
                         <LineChart data={chartData} margin={{ top: 10, right: 12, left: -12, bottom: 4 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                             <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#64748b' }} stroke="#cbd5e1" />

@@ -87,15 +87,18 @@ def _sync_seed_data_to_supabase():
             else:
                 print(f"[Sync] All {len(all_days)} program_days already in Supabase")
 
-            # --- Update existing rows missing video_url ---
+            # --- Keep each day's video in line with the seed file (fills missing ones and
+            #     applies replacements, e.g. a real guided practice instead of an introduction) ---
             try:
                 seed_lookup = {(d["program_id"], d["day_number"]): d for d in all_days}
-                missing_video = sb.table("program_days").select("id,program_id,day_number,video_url").is_("video_url", "null").execute()
-                rows_to_update = missing_video.data or []
+                current = sb.table("program_days").select("id,program_id,day_number,video_url,video_title").execute()
+                rows_to_update = current.data or []
                 updated = 0
                 for row in rows_to_update:
                     seed = seed_lookup.get((row["program_id"], row["day_number"]))
-                    if seed and seed.get("video_url"):
+                    if seed and seed.get("video_url") and (
+                        row.get("video_url") != seed["video_url"] or (row.get("video_title") or "") != seed.get("video_title", "")
+                    ):
                         sb.table("program_days").update({
                             "video_url": seed["video_url"],
                             "video_title": seed.get("video_title", ""),
