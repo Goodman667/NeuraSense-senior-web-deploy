@@ -111,7 +111,7 @@ export default function DesktopShell({
             </div>
 
             <div className="nexar-light relative z-10 flex min-h-screen flex-1 flex-col">
-                <header className="sticky top-0 z-30 px-4 pt-4 sm:px-6 lg:px-8">
+                <header className="sticky top-0 z-30 px-4 pt-4 sm:px-6 lg:px-8" data-tour-shell-header>
                     <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between gap-4 rounded-full bg-white px-4 py-2 shadow-sm sm:px-6 sm:py-3">
                         <button onClick={() => onTabChange('today')} className="flex items-center gap-2.5" aria-label="回到今日">
                             <BrandMark />
@@ -123,6 +123,7 @@ export default function DesktopShell({
                                 <button
                                     key={item.id}
                                     onClick={() => onTabChange(item.id)}
+                                    data-tour={`nav-${item.id}`}
                                     aria-current={activeTab === item.id ? 'page' : undefined}
                                     className={`whitespace-nowrap rounded-full px-3 py-2 text-[15px] transition-colors xl:px-4 ${activeTab === item.id ? 'font-medium text-black' : 'text-gray-500 hover:text-gray-900'}`}
                                 >

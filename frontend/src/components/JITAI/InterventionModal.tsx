@@ -237,7 +237,7 @@ export const InterventionModal = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" data-tour-pause>
             <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl overflow-hidden animate-fadeIn">
                 {/* Header */}
                 <div className="bg-gradient-to-r from-violet-500 via-purple-500 to-indigo-500 p-6 text-white relative">

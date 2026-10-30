@@ -84,7 +84,7 @@ interface TabBarProps {
 
 export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 z-50" data-tour-tabbar>
             {/* 毛玻璃背景 */}
             <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-warm-200/60 dark:border-gray-700/60 shadow-[0_-2px_20px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-around max-w-lg mx-auto px-2">
@@ -94,6 +94,7 @@ export default function TabBar({ activeTab, onTabChange }: TabBarProps) {
                             <motion.button
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
+                                data-tour={`nav-${tab.id}`}
                                 whileTap={{ scale: 0.88 }}
                                 className={`relative flex flex-col items-center justify-center py-2 pt-3 flex-1 transition-colors duration-200 ${
                                     isActive ? 'text-primary-600 dark:text-primary-400' : 'text-warm-400 dark:text-gray-500'

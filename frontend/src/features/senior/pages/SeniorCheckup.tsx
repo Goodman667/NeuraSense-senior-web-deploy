@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { emitStudyEvent } from '../../../lib/studyEvents';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { SeniorResultCard } from '../components/SeniorResultCard';
@@ -103,6 +104,7 @@ export function SeniorCheckup({ userId, onNavigate }: { userId: string; onNaviga
       });
       setSummary(res.summary);
       setSnapshot(res.scale_snapshot);
+      emitStudyEvent('senior-checkup-done');
       window.setTimeout(() => speak(res.summary.tts_text || res.summary.plain_summary, { voice: 'xiaoyi', emotion: res.summary.risk_level === 'normal' ? 'friendly' : 'calm' }), 300);
     } catch (exc) {
       setError('小测已经完成，但建议生成暂时失败。请点“重新生成建议”再试一次。');

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useInView } from 'framer-motion';
+import { useTourRunning } from '../../features/studyTour/useStudyTourStore';
 
 export interface FlowMateItem {
     id: string;
@@ -7,6 +8,8 @@ export interface FlowMateItem {
     text: string;
     image: string;
     onClick?: () => void;
+    /** data-tour id, so the guided study tour can point at this card */
+    tourId?: string;
 }
 
 // FlowMate cards carousel: three painterly cards at a time from a rotating pool, auto-advancing every 4s.
@@ -17,15 +20,17 @@ export default function FlowMateCarousel({ title, items, subtitle }: { title: st
     const ref = useRef<HTMLDivElement | null>(null);
     const inView = useInView(ref, { once: true });
     const count = items.length;
+    // Keep the cards still while the guided tour is pointing at one of them.
+    const tourRunning = useTourRunning();
 
     useEffect(() => {
-        if (paused || count <= 3) return;
+        if (paused || tourRunning || count <= 3) return;
         const timer = window.setInterval(() => {
             setDirection(1);
             setIndex((prev) => (prev + 1) % count);
         }, 4000);
         return () => window.clearInterval(timer);
-    }, [count, paused]);
+    }, [count, paused, tourRunning]);
 
     if (!count) return null;
     const visible = Array.from({ length: Math.min(3, count) }, (_, offset) => items[(index + offset) % count]);
@@ -73,6 +78,7 @@ export default function FlowMateCarousel({ title, items, subtitle }: { title: st
                             key={`${card.id}-${index}-${idx}`}
                             type="button"
                             onClick={card.onClick}
+                            data-tour={card.tourId}
                             initial={{ opacity: 0, x: direction > 0 ? 100 : -100, scale: 0.95 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
                             exit={{ opacity: 0, x: direction > 0 ? -100 : 100, scale: 0.95 }}

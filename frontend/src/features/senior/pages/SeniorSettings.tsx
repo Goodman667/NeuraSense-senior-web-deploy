@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useStudyTourStore } from '../../studyTour/useStudyTourStore';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorPageHeader } from '../components/SeniorPageHeader';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
@@ -298,6 +299,16 @@ export function SeniorSettings({ userId, required = false, onSaved, autoOpenCont
           </div>
         </section>
       </div>
+
+      {!required ? (
+        <section className="sn-sheet mt-6 flex flex-wrap items-center justify-between gap-4 p-6 md:p-7">
+          <div>
+            <h2 className="sn-h2">体验引导</h2>
+            <p className="sn-body mt-1">从第 1 步开始，带您把主要功能再走一遍，最后填一份问卷。</p>
+          </div>
+          <button onClick={() => useStudyTourStore.getState().start('companion')} className="sn-btn sn-btn-outline">重新开始体验引导</button>
+        </section>
+      ) : null}
 
       {message ? <p className="sn-notice tone-success mt-6 text-[1.15rem]" role="status">{message}</p> : null}
       {!required && contacts.length ? (

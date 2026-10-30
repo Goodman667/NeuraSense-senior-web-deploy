@@ -14,7 +14,7 @@ export function SeniorRiskModal({
 }) {
   const urgent = level === 'urgent' || level === 'medical_emergency';
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(19,40,43,0.5)] p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="sn-risk-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(19,40,43,0.5)] p-4 backdrop-blur-sm" data-tour-pause role="dialog" aria-modal="true" aria-labelledby="sn-risk-title">
       <div className="sn sn-sheet max-h-[92vh] w-full max-w-2xl overflow-auto p-6 md:p-8">
         <div className={`rounded-[18px] p-5 ${urgent ? 'bg-[var(--sn-help-soft)] text-[#5E1F18]' : 'bg-[#F7EEDC] text-[#5B4313]'}`}>
           <div className="flex items-start gap-4">

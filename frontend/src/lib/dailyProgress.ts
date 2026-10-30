@@ -1,3 +1,5 @@
+import { emitStudyEvent } from './studyEvents';
+
 export const DAILY_PROGRESS_EVENT = 'neurasense:daily-progress-updated';
 
 export const DAILY_PROGRESS_KEYS = {
@@ -113,6 +115,7 @@ export function incrementToolCompletionCount() {
         DAILY_PROGRESS_KEYS.tool.dateKey,
         DAILY_PROGRESS_KEYS.tool.valueKey,
     );
+    emitStudyEvent('tool-done');
 }
 
 export function isDailyTaskCompleted(task: 'chat' | 'assessment') {
@@ -127,4 +130,5 @@ export function markDailyTaskCompleted(task: 'chat' | 'assessment') {
         DAILY_PROGRESS_KEYS[task].dateKey,
         DAILY_PROGRESS_KEYS[task].valueKey,
     );
+    emitStudyEvent(task === 'chat' ? 'chat-replied' : 'assessment-done');
 }

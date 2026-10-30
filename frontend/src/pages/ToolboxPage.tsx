@@ -464,6 +464,7 @@ export default function ToolboxPage({ onNavigate, onStartImmersive, onOpenTool }
                 subtitle={`共 ${tools.length || 0} 个练习 · ${grouped.length} 个主题 · 平均 ${formatDuration(averageDuration)}`}
                 items={shortcuts.slice(0, 5).map((shortcut, idx) => ({
                     id: shortcut.id,
+                    tourId: `toolbox-${shortcut.id}`,
                     label: shortcut.label,
                     text: shortcut.description,
                     image: standardAssets.paintings[idx % standardAssets.paintings.length],
@@ -739,6 +740,7 @@ export default function ToolboxPage({ onNavigate, onStartImmersive, onOpenTool }
                                                             <motion.button
                                                                 key={tool.id}
                                                                 type="button"
+                                                                data-tour={`tool-${tool.id}`}
                                                                 variants={revealCard}
                                                                 whileHover={{ y: -5 }}
                                                                 whileTap={{ scale: 0.985 }}

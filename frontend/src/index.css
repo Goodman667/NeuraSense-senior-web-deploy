@@ -426,3 +426,19 @@ html[data-ui-mode='senior'] body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Guided study tour: pulsing ring around the highlighted area */
+.study-tour-ring {
+  box-shadow: 0 0 0 3px #f59e0b, 0 0 0 9px rgba(245, 158, 11, 0.28);
+  animation: study-tour-pulse 1.6s ease-in-out infinite;
+}
+@keyframes study-tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px #f59e0b, 0 0 0 8px rgba(245, 158, 11, 0.26); }
+  50% { box-shadow: 0 0 0 3px #f59e0b, 0 0 0 15px rgba(245, 158, 11, 0.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .study-tour-ring { animation: none; }
+}
+.study-tour-ring-static {
+  box-shadow: 0 0 0 3px #f59e0b;
+}

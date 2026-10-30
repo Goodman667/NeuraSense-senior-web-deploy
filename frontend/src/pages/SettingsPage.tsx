@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useProfileStore } from '../store/useProfileStore';
 import { useI18n } from '../i18n';
 import { API_BASE } from '../config/api';
+import { useStudyTourStore } from '../features/studyTour/useStudyTourStore';
 
 interface SettingsPageProps {
     onBack: () => void;
@@ -148,6 +149,18 @@ export default function SettingsPage({ authToken }: SettingsPageProps) {
                             : (lang === 'zh' ? '保存提醒设置' : 'Save Reminder Settings')}
                     </button>
                 </div>
+            </SettingsSection>
+
+            {/* === 体验引导 === */}
+            <SettingsSection title="体验引导">
+                <SettingsRow icon="🧭" label="重新开始体验引导" desc="从第 1 步开始，带你把 6 个主要功能再走一遍，最后填一份使用感受问卷。">
+                    <button
+                        onClick={() => useStudyTourStore.getState().start('standard')}
+                        className="shrink-0 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                    >
+                        开始
+                    </button>
+                </SettingsRow>
             </SettingsSection>
 
             {/* === 数据 === */}
