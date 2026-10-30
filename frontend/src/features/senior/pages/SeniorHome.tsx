@@ -21,7 +21,7 @@ function TourStartCard() {
       <div>
         <p className="sn-kicker"><SeniorIcon name="spark" className="h-5 w-5" />第一次用？</p>
         <h2 className="sn-h2 mt-1">跟着引导，一步一步体验</h2>
-        <p className="sn-body mt-1">一共 6 步，每一步只要点亮起来的地方，最后填一份 10 道题的问卷。大约 20 分钟。</p>
+        <p className="sn-body mt-1">一共 6 步，跟着页面上亮起来的地方点就好，最后填一份 10 道题的小问卷。大约 20 分钟。</p>
       </div>
       <button onClick={() => start('companion')} className="sn-btn sn-btn-primary sn-btn-lg" data-tour="senior-tour-start">
         开始体验流程<SeniorIcon name="arrow" />

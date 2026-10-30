@@ -49,7 +49,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: '每日签到',
         desc: '记录今天的状态',
         subs: [
-            { kind: 'click', target: 'nav-today', text: '先点亮起来的「今日」，回到首页。' },
+            { kind: 'click', target: 'nav-today', text: '先点一下亮起来的「今日」，回到首页。' },
             {
                 kind: 'task',
                 target: 'today-checkin',
@@ -67,7 +67,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: '心理自评',
         desc: 'PHQ-9 量表',
         subs: [
-            { kind: 'click', target: 'nav-toolbox', text: '点亮起来的「工具箱」。' },
+            { kind: 'click', target: 'nav-toolbox', text: '点一下亮起来的「工具箱」。' },
             { kind: 'click', target: 'toolbox-scale', text: '点「量表评估」，进入测评中心。' },
             { kind: 'click', target: 'scale-phq9', text: '选择「PHQ-9」抑郁自评量表。' },
             {
@@ -92,7 +92,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: 'AI 陪伴',
         desc: '和小心聊一句',
         subs: [
-            { kind: 'click', target: 'nav-chat', text: '点亮起来的「AI 陪伴」。' },
+            { kind: 'click', target: 'nav-chat', text: '点一下亮起来的「AI 陪伴」。' },
             {
                 kind: 'task',
                 target: 'page:chat',
@@ -107,7 +107,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: '放松练习',
         desc: '呼吸与正念',
         subs: [
-            { kind: 'click', target: 'nav-toolbox', text: '点亮起来的「工具箱」。' },
+            { kind: 'click', target: 'nav-toolbox', text: '点一下亮起来的「工具箱」。' },
             { kind: 'click', target: 'tool-breathing_478', text: '找到「4-7-8 呼吸法」，点开它。' },
             {
                 kind: 'task',
@@ -132,7 +132,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: '课程计划',
         desc: '完成第 1 课',
         subs: [
-            { kind: 'click', target: 'nav-programs', text: '点亮起来的「课程计划」。' },
+            { kind: 'click', target: 'nav-programs', text: '点一下亮起来的「课程计划」。' },
             { kind: 'click', target: 'program-stress-7', text: '选择「7 天减压训练营」。' },
             {
                 kind: 'task',
@@ -148,7 +148,7 @@ export const STANDARD_STEPS: TourStep[] = [
         label: '个人中心',
         desc: '查看记录',
         subs: [
-            { kind: 'click', target: 'nav-me', text: '点亮起来的「个人中心」。' },
+            { kind: 'click', target: 'nav-me', text: '点一下亮起来的「个人中心」。' },
             {
                 kind: 'view',
                 target: 'page:me',
@@ -166,8 +166,8 @@ export const COMPANION_STEPS: TourStep[] = [
         label: '今天的问候',
         desc: '回答 5 个问题',
         subs: [
-            { kind: 'click', target: 'senior-nav-home', text: '先点亮起来的「今天」。' },
-            { kind: 'click', target: 'senior-start-greeting', text: '点亮起来的这个按钮，开始今天的问候。' },
+            { kind: 'click', target: 'senior-nav-home', text: '先点一下亮起来的「今天」。' },
+            { kind: 'click', target: 'senior-start-greeting', text: '点一下亮起来的这个按钮，开始今天的问候。' },
             {
                 kind: 'task',
                 target: 'page:companion',
@@ -197,7 +197,7 @@ export const COMPANION_STEPS: TourStep[] = [
         label: '聊一聊',
         desc: '说一句或打一句',
         subs: [
-            { kind: 'click', target: 'senior-nav-chat', text: '点亮起来的「聊聊」。' },
+            { kind: 'click', target: 'senior-nav-chat', text: '点一下亮起来的「聊聊」。' },
             {
                 kind: 'task',
                 target: 'page:chat',
@@ -212,7 +212,7 @@ export const COMPANION_STEPS: TourStep[] = [
         label: '放松练习',
         desc: '选一个做',
         subs: [
-            { kind: 'click', target: 'senior-nav-relax', text: '点亮起来的「放松」。' },
+            { kind: 'click', target: 'senior-nav-relax', text: '点一下亮起来的「放松」。' },
             {
                 kind: 'task',
                 target: 'page:relax',
@@ -227,7 +227,7 @@ export const COMPANION_STEPS: TourStep[] = [
         label: '小测',
         desc: '一题一题答',
         subs: [
-            { kind: 'click', target: 'senior-nav-checkup', text: '点亮起来的「小测」。' },
+            { kind: 'click', target: 'senior-nav-checkup', text: '点一下亮起来的「小测」。' },
             {
                 kind: 'task',
                 target: 'page:checkup',
@@ -250,7 +250,7 @@ export const COMPANION_STEPS: TourStep[] = [
         label: '找帮助',
         desc: '知道按钮在哪',
         subs: [
-            { kind: 'click', target: 'senior-nav-help', text: '点亮起来的「帮助」。' },
+            { kind: 'click', target: 'senior-nav-help', text: '点一下亮起来的「帮助」。' },
             {
                 kind: 'view',
                 target: 'page:help',

@@ -19,6 +19,7 @@ from app.schemas.senior import (
 from app.services.llm import CounselorService
 from app.services.mental_health import build_ai_context
 from app.services.senior import storage
+from app.services.senior.advice_guidelines import CARD_PLAN, PRACTICAL_ADVICE_RULES
 from app.services.senior.card_service import build_family_message, build_insight_cards, recommend_exercise
 from app.services.senior.safety_service import detect_senior_safety
 from app.services.senior.summary_service import _extract_json
@@ -518,7 +519,8 @@ def _prompt_for_checkup(answers: list[SeniorCheckupAnswer], snapshot: SeniorChec
         user_mode="senior",
         interaction_kind="scale_checkup",
         user_message=qa,
-        recent_context={"scale_snapshot": snapshot.model_dump(), "fallback": fallback.model_dump()},
+        # The canned fallback is not passed in: the model copied its generic wording.
+        recent_context={"scale_snapshot": snapshot.model_dump(), "risk_hint": fallback.risk_level},
     )
     return f"""
 {project_context}
@@ -533,24 +535,21 @@ def _prompt_for_checkup(answers: list[SeniorCheckupAnswer], snapshot: SeniorChec
 【内部参考线索】
 {json.dumps(snapshot.model_dump(), ensure_ascii=False)}
 
+{PRACTICAL_ADVICE_RULES}
+
+{CARD_PLAN}
+
 【必须遵守】
 1. 输出严格 JSON，不要 Markdown，不要代码块。
 2. 给用户看的字段不要出现：NeuraSense、项目、平台、AI、人工智能、诊断、量表、评分、分数、PHQ、GAD、抑郁症、焦虑症、算法、模型。
-3. 不要把用户答案复述一遍凑字数；必须给“今天能做”的动作、对象、时长。
-4. 如果回答质量较少或很多“不确定”，要明确“先给低门槛建议”，不要假装很确定。
-5. 对老年人用语：短句、具体、像家人/护理员提醒，不说教。
-6. 如果有不想活、伤害自己、撑不住、胸痛、呼吸困难、摔倒、用药过量等，优先联系真人与急救/专业帮助，next_action.route 必须是 help。
-7. insight_cards 固定 5 张，顺序：
-   priority 今天先照顾哪里；
-   first_action 现在先做一步；
-   why 为什么这样建议；
-   safety 如果等下更不舒服；
-   family 可以给家人看的话。
+3. 小测的答案是选项，线索比较少：从“是/不是/不确定”的组合里看出今天最需要照顾的方面（例如睡不好、常觉得孤单、总在担心），针对它给具体办法；不确定的地方要说清楚“先试试”，不要假装很确定。
+4. 不要把题目和答案复述一遍凑字数。
+5. 如果有不想活、伤害自己、撑不住、胸痛、呼吸困难、摔倒、用药过量等，优先联系真人与急救/专业帮助，next_action.route 必须是 help。
 
 【输出 JSON 结构】
 {{
   "summary_title": "不超过18字",
-  "plain_summary": "80-140字，先说今天最需要照顾的地方，再给一个具体动作，再说明加重时找谁",
+  "plain_summary": "100-160字，先点名今天最需要照顾的方面，再说最关键的办法怎么做，最后说出现什么信号时找谁",
   "dimensions": {{
     "sleep": {{"label":"睡眠","status":"较平稳/一般/需要关注","text":"一句话"}},
     "mood": {{"label":"心情","status":"较平稳/有些低落/需要陪伴","text":"一句话"}},
@@ -562,11 +561,11 @@ def _prompt_for_checkup(answers: list[SeniorCheckupAnswer], snapshot: SeniorChec
   "recommendation": {{"type":"relax/chat/help/rest","title":"按钮式短标题","reason":"为什么现在适合做这一步","tool_id":"可选"}},
   "next_action": {{"label":"按钮文案","route":"relax/chat/help/summary/home"}},
   "insight_cards": [
-    {{"id":"priority","eyebrow":"先看这一点","title":"短标题","body":"只讲一个重点","action":"可选","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"first_action","eyebrow":"现在先做","title":"短标题","body":"具体动作、时长或对象","action":"可选","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"why","eyebrow":"为什么这样建议","title":"短标题","body":"只解释生活线索，不讲算法","action":"可选","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"safety","eyebrow":"如果等下更不舒服","title":"短标题","body":"加重时怎么做","action":"打开帮助或练习名","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["短句1","短句2","短句3"],"speak_text":"适合朗读"}},
-    {{"id":"family","eyebrow":"可以给家人看的话","title":"短标题","body":"可直接发给家人的话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":["短句1","短句2"],"speak_text":"适合朗读"}}
+    {{"id":"priority","eyebrow":"今天先照顾这件事","title":"短标题，点名具体方面","body":"一句话：是什么、为什么先照顾它","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":[]}},
+    {{"id":"first_action","eyebrow":"可以这样做","title":"短标题","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["怎么做1","怎么做2","怎么做3"]}},
+    {{"id":"why","eyebrow":"还可以试试","title":"短标题，针对第二个方面","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["怎么做1","怎么做2"]}},
+    {{"id":"safety","eyebrow":"这些情况要找人帮忙","title":"短标题","body":"一句话","action":"打开帮助","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["具体信号1","具体信号2","具体信号3"]}},
+    {{"id":"family","eyebrow":"可以发给家人的话","title":"短标题","body":"可直接发给家人的一句话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":[]}}
   ],
   "family_message": "可直接复制给家人的一句话",
   "safety": {{"level":"normal/watch/elevated/urgent/medical_emergency","title":"短标题","message":"给用户看的安全说明","steps":["一步","一步","一步"],"should_contact_family":false,"emergency_note":"可选"}},
@@ -595,6 +594,7 @@ async def analyze_checkup(
             user_id=user_id,
             conversation_history=[],
             emotion_context={"skip_project_context": True, "skip_memory": True, "neurasense_mode": "senior"},
+            max_tokens=2600,
         )
         data = _extract_json(response.message)
         if data:

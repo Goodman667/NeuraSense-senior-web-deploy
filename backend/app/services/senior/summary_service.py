@@ -12,6 +12,7 @@ from app.schemas.senior import (
 )
 from app.services.llm import CounselorService
 from app.services.mental_health import build_ai_context
+from app.services.senior.advice_guidelines import CARD_PLAN, PRACTICAL_ADVICE_RULES
 from app.services.senior.card_service import build_family_message, build_insight_cards, recommend_exercise
 from app.services.senior.memory_service import get_senior_memory, update_senior_memory
 from app.services.senior.safety_service import detect_senior_safety
@@ -484,35 +485,26 @@ def _build_senior_summary_prompt(
 {project_context}
 
 【输出任务】
-你要根据上面的系统问题和用户回答，生成真正给用户本人看的生活建议。
+根据上面的系统问题和老人的回答，写给老人本人看的今日建议。
+
+{PRACTICAL_ADVICE_RULES}
+
+{CARD_PLAN}
+
+【格式和安全要求】
 必须输出严格 JSON，不要 Markdown，不要解释，不要代码块。
-所有会显示给用户或家人的字段，都不要出现 NeuraSense、关怀模式、项目、平台、AI、PHQ、GAD、抑郁症、焦虑症、诊断、评分、分数、量表、风险等级、算法、模型 等词。
-短句，简体中文。风险提示要温和但清楚。
-不要写项目介绍，不要解释算法，不要复述用户原话来凑字数。
-每个建议必须包含一个今天能照做的具体动作、时长或对象。
-如果无法给出个性化建议，宁可用朴素但具体的 fallback，不要输出“建议来自睡眠、心情、压力和支持线索”这种说明腔。
-如果用户提到身体不舒服，例如眼睛痛、头痛、胸闷、持续疼痛，要先建议减少刺激、休息、联系家人观察；持续或加重时建议咨询医生。
-如果用户说想聊天或需要陪伴，要给出具体方式，例如“聊 10 分钟”“给家人发一句话”，不要只写“需要陪伴”。
-plain_summary 必须遵循：先指出今天最需要照顾的地方，再给一个具体动作，再说明加重时找谁。
-insight_cards 必须固定 5 张，顺序必须是：
-1 priority：今天最需要照顾的地方
-2 first_action：现在先做的一步
-3 why：为什么这样建议
-4 safety：如果等下更不舒服怎么办
-5 family：可以给家人看的话
-family_message 必须像老人可以直接复制发给家人的一句话，不共享完整聊天原文。
-recommended_exercise 只能从这些 id 选择：breathing_5min（慢呼吸）、mindful_breath_5min（正念呼吸）、body_relax_5min（身体放松）、grounding_54321（5-4-3-2-1 安心练习）、eye_rest_10min、worry_note、connection_message。
-recommended_exercise 必须像“今天这一位用户的练习单”，不能只是工具名。请根据回答质量调整：
-如果回答很具体，步骤要贴合用户提到的身体、睡眠、家人或担心内容；
-如果回答很少或很模糊，步骤要更低门槛，比如“坐稳、喝水、只说一句”。
-play_prompt 写一个轻微有趣但不幼稚的小玩法，比如“一句话挑战”“找三个安全锚点”“只找一口更轻的呼气”。
-stop_rule 写清楚什么时候停止练习并找真人帮助。
-如果是 urgent 或 medical_emergency，next_action.route 必须是 help，卡片重点放在现实帮助，不要继续普通聊天。
+给老人或家人看的字段里不要出现 NeuraSense、关怀模式、项目、平台、AI、PHQ、GAD、抑郁症、焦虑症、诊断、评分、分数、量表、风险等级、算法、模型 等词。
+不要复述老人的原话来凑字数。
+plain_summary：先点名今天最需要照顾的具体情况，再说最关键的一个办法怎么做，最后一句说出现什么信号时找谁。
+family_message 必须像老人可以直接复制发给家人的一句话，说清楚想请家人帮什么，不共享完整聊天原文。
+recommended_exercise 只能从这些 id 选择：breathing_5min（慢呼吸）、mindful_breath_5min（正念呼吸）、body_relax_5min（身体放松）、grounding_54321（5-4-3-2-1 安心练习）、eye_rest_10min、worry_note、connection_message；步骤要贴合这位老人提到的情况。
+play_prompt 写一个轻微有趣但不幼稚的小玩法；stop_rule 写清楚什么时候停止练习并找真人帮助。
+如果是 urgent 或 medical_emergency，next_action.route 必须是 help，卡片重点放在现实帮助，不要继续普通建议。
 
 请输出如下 JSON：
 {{
   "summary_title": "不超过18字",
-  "plain_summary": "80-140字，生活化",
+  "plain_summary": "100-160字，生活化，有具体办法",
   "dimensions": {{
     "sleep": {{"label":"睡眠", "status":"较平稳/一般/需要关注", "text":"一句话"}},
     "mood": {{"label":"心情", "status":"较平稳/有些低落/需要陪伴", "text":"一句话"}},
@@ -524,16 +516,16 @@ stop_rule 写清楚什么时候停止练习并找真人帮助。
   "recommendation": {{"type":"relax/chat/help/rest", "title":"一个下一步，像给用户看的按钮", "reason":"用生活化语言说明为什么现在适合做这一步", "tool_id":"可选"}},
   "next_action": {{"label":"按钮文案", "route":"relax/chat/help/summary"}},
   "insight_cards": [
-    {{"id":"priority","eyebrow":"先看这一点","title":"短标题","body":"只讲一个重点","action":"可选按钮文案","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"first_action","eyebrow":"现在先做","title":"短标题","body":"具体动作、时长或对象","action":"可选按钮文案","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"why","eyebrow":"为什么这样建议","title":"短标题","body":"只解释生活线索，不讲算法","action":"可选按钮文案","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["短句1","短句2"],"speak_text":"适合朗读"}},
-    {{"id":"safety","eyebrow":"如果等下更不舒服","title":"短标题","body":"加重时怎么做","action":"打开帮助或练习名","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["短句1","短句2","短句3"],"speak_text":"适合朗读"}},
-    {{"id":"family","eyebrow":"可以给家人看的话","title":"短标题","body":"可直接发给家人的话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":["短句1","短句2"],"speak_text":"适合朗读"}}
+    {{"id":"priority","eyebrow":"今天先照顾这件事","title":"短标题，点名具体情况","body":"一句话：是什么、为什么先照顾它","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":[]}},
+    {{"id":"first_action","eyebrow":"可以这样做","title":"短标题","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["怎么做1","怎么做2","怎么做3"]}},
+    {{"id":"why","eyebrow":"还可以试试","title":"短标题，针对第二件事","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["怎么做1","怎么做2"]}},
+    {{"id":"safety","eyebrow":"这些情况要找人帮忙","title":"短标题","body":"一句话","action":"打开帮助","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["具体信号1","具体信号2","具体信号3"]}},
+    {{"id":"family","eyebrow":"可以发给家人的话","title":"短标题","body":"可直接发给家人的一句话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":[]}}
   ],
   "family_message": "可直接复制给家人的短句",
   "safety": {{"level":"normal/watch/elevated/urgent/medical_emergency","title":"短标题","message":"给用户看的安全说明","steps":["一步","一步","一步"],"should_contact_family":false,"emergency_note":"可选"}},
   "recommended_exercise": {{"id":"breathing_3min","title":"练习名","reason":"为什么推荐","duration_label":"3 分钟","steps":["一步","一步","一步"],"play_prompt":"一个轻微有趣的小玩法","stop_rule":"什么时候停止并找人"}},
-  "tts_text": "适合直接朗读的短文本"
+  "tts_text": "适合直接朗读的一小段，内容和 plain_summary 一致"
 }}
 """.strip()
 
@@ -550,7 +542,8 @@ async def generate_senior_summary(
     enriched_recent_context = {
         "client_context": recent_context or {},
         "senior_memory": memory_before.model_dump(),
-        "safety_hint": fallback.safety.model_dump() if fallback.safety else {},
+        # Only the safety level: passing the canned fallback text made the model copy its generic tone.
+        "safety_hint": {"level": fallback.risk_level},
     }
     prompt = _build_senior_summary_prompt(
         answers=answers,
@@ -565,6 +558,7 @@ async def generate_senior_summary(
             user_id=user_id,
             conversation_history=[],
             emotion_context={"skip_project_context": True, "skip_memory": True, "neurasense_mode": "senior"},
+            max_tokens=2600,
         )
         data = _extract_json(response.message)
         if data:

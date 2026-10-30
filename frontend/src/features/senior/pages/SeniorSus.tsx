@@ -10,7 +10,7 @@ import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import type { SeniorPage } from '../types/senior';
 import {
   SUS_ITEMS, SUS_OPTIONS, SUS_AGE_GROUPS,
-  SUS_CONSENT_TITLE, SUS_CONSENT_PROJECT, SUS_CONSENT_SECTIONS, SUS_CONSENT_CHECKBOX,
+  SUS_CONSENT_TITLE, SUS_CONSENT_INTRO, SUS_CONSENT_FACTS, SUS_CONSENT_SECTIONS, SUS_CONSENT_CHECKS,
   submitSus, announceSusSubmitted,
 } from '../../../components/Assessment/susShared';
 
@@ -20,7 +20,8 @@ export function SeniorSus({ onNavigate }: { onNavigate: (page: SeniorPage) => vo
   const token = localStorage.getItem('token');
   const { speak } = useSeniorTTS();
   const [step, setStep] = useState<Step>('consent');
-  const [agreed, setAgreed] = useState(false);
+  const [checks, setChecks] = useState<boolean[]>(() => SUS_CONSENT_CHECKS.map(() => false));
+  const agreed = checks.every(Boolean);
   const [ageGroup, setAgeGroup] = useState<string | null>(null);
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(new Array(10).fill(null));
@@ -30,7 +31,7 @@ export function SeniorSus({ onNavigate }: { onNavigate: (page: SeniorPage) => vo
   const read = (text: string) => speak(text, { voice: 'xiaoyi', emotion: 'friendly' });
 
   useEffect(() => {
-    if (step === 'consent') read('这是一份 10 道题的使用感受问卷。请先看一下说明，同意的话，勾选下面的方框，再点继续。');
+    if (step === 'consent') read('这是一份 10 道题的使用感受问卷。请先看一下说明，同意的话，把下面三个方框都勾上，再点继续。');
     if (step === 'age') read('请选一下您的年龄段。');
     if (step === 'done') read('谢谢您，问卷已经交好了。');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,19 +71,42 @@ export function SeniorSus({ onNavigate }: { onNavigate: (page: SeniorPage) => vo
       {step === 'consent' && (
         <section className="sn-sheet p-6 md:p-8">
           <h2 className="sn-h2">{SUS_CONSENT_TITLE}</h2>
-          <p className="sn-small mt-2">{SUS_CONSENT_PROJECT}</p>
-          <div className="mt-5 space-y-4">
-            {SUS_CONSENT_SECTIONS.map((sec) => (
-              <div key={sec.heading}>
-                <p className="text-[1.25rem] font-semibold text-[var(--sn-ink)]">{sec.heading}</p>
-                <p className="sn-body mt-1">{sec.body}</p>
+          <p className="sn-body mt-3">{SUS_CONSENT_INTRO}</p>
+          <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+            {SUS_CONSENT_FACTS.map((f) => (
+              <div key={f.label} className="rounded-[14px] bg-[var(--sn-sheet-2)] px-4 py-3">
+                <dt className="sn-small">{f.label}</dt>
+                <dd className="mt-1 text-[1.2rem] text-[var(--sn-ink)]">{f.value}</dd>
               </div>
             ))}
-          </div>
-          <label className="mt-6 flex min-h-[3.6rem] cursor-pointer items-start gap-4 rounded-[14px] bg-[var(--sn-sheet-2)] px-4 py-3 text-[1.25rem]">
-            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 h-7 w-7 shrink-0 accent-[#175A67]" />
-            <span>{SUS_CONSENT_CHECKBOX}</span>
-          </label>
+          </dl>
+          <ol className="mt-6 space-y-5">
+            {SUS_CONSENT_SECTIONS.map((sec, i) => (
+              <li key={sec.heading}>
+                <p className="text-[1.25rem] font-semibold text-[var(--sn-ink)]">{i + 1}. {sec.heading}</p>
+                {sec.body ? <p className="sn-body mt-1">{sec.body}</p> : null}
+                {sec.points ? (
+                  <ul className="sn-body mt-1 list-disc space-y-1 pl-6">
+                    {sec.points.map((pt) => <li key={pt}>{pt}</li>)}
+                  </ul>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+          <fieldset className="mt-6 space-y-3">
+            <legend className="mb-2 text-[1.25rem] font-semibold text-[var(--sn-ink)]">同意的话，请把下面三项都勾上</legend>
+            {SUS_CONSENT_CHECKS.map((text, i) => (
+              <label key={text} className="flex min-h-[3.6rem] cursor-pointer items-start gap-4 rounded-[14px] bg-[var(--sn-sheet-2)] px-4 py-3 text-[1.25rem]">
+                <input
+                  type="checkbox"
+                  checked={checks[i]}
+                  onChange={(e) => setChecks((prev) => prev.map((v, j) => (j === i ? e.target.checked : v)))}
+                  className="mt-1 h-7 w-7 shrink-0 accent-[#175A67]"
+                />
+                <span>{text}</span>
+              </label>
+            ))}
+          </fieldset>
           {!token && <p className="sn-small mt-4 text-[var(--sn-help)]">请先登录账号再填写。</p>}
           <div className="mt-6 flex flex-wrap gap-3">
             <button className="sn-btn sn-btn-primary sn-btn-lg" disabled={!token || !agreed} onClick={() => setStep('age')}>同意，继续</button>

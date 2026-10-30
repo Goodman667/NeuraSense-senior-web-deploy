@@ -180,7 +180,7 @@ export function StudyTourOverlay({ uiMode }: { uiMode: TourMode }) {
     useEffect(() => {
         if (!running || !companion) return;
         let text = '';
-        if (tour.phase === 'intro') text = `欢迎体验陪伴版。接下来我会带您走 6 步，每一步只要点亮起来的地方。全部做完，还有一份 10 道题的问卷。准备好了，请点“开始”。`;
+        if (tour.phase === 'intro') text = '欢迎体验陪伴版。接下来我带您把主要功能用一遍，一共 6 步。每一步页面上会有一处亮起来，您点那里就好。最后还有一份 10 道题的小问卷。准备好了，请点“开始”。';
         else if (tour.phase === 'steps' && step) {
             text = isEnglish()
                 ? `Step ${tour.stepIndex + 1}. ${translateText(step.label)}. ${translateText(instruction)}`
@@ -417,8 +417,8 @@ export function StudyTourOverlay({ uiMode }: { uiMode: TourMode }) {
                             <h2 className={`mt-2 font-semibold text-slate-950 ${bigText ? 'text-[2rem] leading-tight' : 'text-2xl'}`}>跟着 6 步，把主要功能用一遍</h2>
                             <p className="mt-3 leading-relaxed text-slate-600">
                                 {companion
-                                    ? '每一步只要点亮起来的地方，其他地方暂时点不了。浮窗会告诉您现在做什么，也会读出来。全部做完，还有一份 10 道题的问卷。'
-                                    : '每一步只需要点亮起来的地方，其他地方暂时点不了。浮窗会告诉你现在做什么，完成一步打一个勾。6 步做完后有一份 10 道题的使用感受问卷。'}
+                                    ? '接下来我带您把陪伴版的主要功能都用一遍：问候、看建议、聊天、放松、小测和找帮助。每一步，页面上会有一处亮起来，您点那里就好。旁边的小窗会告诉您现在做什么，也会读给您听。最后请您填一份 10 道题的小问卷，说说用起来的感受。'
+                                    : '接下来带你把标准版的主要功能都用一遍：签到、心理自评、AI 陪伴、放松练习、课程和个人中心。每一步页面上会有一处亮起来，按小窗里的提示操作就行，完成一步打一个勾。最后有一份 10 道题的使用感受问卷。'}
                             </p>
                             <ol className="mt-5 grid grid-cols-2 gap-2">
                                 {steps.map((s, i) => (
@@ -428,7 +428,7 @@ export function StudyTourOverlay({ uiMode }: { uiMode: TourMode }) {
                                     </li>
                                 ))}
                             </ol>
-                            <p className={`mt-4 text-slate-500 ${bigText ? 'text-[1rem]' : 'text-xs'}`}>大约需要 20–30 分钟。随时可以停下，下次登录会从停下的地方继续。</p>
+                            <p className={`mt-4 text-slate-500 ${bigText ? 'text-[1rem]' : 'text-xs'}`}>大约需要 20–30 分钟。中途可以随时停下，下次登录会接着上次的进度。</p>
                             <div className="mt-6 flex flex-wrap gap-3">
                                 <button
                                     onClick={() => tour.begin()}

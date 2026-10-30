@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import {
     SUS_ITEMS, SUS_OPTIONS as OPTIONS, SUS_AGE_GROUPS as AGE_GROUPS,
-    SUS_CONSENT_TITLE, SUS_CONSENT_PROJECT, SUS_CONSENT_SECTIONS, SUS_CONSENT_CHECKBOX,
+    SUS_CONSENT_TITLE, SUS_CONSENT_INTRO, SUS_CONSENT_FACTS, SUS_CONSENT_SECTIONS, SUS_CONSENT_CHECKS,
     submitSus, announceSusSubmitted,
 } from './susShared';
 
@@ -37,7 +37,8 @@ export const SUSScale = ({ onClose, fixedMode }: SUSScaleProps) => {
     const token = localStorage.getItem('token');
     const [step, setStep] = useState<Step>('consent');
     const [mode, setMode] = useState<Mode>(fixedMode || 'standard');
-    const [agreed, setAgreed] = useState(false);
+    const [checks, setChecks] = useState<boolean[]>(() => SUS_CONSENT_CHECKS.map(() => false));
+    const agreed = checks.every(Boolean);
     const [ageGroup, setAgeGroup] = useState<string | null>(null);
     const [current, setCurrent] = useState(0);
     const [answers, setAnswers] = useState<(number | null)[]>(new Array(10).fill(null));
@@ -88,20 +89,49 @@ export const SUSScale = ({ onClose, fixedMode }: SUSScaleProps) => {
 
             {step === 'consent' && (
                 <section className={card}>
-                    <h3 className="text-lg font-semibold text-gray-900">{SUS_CONSENT_TITLE}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{SUS_CONSENT_PROJECT}</p>
-                    <dl className="mt-5 space-y-4 text-[15px] leading-relaxed text-gray-700">
-                        {SUS_CONSENT_SECTIONS.map((sec) => (
-                            <div key={sec.heading}>
-                                <dt className="font-semibold text-gray-900">{sec.heading}</dt>
-                                <dd className="mt-1">{sec.body}</dd>
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">开始前请阅读</p>
+                    <h3 className="mt-1 text-xl font-semibold text-gray-900">{SUS_CONSENT_TITLE}</h3>
+                    <p className="mt-3 text-[15px] leading-relaxed text-gray-700">{SUS_CONSENT_INTRO}</p>
+                    <dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        {SUS_CONSENT_FACTS.map((f) => (
+                            <div key={f.label} className="rounded-2xl bg-gray-50 px-3 py-2.5">
+                                <dt className="text-xs text-gray-500">{f.label}</dt>
+                                <dd className="mt-0.5 text-sm font-medium leading-snug text-gray-900">{f.value}</dd>
                             </div>
                         ))}
                     </dl>
-                    <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900">
-                        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-black" />
-                        <span>{SUS_CONSENT_CHECKBOX}</span>
-                    </label>
+                    <ol className="mt-6 space-y-5 text-[15px] leading-relaxed text-gray-700">
+                        {SUS_CONSENT_SECTIONS.map((sec, i) => (
+                            <li key={sec.heading} className="flex gap-3">
+                                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">{i + 1}</span>
+                                <div className="min-w-0">
+                                    <p className="font-semibold text-gray-900">{sec.heading}</p>
+                                    {sec.body ? <p className="mt-1">{sec.body}</p> : null}
+                                    {sec.points ? (
+                                        <ul className="mt-1 list-disc space-y-1 pl-5 marker:text-gray-400">
+                                            {sec.points.map((pt) => <li key={pt}>{pt}</li>)}
+                                        </ul>
+                                    ) : null}
+                                </div>
+                            </li>
+                        ))}
+                    </ol>
+                    <fieldset className="mt-7 rounded-2xl border border-gray-200 p-4">
+                        <legend className="px-1 text-sm font-semibold text-gray-900">同意声明（请逐项勾选）</legend>
+                        <div className="space-y-2.5">
+                            {SUS_CONSENT_CHECKS.map((text, i) => (
+                                <label key={text} className="flex cursor-pointer items-start gap-3 text-[15px] text-gray-900">
+                                    <input
+                                        type="checkbox"
+                                        checked={checks[i]}
+                                        onChange={(e) => setChecks((prev) => prev.map((v, j) => (j === i ? e.target.checked : v)))}
+                                        className="mt-1 h-5 w-5 shrink-0 accent-black"
+                                    />
+                                    <span>{text}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
                     {!token && (
                         <p className="mt-5 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">请先登录账号再填写，这样您的回答才能和账号关联。</p>
                     )}
