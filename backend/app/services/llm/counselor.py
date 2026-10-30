@@ -13,10 +13,15 @@ Key features:
 """
 
 from app.utils.lang import apply_lang, has_en_crisis
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
 import os
+
+# System prompt for the current call when a backend task (not the chat) uses this service,
+# e.g. the companion-mode advice cards. Set only from server code, never from request data.
+_TASK_SYSTEM_PROMPT: ContextVar[Optional[str]] = ContextVar("counselor_task_system_prompt", default=None)
 from app.services.mental_health import build_ai_context
 from .client import (
     DEFAULT_LLM_API_BASE,
@@ -178,22 +183,42 @@ class CounselorService:
         emotion_context: Optional[dict] = None,
         style: ResponseStyle = ResponseStyle.EMPATHETIC,
         max_tokens: Optional[int] = None,
+        task_system_prompt: Optional[str] = None,
+        task_crisis: Optional[bool] = None,
     ) -> CounselorResponse:
         """
         生成咨询师回复
-        
+
         Args:
             user_message: 用户消息
             conversation_history: 对话历史
             emotion_context: 情感分析结果（来自 EmotionFusionService）
             style: 回复风格
-            
+            task_system_prompt: 后端任务（如陪伴版建议卡片）用自己的系统提示词，代替聊天人设
+            task_crisis: 后端任务自己判断的危机状态。任务提示词里本身写着安全规则（含“自杀”等词），
+                不能再用关键词扫描整段提示词，否则每次都会被当成危机。
+
         Returns:
             CounselorResponse 咨询师回复
         """
+        if task_system_prompt is not None:
+            token = _TASK_SYSTEM_PROMPT.set(task_system_prompt)
+            try:
+                return await self.generate_response(
+                    user_message,
+                    user_id=user_id,
+                    conversation_history=conversation_history,
+                    emotion_context=emotion_context,
+                    style=style,
+                    max_tokens=max_tokens,
+                    task_crisis=bool(task_crisis),
+                )
+            finally:
+                _TASK_SYSTEM_PROMPT.reset(token)
+
         # 检查危机信号
-        crisis_flag = self.check_crisis_signals(user_message)
-        
+        crisis_flag = bool(task_crisis) if task_crisis is not None else self.check_crisis_signals(user_message)
+
         # 获取长期记忆上下文
         memory_context = ""
         skip_memory = bool((emotion_context or {}).get("skip_memory"))
@@ -375,6 +400,10 @@ class CounselorService:
             raise
 
     def _compose_system_prompt(self, context: str, crisis_flag: bool) -> str:
+        task_prompt = _TASK_SYSTEM_PROMPT.get()
+        if task_prompt:
+            # A backend task carries its own instructions (and its own safety rules) in the prompt.
+            return task_prompt
         extras = []
         if context:
             extras.append(context)

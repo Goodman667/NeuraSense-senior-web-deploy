@@ -174,6 +174,22 @@ def _resource_block(mode: UIMode, interaction_kind: str) -> str:
     return "\n".join(lines)
 
 
+def build_resource_block(topics: set[str], mode: str = "senior") -> str:
+    """Built-in resources for a chosen set of topics (used by tasks that pick their own references)."""
+    norm = _normalize_mode(mode)
+    lines: list[str] = []
+    for item in _resources():
+        audience = item.get("audience") or []
+        if item.get("topic") not in topics or norm not in audience:
+            continue
+        lines.append(f"【{item.get('label') or item.get('topic')}】")
+        if item.get("source"):
+            lines.append(f"依据：{item['source']}")
+        for principle in (item.get("principles") or [])[:3]:
+            lines.append(f"- {principle}")
+    return "\n".join(lines)
+
+
 def _json_block(value: Any) -> str:
     if value is None:
         return "无"

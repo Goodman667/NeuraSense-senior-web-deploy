@@ -17,9 +17,8 @@ from app.schemas.senior import (
     SeniorSummaryResponse,
 )
 from app.services.llm import CounselorService
-from app.services.mental_health import build_ai_context
 from app.services.senior import storage
-from app.services.senior.advice_guidelines import CARD_PLAN, PRACTICAL_ADVICE_RULES
+from app.services.senior.advice_guidelines import SENIOR_ADVICE_SYSTEM, build_senior_advice_prompt, normalize_ai_cards, stricter_risk
 from app.services.senior.card_service import build_family_message, build_insight_cards, recommend_exercise
 from app.services.senior.safety_service import detect_senior_safety
 from app.services.senior.summary_service import _extract_json
@@ -34,8 +33,8 @@ YES_NO_OPTIONS = [
 
 # Same values as YES_NO_OPTIONS, worded for "有没有……？" questions.
 HAVE_OPTIONS = [
-    {"value": "yes", "label": "有"},
     {"value": "no", "label": "没有"},
+    {"value": "yes", "label": "有"},
     {"value": "unsure", "label": "不确定"},
 ]
 
@@ -245,17 +244,34 @@ def _safety_text(answers: list[SeniorCheckupAnswer]) -> str:
     parts: list[str] = []
     for item in answers:
         question = next((q for q in QUESTION_BANK if q["id"] == item.question_id), None)
-        concerning = question is not None and _answer_score(question, item.answer_value) >= 1
+        if question is not None and question.get("scale") == "safety":
+            # "不确定" on these questions is handled as needing attention (see _unsure_safety),
+            # not as if the person had said yes.
+            concerning = item.answer_value == "yes"
+        else:
+            concerning = question is not None and _answer_score(question, item.answer_value) >= 1
         parts.append(f"{item.question_text}：{item.answer_label}" if concerning else item.answer_label)
     return "；".join(parts)
 
 
-def _level_from_snapshot(snapshot: SeniorCheckupScaleSnapshot, answer_text: str) -> str:
+def _unsure_safety(answers: list[SeniorCheckupAnswer]) -> list[str]:
+    """Safety questions answered "不确定"."""
+    texts: list[str] = []
+    for item in answers:
+        question = next((q for q in QUESTION_BANK if q["id"] == item.question_id), None)
+        if question is not None and question.get("scale") == "safety" and item.answer_value == "unsure":
+            texts.append(item.question_text)
+    return texts
+
+
+def _level_from_snapshot(snapshot: SeniorCheckupScaleSnapshot, answer_text: str, unsure_safety: bool = False) -> str:
     safety = detect_senior_safety(answer_text)
     if safety.level in {"urgent", "medical_emergency", "elevated"}:
         return safety.level
     if snapshot.safety_score >= 4:
         return "urgent"
+    if unsure_safety:
+        return "elevated"
     if snapshot.safety_score >= 2 or snapshot.mood_score >= 5 or snapshot.anxiety_score >= 6:
         return "elevated"
     if snapshot.sleep_score >= 6 or snapshot.loneliness_score >= 5 or snapshot.mood_score >= 3 or snapshot.anxiety_score >= 3:
@@ -298,7 +314,7 @@ def _fallback_summary(
     answer_text = _joined_answers(answers)
     safety_text = _safety_text(answers)
     safety_detection = detect_senior_safety(safety_text)
-    risk_level = _level_from_snapshot(snapshot, safety_text)
+    risk_level = _level_from_snapshot(snapshot, safety_text, bool(_unsure_safety(answers)))
     dimensions = _dimension_text(snapshot, safety_text)
 
     if risk_level in {"urgent", "medical_emergency"}:
@@ -400,7 +416,7 @@ def _coerce_ai_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, sn
                 status=str(raw.get("status") or fallback.dimensions[key].status),
                 text=str(raw.get("text") or fallback.dimensions[key].text),
             )
-        risk = data.get("risk_level") if data.get("risk_level") in {"normal", "watch", "elevated", "urgent", "medical_emergency"} else fallback.risk_level
+        risk = stricter_risk(data.get("risk_level"), fallback.risk_level)
         rec_raw = data.get("recommendation") or {}
         rec_type = rec_raw.get("type") if rec_raw.get("type") in {"relax", "chat", "help", "rest"} else fallback.recommendation.type
         rec = SeniorRecommendation(
@@ -438,23 +454,8 @@ def _coerce_ai_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, sn
         summary_title = str(data.get("summary_title") or fallback.summary_title)
         plain_summary = str(data.get("plain_summary") or fallback.plain_summary)
         family_message = str(data.get("family_message") or fallback.family_message)
-        cards: list[SeniorInsightCard] = []
-        for idx, raw in enumerate(data.get("insight_cards") or data.get("cards") or []):
-            if not isinstance(raw, dict):
-                continue
-            fb = fallback.insight_cards[min(idx, max(0, len(fallback.insight_cards) - 1))]
-            cards.append(SeniorInsightCard(
-                id=str(raw.get("id") or fb.id),
-                eyebrow=str(raw.get("eyebrow") or fb.eyebrow),
-                title=str(raw.get("title") or fb.title),
-                body=str(raw.get("body") or fb.body),
-                action=raw.get("action") or fb.action,
-                tone=raw.get("tone") if raw.get("tone") in {"normal", "watch", "elevated", "urgent", "medical_emergency"} else risk,
-                icon=raw.get("icon") or fb.icon,
-                bullets=[str(item) for item in (raw.get("bullets") or fb.bullets or [])][:4],
-                speak_text=raw.get("speak_text") or raw.get("speakText") or fb.speak_text,
-            ))
-        if len(cards) < 5:
+        cards = [SeniorInsightCard(**card) for card in normalize_ai_cards(data.get("insight_cards") or data.get("cards"), risk)]
+        if len(cards) < 2:
             cards = build_insight_cards(
                 summary_title=summary_title,
                 plain_summary=plain_summary,
@@ -514,65 +515,36 @@ def _coerce_ai_summary(data: dict[str, Any], fallback: SeniorSummaryResponse, sn
 
 
 def _prompt_for_checkup(answers: list[SeniorCheckupAnswer], snapshot: SeniorCheckupScaleSnapshot, fallback: SeniorSummaryResponse) -> str:
-    qa = "\n".join(f"- {a.question_text}：{a.answer_label}" for a in answers)
-    project_context = build_ai_context(
-        user_mode="senior",
-        interaction_kind="scale_checkup",
-        user_message=qa,
-        # The canned fallback is not passed in: the model copied its generic wording.
-        recent_context={"scale_snapshot": snapshot.model_dump(), "risk_hint": fallback.risk_level},
+    qa_lines = [f"{a.question_text}：{a.answer_label}" for a in answers]
+    notes: list[str] = []
+    unsure = _unsure_safety(answers)
+    if unsure and fallback.risk_level == "elevated":
+        notes.append(
+            "他在“" + "”“".join(unsure) + "”这样的题上选了“不确定”。不要说他“提到过”这类念头，也不要用整组卡片讲安全。"
+            "用一张 id 为 safety 的卡温和地说：这种感觉偶尔冒出来是可以说出来的，可以先告诉一个信得过的人，"
+            "也可以拨打心理援助热线 400-161-9995；其余卡片照常针对他的其他回答给建议。"
+        )
+    topics = {"self_care_boundaries"}
+    if snapshot.sleep_score >= 2:
+        topics.add("sleep")
+    if snapshot.loneliness_score >= 2:
+        topics.add("older_adult_loneliness")
+    if snapshot.mood_score >= 2:
+        topics.add("low_mood_activation")
+    if snapshot.anxiety_score >= 2:
+        topics.add("stress_breathing")
+    if any(a.dimension == "body" and a.answer_value not in {"none", "no", "not_at_all"} for a in answers):
+        topics.add("body_discomfort")
+    if topics == {"self_care_boundaries"}:
+        topics.add("low_mood_activation")
+    return build_senior_advice_prompt(
+        kind="checkup",
+        topics=topics,
+        qa_lines=qa_lines,
+        risk_level=fallback.risk_level,
+        risk_reasons=detect_senior_safety(_safety_text(answers)).reasons if fallback.risk_level in {"urgent", "medical_emergency"} else None,
+        notes=notes,
     )
-    return f"""
-{project_context}
-
-【场景】
-这是一个老年心理健康陪伴网站里的“小测”。题目内部参考了老年心情、担心、孤独、睡眠和安全观察维度，但用户本人不应看到专业名词。
-你会收到“系统提问的问题”和“用户选择的答案”。请根据项目老年版要求，给老人本人输出可执行、生活化、低负担的建议。
-
-【用户本轮回答】
-{qa}
-
-【内部参考线索】
-{json.dumps(snapshot.model_dump(), ensure_ascii=False)}
-
-{PRACTICAL_ADVICE_RULES}
-
-{CARD_PLAN}
-
-【必须遵守】
-1. 输出严格 JSON，不要 Markdown，不要代码块。
-2. 给用户看的字段不要出现：NeuraSense、项目、平台、AI、人工智能、诊断、量表、评分、分数、PHQ、GAD、抑郁症、焦虑症、算法、模型。
-3. 小测的答案是选项，线索比较少：从“是/不是/不确定”的组合里看出今天最需要照顾的方面（例如睡不好、常觉得孤单、总在担心），针对它给具体办法；不确定的地方要说清楚“先试试”，不要假装很确定。
-4. 不要把题目和答案复述一遍凑字数。
-5. 如果有不想活、伤害自己、撑不住、胸痛、呼吸困难、摔倒、用药过量等，优先联系真人与急救/专业帮助，next_action.route 必须是 help。
-
-【输出 JSON 结构】
-{{
-  "summary_title": "不超过18字",
-  "plain_summary": "100-160字，先点名今天最需要照顾的方面，再说最关键的办法怎么做，最后说出现什么信号时找谁",
-  "dimensions": {{
-    "sleep": {{"label":"睡眠","status":"较平稳/一般/需要关注","text":"一句话"}},
-    "mood": {{"label":"心情","status":"较平稳/有些低落/需要陪伴","text":"一句话"}},
-    "stress": {{"label":"担心","status":"较轻/中等/偏高","text":"一句话"}},
-    "social_support": {{"label":"陪伴","status":"暂时平稳/可以多聊几句/建议联系家人","text":"一句话"}}
-  }},
-  "risk_level": "normal/watch/elevated/urgent/medical_emergency",
-  "risk_explanation": "生活化依据，不写专业词",
-  "recommendation": {{"type":"relax/chat/help/rest","title":"按钮式短标题","reason":"为什么现在适合做这一步","tool_id":"可选"}},
-  "next_action": {{"label":"按钮文案","route":"relax/chat/help/summary/home"}},
-  "insight_cards": [
-    {{"id":"priority","eyebrow":"今天先照顾这件事","title":"短标题，点名具体方面","body":"一句话：是什么、为什么先照顾它","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"spark","bullets":[]}},
-    {{"id":"first_action","eyebrow":"可以这样做","title":"短标题","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"leaf","bullets":["怎么做1","怎么做2","怎么做3"]}},
-    {{"id":"why","eyebrow":"还可以试试","title":"短标题，针对第二个方面","body":"一句话说办法","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"shield","bullets":["怎么做1","怎么做2"]}},
-    {{"id":"safety","eyebrow":"这些情况要找人帮忙","title":"短标题","body":"一句话","action":"打开帮助","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"heart","bullets":["具体信号1","具体信号2","具体信号3"]}},
-    {{"id":"family","eyebrow":"可以发给家人的话","title":"短标题","body":"可直接发给家人的一句话","action":"复制给家人","tone":"normal/watch/elevated/urgent/medical_emergency","icon":"user","bullets":[]}}
-  ],
-  "family_message": "可直接复制给家人的一句话",
-  "safety": {{"level":"normal/watch/elevated/urgent/medical_emergency","title":"短标题","message":"给用户看的安全说明","steps":["一步","一步","一步"],"should_contact_family":false,"emergency_note":"可选"}},
-  "recommended_exercise": {{"id":"breathing_3min","title":"练习名","reason":"为什么推荐","duration_label":"3 分钟","steps":["一步","一步","一步"],"play_prompt":"轻微有趣但不幼稚的小玩法","stop_rule":"什么时候停止并找人"}},
-  "tts_text": "适合朗读的一小段"
-}}
-""".strip()
 
 
 async def analyze_checkup(
@@ -594,7 +566,9 @@ async def analyze_checkup(
             user_id=user_id,
             conversation_history=[],
             emotion_context={"skip_project_context": True, "skip_memory": True, "neurasense_mode": "senior"},
-            max_tokens=2600,
+            max_tokens=3200,
+            task_system_prompt=SENIOR_ADVICE_SYSTEM,
+            task_crisis=fallback.risk_level in {"urgent", "medical_emergency"},
         )
         data = _extract_json(response.message)
         if data:
