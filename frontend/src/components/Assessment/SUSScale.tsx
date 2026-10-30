@@ -12,36 +12,16 @@
  */
 
 import { useState } from 'react';
-import { API_BASE } from '../../config/api';
-import { isEnglish } from '../../i18n/autoTranslate';
-
-const SUS_ITEMS = [
-    '我觉得我会常使用这个系统。',
-    '我觉得这个系统太过不必要的复杂。',
-    '我觉得这个系统是容易操作的。',
-    '我觉得我需要透过专人的协助才能操作这个系统。',
-    '我觉得这个系统有许多不同功能，整合的很好。',
-    '我觉得这个系统很多地方不一致令人困惑。',
-    '我觉得大部分的人都能很快知道怎么使用这个系统。',
-    '我觉得这个系统使用起来有点麻烦。',
-    '我非常有信心下次能自己顺利操作这个系统。',
-    '我在能操作这个系统前，要学很多东西。',
-];
-
-const OPTIONS = [
-    { value: 1, label: '非常不同意' },
-    { value: 2, label: '不同意' },
-    { value: 3, label: '一般' },
-    { value: 4, label: '同意' },
-    { value: 5, label: '非常同意' },
-];
+import {
+    SUS_ITEMS, SUS_OPTIONS as OPTIONS, SUS_AGE_GROUPS as AGE_GROUPS,
+    SUS_CONSENT_TITLE, SUS_CONSENT_PROJECT, SUS_CONSENT_SECTIONS, SUS_CONSENT_CHECKBOX,
+    submitSus, announceSusSubmitted,
+} from './susShared';
 
 const MODES = [
     { key: 'standard', label: '标准版', note: '首页看板、工具箱、测评、AI 对话等' },
     { key: 'companion', label: '陪伴版（关怀模式）', note: '大字、一步一问、红色求助按钮' },
 ] as const;
-
-const AGE_GROUPS = ['18-29', '30-44', '45-59', '60-69', '70-79', '80+'];
 
 type Step = 'consent' | 'info' | 'questions' | 'done';
 type Mode = (typeof MODES)[number]['key'];
@@ -49,12 +29,15 @@ type Mode = (typeof MODES)[number]['key'];
 interface SUSScaleProps {
     onComplete?: (result: unknown) => void;
     onClose?: () => void;
+    /** Set when the guided study tour opens the questionnaire: the mode is known, so it is not asked. */
+    fixedMode?: Mode;
 }
 
-export const SUSScale = ({ onClose }: SUSScaleProps) => {
+export const SUSScale = ({ onClose, fixedMode }: SUSScaleProps) => {
     const token = localStorage.getItem('token');
     const [step, setStep] = useState<Step>('consent');
-    const [mode, setMode] = useState<Mode>('standard');
+    const [mode, setMode] = useState<Mode>(fixedMode || 'standard');
+    const [agreed, setAgreed] = useState(false);
     const [ageGroup, setAgeGroup] = useState<string | null>(null);
     const [current, setCurrent] = useState(0);
     const [answers, setAnswers] = useState<(number | null)[]>(new Array(10).fill(null));
@@ -74,14 +57,9 @@ export const SUSScale = ({ onClose }: SUSScaleProps) => {
         setSubmitting(true);
         setError(null);
         try {
-            const res = await fetch(`${API_BASE}/sus/responses?token=${encodeURIComponent(token)}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode, age_group: ageGroup, answers, consent: true, language: isEnglish() ? 'en' : 'zh' }),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) throw new Error(data.detail || '提交失败');
-            setScore(data.sus_score);
+            const susScore = await submitSus(token, mode, ageGroup, answers as number[]);
+            setScore(susScore);
+            announceSusSubmitted(mode);
             setStep('done');
         } catch (e) {
             setError(e instanceof Error ? e.message : '提交失败，请检查网络后重试');
@@ -110,19 +88,25 @@ export const SUSScale = ({ onClose }: SUSScaleProps) => {
 
             {step === 'consent' && (
                 <section className={card}>
-                    <h3 className="text-lg font-semibold text-gray-900">参加 NeuraSense 平台内测</h3>
-                    <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-gray-700">
-                        <p>感谢您参加 NeuraSense 平台内测。本问卷共 10 道题，大约需要 3 分钟，用来了解您使用平台的感受。</p>
-                        <p>我们会记录您的回答、年龄段和本次评价的版本，并与您的平台账号关联。这些信息只用于研究和改进平台，不会公开，也不会用于其他用途。</p>
-                        <p>问卷不涉及任何诊断，回答没有对错之分，请按您的真实感受作答。</p>
-                        <p>参加完全自愿，您可以随时关闭页面退出。</p>
-                        <p className="font-medium text-gray-900">点击“同意并继续”，即表示您已年满 18 岁，已阅读以上说明，并同意参加。</p>
-                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">{SUS_CONSENT_TITLE}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{SUS_CONSENT_PROJECT}</p>
+                    <dl className="mt-5 space-y-4 text-[15px] leading-relaxed text-gray-700">
+                        {SUS_CONSENT_SECTIONS.map((sec) => (
+                            <div key={sec.heading}>
+                                <dt className="font-semibold text-gray-900">{sec.heading}</dt>
+                                <dd className="mt-1">{sec.body}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-2xl bg-gray-50 px-4 py-3 text-[15px] text-gray-900">
+                        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-black" />
+                        <span>{SUS_CONSENT_CHECKBOX}</span>
+                    </label>
                     {!token && (
                         <p className="mt-5 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-800">请先登录账号再填写，这样您的回答才能和账号关联。</p>
                     )}
                     <div className="mt-6 flex flex-wrap gap-3">
-                        <button className={primary} disabled={!token} onClick={() => setStep('info')}>同意并继续</button>
+                        <button className={primary} disabled={!token || !agreed} onClick={() => setStep('info')}>同意并继续</button>
                         <button className={secondary} onClick={onClose}>不参加，返回</button>
                     </div>
                 </section>
@@ -130,6 +114,7 @@ export const SUSScale = ({ onClose }: SUSScaleProps) => {
 
             {step === 'info' && (
                 <section className={card}>
+                    {!fixedMode && (<>
                     <h3 className="text-lg font-semibold text-gray-900">本次评价的是哪个版本？</h3>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {MODES.map((m) => (
@@ -144,8 +129,9 @@ export const SUSScale = ({ onClose }: SUSScaleProps) => {
                             </button>
                         ))}
                     </div>
+                    </>)}
 
-                    <h3 className="mt-7 text-lg font-semibold text-gray-900">您的年龄段</h3>
+                    <h3 className={`${fixedMode ? '' : 'mt-7 '}text-lg font-semibold text-gray-900`}>您的年龄段</h3>
                     <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="年龄段">
                         {AGE_GROUPS.map((g) => (
                             <button

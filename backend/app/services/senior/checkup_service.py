@@ -312,9 +312,9 @@ def _fallback_summary(
         next_action = SeniorNextAction(label="看看可以找谁", route="help")
     elif snapshot.sleep_score >= max(snapshot.mood_score, snapshot.anxiety_score, snapshot.loneliness_score):
         title = "先把睡眠照顾好"
-        plain = "这次回答里，睡眠和白天精神是最需要先照顾的地方。今天先把屏幕放远，安排一次 15 分钟短休息；如果身体不舒服持续或加重，请告诉家人。"
-        rec = SeniorRecommendation(type="rest", title="短休息 15 分钟", reason="先补一点精神，比继续硬撑更实际。", tool_id="rest_15min")
-        next_action = SeniorNextAction(label="开始短休息", route="relax")
+        plain = "这次回答里，睡眠和白天精神是最需要先照顾的地方。今天先把屏幕放远，做一个 5 分钟的身体放松；如果身体不舒服持续或加重，请告诉家人。"
+        rec = SeniorRecommendation(type="rest", title="身体放松 5 分钟", reason="先让身体松一松，比继续硬撑更实际。", tool_id="body_relax_5min")
+        next_action = SeniorNextAction(label="做 5 分钟放松", route="relax")
     elif snapshot.loneliness_score >= max(snapshot.mood_score, snapshot.anxiety_score):
         title = "今天需要有人说说话"
         plain = "这次回答里，孤单和缺少陪伴的线索比较明显。今天先不用讲很多道理，只给一个可信任的人发一句话，约对方陪您聊 10 分钟。"

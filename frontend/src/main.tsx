@@ -1,3 +1,5 @@
+// Must run before any store reads localStorage: keeps each account's saved data separate.
+import './lib/userScopedStorage'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

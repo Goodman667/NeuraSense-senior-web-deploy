@@ -9,6 +9,7 @@ import { SeniorHelpCenter } from '../pages/SeniorHelpCenter';
 import { SeniorSettings } from '../pages/SeniorSettings';
 import { SeniorCheckup } from '../pages/SeniorCheckup';
 import { SeniorProfile } from '../pages/SeniorProfile';
+import { SeniorSus } from '../pages/SeniorSus';
 import type { SeniorPage, SeniorSummary } from '../types/senior';
 import { useStopAudioOnRouteChange } from '../hooks/useStopAudioOnRouteChange';
 import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
@@ -25,7 +26,7 @@ interface SeniorRoutesProps {
 
 const STORAGE_ROUTE = 'neurasense-senior-route';
 const STORAGE_SUMMARY = 'neurasense-senior-latest-summary';
-const pages: SeniorPage[] = ['home', 'companion', 'chat', 'summary', 'relax', 'help', 'settings', 'checkup', 'profile'];
+const pages: SeniorPage[] = ['home', 'companion', 'chat', 'summary', 'relax', 'help', 'settings', 'checkup', 'profile', 'sus'];
 const CONTACT_READY_STORAGE = 'neurasense-senior-contact-ready';
 
 const storageUserKey = (prefix: string, userId: string) => `${prefix}:${userId || 'anonymous'}`;
@@ -223,6 +224,7 @@ export default function SeniorRoutes({ userId, currentUserName, onSwitchToStanda
       case 'checkup': return <SeniorCheckup userId={storageUserId} onNavigate={handleNavigate} />;
       case 'help': return <SeniorHelpCenter userId={storageUserId} latestSummary={latestSummary} onNavigate={handleNavigate} />;
       case 'settings': return <SeniorSettings userId={storageUserId} required={!contactsReady} autoOpenContact={!contactsReady} onSaved={handleContactSaved} />;
+      case 'sus': return <SeniorSus onNavigate={handleNavigate} />;
       case 'profile': return <SeniorProfile userId={storageUserId} currentUserName={currentUserName} onNavigate={handleNavigate} onSwitchToStandard={onSwitchToStandard} onLogout={onLogout || (() => {})} />;
       case 'home':
       default: return <SeniorHome userId={storageUserId} currentUserName={currentUserName} latestSummary={latestSummary} onNavigate={handleNavigate} onStartTopic={handleStartTopic} />;

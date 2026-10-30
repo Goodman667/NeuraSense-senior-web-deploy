@@ -6,6 +6,15 @@
 
 import { useState } from 'react';
 import { API_BASE } from '../../config/api';
+import type { ScoreBreakdown } from './ScaleResultParts';
+import { isEnglish, translateText } from '../../i18n/autoTranslate';
+
+/** In English mode the PDF is drawn on the server, so translate the chart labels here. */
+function localizeBreakdown(b?: ScoreBreakdown): ScoreBreakdown | undefined {
+    if (!b || !isEnglish()) return b;
+    const tr = <T extends { label: string; text?: string }>(r: T): T => ({ ...r, label: translateText(r.label), text: r.text ? translateText(r.text) : r.text });
+    return { groups: b.groups.map(tr), items: b.items.map(tr) };
+}
 
 interface PDFDownloadButtonProps {
     scaleType: string;
@@ -14,6 +23,8 @@ interface PDFDownloadButtonProps {
     aiInterpretation?: string;
     userName?: string;
     className?: string;
+    /** group and item scores shown on the result page, drawn as charts in the PDF */
+    breakdown?: ScoreBreakdown;
 }
 
 export const PDFDownloadButton = ({
@@ -23,6 +34,7 @@ export const PDFDownloadButton = ({
     aiInterpretation,
     userName,
     className = '',
+    breakdown,
 }: PDFDownloadButtonProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -38,6 +50,7 @@ export const PDFDownloadButton = ({
                 body: JSON.stringify({
                     scale_type: scaleType,
                     total_score: totalScore,
+                    breakdown: localizeBreakdown(breakdown),
                     answers: answers,
                     ai_interpretation: aiInterpretation,
                     user_name: userName,
@@ -83,7 +96,7 @@ export const PDFDownloadButton = ({
             <button
                 onClick={handleDownload}
                 disabled={isLoading}
-                className={`flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+                className={`flex items-center justify-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium shadow-md hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
             >
                 {isLoading ? (
                     <>

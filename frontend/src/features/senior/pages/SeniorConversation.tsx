@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorRiskModal } from '../components/SeniorRiskModal';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
@@ -8,6 +8,9 @@ import type { SeniorChatMessage, SeniorPage, SeniorRiskAction, SeniorRiskLevel }
 import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { LeafShadow } from '../components/LeafShadow';
+import { useSeniorSpeechRecognition } from '../hooks/useSeniorSpeechRecognition';
+import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
+import { emitStudyEvent } from '../../../lib/studyEvents';
 
 const makeId = () => Math.random().toString(36).slice(2);
 
@@ -27,6 +30,22 @@ export function SeniorConversation({
   const [loading, setLoading] = useState(false);
   const [riskModal, setRiskModal] = useState<{ action: SeniorRiskAction; level: SeniorRiskLevel } | null>(null);
   const { speak } = useSeniorTTS();
+  // Voice input: what is said is added after anything already typed.
+  const typedBeforeVoiceRef = useRef('');
+  const onVoiceText = useCallback((text: string) => {
+    const base = typedBeforeVoiceRef.current;
+    setInput(base ? `${base} ${text}` : text);
+  }, []);
+  const speech = useSeniorSpeechRecognition(onVoiceText);
+  const toggleVoice = () => {
+    if (speech.isListening) {
+      speech.stop();
+      return;
+    }
+    useSeniorAudioStore.getState().stop();
+    typedBeforeVoiceRef.current = input.trim();
+    speech.start();
+  };
 
   useEffect(() => {
     if (initialTopic) {
@@ -37,6 +56,7 @@ export function SeniorConversation({
 
   const send = async (text = input.trim()) => {
     if (!text || loading) return;
+    if (speech.isListening) speech.stop();
     const userMsg: SeniorChatMessage = { id: makeId(), role: 'user', text, createdAt: new Date().toISOString() };
     setMessages(prev => [...prev.slice(-3), userMsg]); setInput(''); setLoading(true);
     try {
@@ -45,6 +65,7 @@ export function SeniorConversation({
       const assistant: SeniorChatMessage = { id: makeId(), role: 'assistant', text: res.reply_text, createdAt: new Date().toISOString(), riskLevel: res.risk_level };
       setMessages(prev => [...prev.slice(-4), assistant]);
       markSeniorProgress(userId, 'chat');
+      emitStudyEvent('senior-chat-replied');
       await speak(res.tts_text || res.reply_text, { emotion: res.risk_level === 'urgent' || res.risk_level === 'medical_emergency' ? 'empathetic' : 'friendly' });
       if (res.risk_action?.should_show_modal) {
         setRiskModal({ action: res.risk_action, level: res.risk_level });
@@ -54,6 +75,7 @@ export function SeniorConversation({
       const fallback = '网络有点慢，但我还在这里。您可以先喝口水，慢慢告诉我最想说的一件事。';
       setMessages(prev => [...prev, { id: makeId(), role: 'assistant', text: fallback, createdAt: new Date().toISOString() }]);
       markSeniorProgress(userId, 'chat');
+      emitStudyEvent('senior-chat-replied');
       speak(fallback);
     } finally { setLoading(false); }
   };
@@ -94,7 +116,16 @@ export function SeniorConversation({
       <section className="sn-sheet mt-5 p-5 md:p-6">
         <p className="sn-small mb-3">不知道怎么开口，点一个就行：</p>
         <SeniorTopicChips compact onSelect={(prompt) => send(prompt)} />
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+        <button
+          onClick={toggleVoice}
+          data-tour="senior-chat-voice"
+          className={`mt-5 flex w-full items-center justify-center gap-3 rounded-[20px] px-6 py-5 text-[1.5rem] text-[#FBF8F3] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3] ${speech.isListening ? 'bg-[var(--sn-help)]' : 'bg-[var(--sn-teal)] hover:bg-[var(--sn-teal-deep)]'}`}
+        >
+          <SeniorIcon name={speech.isListening ? 'pause' : 'mic'} className="h-8 w-8" />
+          {speech.isListening ? '正在听…说完再按一下' : '按一下，开始说'}
+        </button>
+        {speech.status !== 'idle' ? <p className="sn-small mt-2 text-center" aria-live="polite">{speech.hint}</p> : null}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <label htmlFor="sn-chat-input" className="sr-only">输入想说的话</label>
           <input id="sn-chat-input" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} placeholder="也可以在这里打字…" className="sn-input flex-1 !text-[1.3rem]" />
           <button onClick={() => send()} disabled={loading || !input.trim()} className="sn-btn sn-btn-primary sn-btn-lg">发送</button>

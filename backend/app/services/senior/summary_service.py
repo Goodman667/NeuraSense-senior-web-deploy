@@ -166,14 +166,14 @@ def _build_practical_fallback(
         next_action = SeniorNextAction(label="先休息眼睛", route="relax")
     elif poor_sleep and fatigue:
         title = "今天先补一点精神"
-        plain = "昨晚睡得不踏实，今天的累更像是休息不足带来的。先把今天的任务减到一件小事，午后前可以短休息 15 到 20 分钟，晚上再尽量固定睡觉时间。"
+        plain = "昨晚睡得不踏实，今天的累更像是休息不足带来的。先把今天的任务减到一件小事，可以做一个 5 分钟的身体放松，晚上再尽量固定睡觉时间。"
         rec = SeniorRecommendation(
             type="rest",
-            title="短休息 15 分钟",
+            title="身体放松 5 分钟",
             reason="先补一点精神，比继续硬撑更能减少今天的不舒服。",
-            tool_id="rest_15min",
+            tool_id="body_relax_5min",
         )
-        next_action = SeniorNextAction(label="先短休息", route="relax")
+        next_action = SeniorNextAction(label="做 5 分钟放松", route="relax")
     elif wants_chat or lonely:
         title = "今天需要有人陪一会儿"
         plain = "您今天最需要的不是很多建议，而是有人陪着说几句话。可以先聊 10 分钟，把最难受的一点说出来；如果方便，也可以给家人发一句：我今天有点累，想有人陪我聊会儿。"
@@ -501,7 +501,7 @@ insight_cards 必须固定 5 张，顺序必须是：
 4 safety：如果等下更不舒服怎么办
 5 family：可以给家人看的话
 family_message 必须像老人可以直接复制发给家人的一句话，不共享完整聊天原文。
-recommended_exercise 只能从这些 id 选择：breathing_3min、eye_rest_10min、rest_15min、worry_note、connection_message、sleep_wind_down、grounding_1min。
+recommended_exercise 只能从这些 id 选择：breathing_5min（慢呼吸）、mindful_breath_5min（正念呼吸）、body_relax_5min（身体放松）、grounding_54321（5-4-3-2-1 安心练习）、eye_rest_10min、worry_note、connection_message。
 recommended_exercise 必须像“今天这一位用户的练习单”，不能只是工具名。请根据回答质量调整：
 如果回答很具体，步骤要贴合用户提到的身体、睡眠、家人或担心内容；
 如果回答很少或很模糊，步骤要更低门槛，比如“坐稳、喝水、只说一句”。

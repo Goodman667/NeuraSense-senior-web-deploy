@@ -9,7 +9,7 @@
 import { useState, useCallback } from 'react';
 import { API_BASE } from '../../config/api';
 import { PDFDownloadButton } from './PDFDownloadButton';
-import { MarkdownText } from './MarkdownText';
+import { ScaleAdviceCard, DimensionScores, buildScoreBreakdown, type ScaleItemDef, type ScaleGroupDef } from './ScaleResultParts';
 
 // SAS 问题定义（20题）
 const SAS_QUESTIONS = [
@@ -33,6 +33,13 @@ const SAS_QUESTIONS = [
     { id: 18, text: "我脸发烧发红", reverse: false },
     { id: 19, text: "我容易入睡，睡眠很好", reverse: true },
     { id: 20, text: "我做噩梦", reverse: false },
+];
+
+// Item names and groups (affective and somatic items of the Zung SAS) for the result page and the PDF report
+const SAS_ITEMS: ScaleItemDef[] = SAS_QUESTIONS.map((q) => ({ label: q.text, text: q.text, reverse: q.reverse }));
+const SAS_GROUPS: ScaleGroupDef[] = [
+    { label: '情绪性症状', items: [0, 1, 2, 3, 4] },
+    { label: '躯体性症状', items: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] },
 ];
 
 const OPTIONS = [
@@ -67,6 +74,7 @@ export interface SASResult {
 export const SASScale = ({ onComplete, onClose }: SASScaleProps) => {
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<(number | null)[]>(new Array(20).fill(null));
+    const breakdown = buildScoreBreakdown(SAS_ITEMS, answers, 1, 4, SAS_GROUPS);
     const [isComplete, setIsComplete] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [aiInterpretation, setAiInterpretation] = useState<string | null>(null);
@@ -317,19 +325,9 @@ ${indexScore >= 60 ? '### 专业资源\n（推荐就医科室和心理援助热�
                         </div>
                     </div>
 
-                    {aiInterpretation && (
-                        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-start space-x-4">
-                                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <span className="text-2xl">💬</span>
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-lg mb-3">小心的专业建议</h3>
-                                    <MarkdownText text={aiInterpretation} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    {aiInterpretation && <ScaleAdviceCard text={aiInterpretation} title="小心的专业建议" />}
+
+                    <DimensionScores breakdown={breakdown} groupNote="反向题已反向计分：分数越高，表示该方面的症状越明显。" />
 
                     {/* PDF 下载按钮 */}
                     <PDFDownloadButton
@@ -337,6 +335,7 @@ ${indexScore >= 60 ? '### 专业资源\n（推荐就医科室和心理援助热�
                         totalScore={indexScore}
                         answers={answers as number[]}
                         aiInterpretation={aiInterpretation || undefined}
+                        breakdown={breakdown}
                         className="w-full mb-4"
                     />
 
