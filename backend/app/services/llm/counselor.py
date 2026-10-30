@@ -177,6 +177,7 @@ class CounselorService:
         conversation_history: Optional[list[dict]] = None,
         emotion_context: Optional[dict] = None,
         style: ResponseStyle = ResponseStyle.EMPATHETIC,
+        max_tokens: Optional[int] = None,
     ) -> CounselorResponse:
         """
         生成咨询师回复
@@ -227,7 +228,8 @@ class CounselorService:
                     user_message,
                     context,
                     conversation_history,
-                    crisis_flag
+                    crisis_flag,
+                    max_tokens=max_tokens,
                 )
                 
                 # 保存到长期记忆
@@ -298,6 +300,7 @@ class CounselorService:
         context: str,
         conversation_history: Optional[list[dict]],
         crisis_flag: bool,
+        max_tokens: Optional[int] = None,
     ) -> CounselorResponse:
         """
         调用 LLM 生成回复。
@@ -314,6 +317,7 @@ class CounselorService:
                 context=context,
                 conversation_history=conversation_history,
                 crisis_flag=crisis_flag,
+                max_tokens=max_tokens,
             )
 
         try:
@@ -350,7 +354,7 @@ class CounselorService:
                 model=self.LLM_MODEL,
                 messages=apply_lang(messages),
                 temperature=0.75,
-                max_tokens=900,
+                max_tokens=max_tokens or 900,
             )
             
             # 解析回复
@@ -397,6 +401,7 @@ class CounselorService:
         context: str,
         conversation_history: Optional[list[dict]],
         crisis_flag: bool,
+        max_tokens: Optional[int] = None,
     ) -> CounselorResponse:
         if not self.LLM_API_BASE:
             raise RuntimeError("LLM_API_BASE is required for HTTP LLM provider")
@@ -416,7 +421,7 @@ class CounselorService:
             api_base=self.LLM_API_BASE,
             messages=messages,
             temperature=0.72,
-            max_tokens=1200,
+            max_tokens=max_tokens or 1200,
         )
 
         return CounselorResponse(

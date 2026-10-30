@@ -442,3 +442,74 @@ html[data-ui-mode='senior'] body {
 .study-tour-ring-static {
   box-shadow: 0 0 0 3px #f59e0b;
 }
+
+/*
+ * Solid colour under every solid gradient fill (generated from the classes in src). If a browser
+ * still fails to draw a gradient, buttons keep a visible background instead of white on white.
+ * When the gradient is drawn it covers this colour completely.
+ */
+[class*="bg-gradient-to-"].from-accent-50:not([class*="transparent"]) { background-color: #fff7ed; }
+[class*="bg-gradient-to-"].from-accent-500:not([class*="transparent"]) { background-color: #f97316; }
+[class*="bg-gradient-to-"].from-accent-600:not([class*="transparent"]) { background-color: #ea580c; }
+[class*="bg-gradient-to-"].from-amber-100:not([class*="transparent"]) { background-color: #fef3c7; }
+[class*="bg-gradient-to-"].from-amber-400:not([class*="transparent"]) { background-color: #fbbf24; }
+[class*="bg-gradient-to-"].from-amber-50:not([class*="transparent"]) { background-color: #fffbeb; }
+[class*="bg-gradient-to-"].from-amber-500:not([class*="transparent"]) { background-color: #f59e0b; }
+[class*="bg-gradient-to-"].from-amber-600:not([class*="transparent"]) { background-color: #d97706; }
+[class*="bg-gradient-to-"].from-blue-400:not([class*="transparent"]) { background-color: #60a5fa; }
+[class*="bg-gradient-to-"].from-blue-50:not([class*="transparent"]) { background-color: #eff6ff; }
+[class*="bg-gradient-to-"].from-blue-500:not([class*="transparent"]) { background-color: #3b82f6; }
+[class*="bg-gradient-to-"].from-blue-600:not([class*="transparent"]) { background-color: #2563eb; }
+[class*="bg-gradient-to-"].from-calm-50:not([class*="transparent"]) { background-color: #f6f7f4; }
+[class*="bg-gradient-to-"].from-cyan-100:not([class*="transparent"]) { background-color: #cffafe; }
+[class*="bg-gradient-to-"].from-cyan-500:not([class*="transparent"]) { background-color: #06b6d4; }
+[class*="bg-gradient-to-"].from-emerald-100:not([class*="transparent"]) { background-color: #d1fae5; }
+[class*="bg-gradient-to-"].from-emerald-400:not([class*="transparent"]) { background-color: #34d399; }
+[class*="bg-gradient-to-"].from-emerald-50:not([class*="transparent"]) { background-color: #ecfdf5; }
+[class*="bg-gradient-to-"].from-gray-300:not([class*="transparent"]) { background-color: #d1d5db; }
+[class*="bg-gradient-to-"].from-gray-700:not([class*="transparent"]) { background-color: #374151; }
+[class*="bg-gradient-to-"].from-green-100:not([class*="transparent"]) { background-color: #dcfce7; }
+[class*="bg-gradient-to-"].from-green-400:not([class*="transparent"]) { background-color: #4ade80; }
+[class*="bg-gradient-to-"].from-green-500:not([class*="transparent"]) { background-color: #22c55e; }
+[class*="bg-gradient-to-"].from-indigo-100:not([class*="transparent"]) { background-color: #e0e7ff; }
+[class*="bg-gradient-to-"].from-indigo-400:not([class*="transparent"]) { background-color: #818cf8; }
+[class*="bg-gradient-to-"].from-indigo-50:not([class*="transparent"]) { background-color: #eef2ff; }
+[class*="bg-gradient-to-"].from-indigo-500:not([class*="transparent"]) { background-color: #6366f1; }
+[class*="bg-gradient-to-"].from-indigo-600:not([class*="transparent"]) { background-color: #4f46e5; }
+[class*="bg-gradient-to-"].from-indigo-900:not([class*="transparent"]) { background-color: #312e81; }
+[class*="bg-gradient-to-"].from-orange-400:not([class*="transparent"]) { background-color: #fb923c; }
+[class*="bg-gradient-to-"].from-orange-50:not([class*="transparent"]) { background-color: #fff7ed; }
+[class*="bg-gradient-to-"].from-orange-500:not([class*="transparent"]) { background-color: #f97316; }
+[class*="bg-gradient-to-"].from-orange-600:not([class*="transparent"]) { background-color: #ea580c; }
+[class*="bg-gradient-to-"].from-pink-400:not([class*="transparent"]) { background-color: #f472b6; }
+[class*="bg-gradient-to-"].from-pink-500:not([class*="transparent"]) { background-color: #ec4899; }
+[class*="bg-gradient-to-"].from-pink-600:not([class*="transparent"]) { background-color: #db2777; }
+[class*="bg-gradient-to-"].from-primary-100:not([class*="transparent"]) { background-color: #f3e8ff; }
+[class*="bg-gradient-to-"].from-primary-200:not([class*="transparent"]) { background-color: #e9d5ff; }
+[class*="bg-gradient-to-"].from-primary-300:not([class*="transparent"]) { background-color: #d8b4fe; }
+[class*="bg-gradient-to-"].from-primary-400:not([class*="transparent"]) { background-color: #c084fc; }
+[class*="bg-gradient-to-"].from-primary-50:not([class*="transparent"]) { background-color: #faf5ff; }
+[class*="bg-gradient-to-"].from-primary-500:not([class*="transparent"]) { background-color: #a855f7; }
+[class*="bg-gradient-to-"].from-primary-600:not([class*="transparent"]) { background-color: #9333ea; }
+[class*="bg-gradient-to-"].from-purple-400:not([class*="transparent"]) { background-color: #c084fc; }
+[class*="bg-gradient-to-"].from-purple-50:not([class*="transparent"]) { background-color: #faf5ff; }
+[class*="bg-gradient-to-"].from-purple-500:not([class*="transparent"]) { background-color: #a855f7; }
+[class*="bg-gradient-to-"].from-purple-600:not([class*="transparent"]) { background-color: #9333ea; }
+[class*="bg-gradient-to-"].from-red-400:not([class*="transparent"]) { background-color: #f87171; }
+[class*="bg-gradient-to-"].from-red-500:not([class*="transparent"]) { background-color: #ef4444; }
+[class*="bg-gradient-to-"].from-rose-100:not([class*="transparent"]) { background-color: #ffe4e6; }
+[class*="bg-gradient-to-"].from-rose-400:not([class*="transparent"]) { background-color: #fb7185; }
+[class*="bg-gradient-to-"].from-rose-500:not([class*="transparent"]) { background-color: #f43f5e; }
+[class*="bg-gradient-to-"].from-rose-600:not([class*="transparent"]) { background-color: #e11d48; }
+[class*="bg-gradient-to-"].from-slate-100:not([class*="transparent"]) { background-color: #f1f5f9; }
+[class*="bg-gradient-to-"].from-slate-400:not([class*="transparent"]) { background-color: #94a3b8; }
+[class*="bg-gradient-to-"].from-teal-400:not([class*="transparent"]) { background-color: #2dd4bf; }
+[class*="bg-gradient-to-"].from-teal-500:not([class*="transparent"]) { background-color: #14b8a6; }
+[class*="bg-gradient-to-"].from-violet-100:not([class*="transparent"]) { background-color: #ede9fe; }
+[class*="bg-gradient-to-"].from-violet-400:not([class*="transparent"]) { background-color: #a78bfa; }
+[class*="bg-gradient-to-"].from-violet-500:not([class*="transparent"]) { background-color: #8b5cf6; }
+[class*="bg-gradient-to-"].from-violet-600:not([class*="transparent"]) { background-color: #7c3aed; }
+[class*="bg-gradient-to-"].from-warm-300:not([class*="transparent"]) { background-color: #efe0d5; }
+[class*="bg-gradient-to-"].from-warm-50:not([class*="transparent"]) { background-color: #fdfcfb; }
+[class*="bg-gradient-to-"].from-yellow-400:not([class*="transparent"]) { background-color: #facc15; }
+[class*="bg-gradient-to-"].from-yellow-500:not([class*="transparent"]) { background-color: #eab308; }
