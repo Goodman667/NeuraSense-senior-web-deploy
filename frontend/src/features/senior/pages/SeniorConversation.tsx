@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SeniorIcon } from '../components/SeniorIcon';
 import { SeniorRiskModal } from '../components/SeniorRiskModal';
 import { SeniorSafetyActions } from '../components/SeniorSafetyActions';
@@ -9,7 +9,6 @@ import { markSeniorProgress } from '../hooks/useSeniorDailyProgress';
 import { useSeniorTTS } from '../hooks/useSeniorTTS';
 import { LeafShadow } from '../components/LeafShadow';
 import { useSeniorSpeechRecognition } from '../hooks/useSeniorSpeechRecognition';
-import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 import { emitStudyEvent } from '../../../lib/studyEvents';
 
 const makeId = () => Math.random().toString(36).slice(2);
@@ -30,21 +29,14 @@ export function SeniorConversation({
   const [loading, setLoading] = useState(false);
   const [riskModal, setRiskModal] = useState<{ action: SeniorRiskAction; level: SeniorRiskLevel } | null>(null);
   const { speak } = useSeniorTTS();
-  // Voice input: what is said is added after anything already typed.
-  const typedBeforeVoiceRef = useRef('');
-  const onVoiceText = useCallback((text: string) => {
-    const base = typedBeforeVoiceRef.current;
-    setInput(base ? `${base} ${text}` : text);
-  }, []);
-  const speech = useSeniorSpeechRecognition(onVoiceText);
+  // Voice input: what is said is added after anything already typed (the hook stops read-aloud first).
+  const speech = useSeniorSpeechRecognition(setInput);
   const toggleVoice = () => {
     if (speech.isListening) {
       speech.stop();
       return;
     }
-    useSeniorAudioStore.getState().stop();
-    typedBeforeVoiceRef.current = input.trim();
-    speech.start();
+    speech.start(input);
   };
 
   useEffect(() => {
