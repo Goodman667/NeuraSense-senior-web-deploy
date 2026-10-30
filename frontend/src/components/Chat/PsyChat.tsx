@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from 'react';
 import { API_BASE } from '../../config/api';
-import { speechLang } from '../../i18n/autoTranslate';
+import { isAppleTouchDevice, useSpeechInput } from '../../lib/useSpeechInput';
 
 // ==================== Types ====================
 
@@ -1317,8 +1317,6 @@ export const PsyChat = ({
     const [messages, setMessages] = useState<ChatMessage[]>(chatBootstrapRef.current.messages);
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [voiceSupported, setVoiceSupported] = useState(false);
     const [sessionSearch, setSessionSearch] = useState('');
     const [showSensorDock, setShowSensorDock] = useState(false);
     const [autoReadReplies, setAutoReadReplies] = useState(() => {
@@ -1326,7 +1324,6 @@ export const PsyChat = ({
         return window.localStorage.getItem(AUTO_READ_KEY) !== 'false';
     });
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const recognitionRef = useRef<any>(null);
 
     // Exercise state
     const [activeExercise, setActiveExercise] = useState<{
@@ -1415,55 +1412,35 @@ export const PsyChat = ({
         setInputText('');
     }, [activeSessionId, onStopSpeaking]);
 
-    // Check for Web Speech API support
-    useEffect(() => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            setVoiceSupported(true);
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = true;
-            recognitionRef.current.lang = speechLang();
-
-            recognitionRef.current.onresult = (event: any) => {
-                const transcript = Array.from(event.results)
-                    .map((result: any) => result[0].transcript)
-                    .join('');
-                setInputText(transcript);
-            };
-
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
-
-            recognitionRef.current.onerror = (event: any) => {
-                console.error('Speech recognition error:', event.error);
-                setIsListening(false);
-            };
-        }
-    }, []);
-
     // Scroll to bottom on new messages
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Toggle voice input
+    // Voice input: one recognition at a time; what is said is added after what is already typed.
+    // (lib/useSpeechInput.ts explains why the second press used to fail on phones and iPads.)
+    const speech = useSpeechInput({
+        onText: setInputText,
+        onBeforeStart: () => {
+            onStopSpeaking?.();
+        },
+    });
+    const isListening = speech.isListening;
+    const voiceSupported = speech.supported;
     const toggleVoiceInput = useCallback(() => {
-        if (!recognitionRef.current) return;
-
-        if (isListening) {
-            recognitionRef.current.stop();
-            setIsListening(false);
-        } else {
-            // Stop TTS if playing
-            if (isSpeaking && onStopSpeaking) {
-                onStopSpeaking();
-            }
-            recognitionRef.current.start();
-            setIsListening(true);
-        }
-    }, [isListening, isSpeaking, onStopSpeaking]);
+        if (speech.isListening) speech.stop();
+        else speech.start(inputText);
+    }, [speech, inputText]);
+    const voiceHint = speech.status === 'permission_denied'
+        ? '麦克风没有打开，请在浏览器设置里允许使用麦克风。'
+        : speech.status === 'no-speech'
+            ? '刚才没有听到声音，可以再点一次「语音输入」。'
+            : speech.status === 'error'
+                ? '语音识别没有成功，可以再点一次，也可以直接打字。'
+                : '';
+    const dictationTip = isAppleTouchDevice()
+        ? '也可以点屏幕键盘上的小话筒，用 iPad / iPhone 自带的听写。'
+        : '也可以用输入法自带的语音输入。'
 
     const buildCurrentSensorSnapshot = useCallback((): SensorSnapshot | undefined => {
         if (!sensorPanel) return undefined;
@@ -1908,11 +1885,16 @@ export const PsyChat = ({
 
                     <div className="relative z-10 border-t border-slate-200/80 bg-[#fbfaf7]/95 px-6 py-5 backdrop-blur-xl">
                         <div className="mx-auto max-w-4xl">
+                            {!isListening && voiceHint ? (
+                                <p className="mb-3 text-center text-sm text-slate-500" aria-live="polite">
+                                    {voiceHint}{speech.suggestDictation ? ` ${dictationTip}` : ''}
+                                </p>
+                            ) : null}
                             {isListening && (
                                 <div className="mb-3 flex items-center justify-center">
                                     <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">
                                         <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-rose-500 animate-pulse" />
-                                        正在听你说话…
+                                        正在听你说话…说完再点一次「语音输入」
                                     </div>
                                 </div>
                             )}

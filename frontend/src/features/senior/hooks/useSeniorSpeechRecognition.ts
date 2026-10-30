@@ -1,55 +1,48 @@
-import { useCallback, useRef, useState } from 'react';
-import { speechLang } from '../../../i18n/autoTranslate';
+import { useMemo } from 'react';
+import { isAppleTouchDevice, useSpeechInput } from '../../../lib/useSpeechInput';
+import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 
 export type SpeechStatus = 'idle' | 'unsupported' | 'listening' | 'recognized' | 'error' | 'permission_denied';
 
+const DICTATION_TIP = isAppleTouchDevice()
+  ? '也可以点屏幕键盘上的小话筒，用 iPad 自带的听写说话（普通话、粤语都可以）。'
+  : '也可以直接打字，或者用输入法自带的语音输入。';
+
+/**
+ * Companion-mode voice input. `start(base)` adds what is said after `base` (what is already in
+ * the box). See lib/useSpeechInput.ts for why the second press used to fail on tablets.
+ */
 export function useSeniorSpeechRecognition(onText: (text: string) => void) {
-  const recognitionRef = useRef<any>(null);
-  const [status, setStatus] = useState<SpeechStatus>('idle');
-  const [hint, setHint] = useState('可以点“开始说话”，也可以直接打字。');
+  const input = useSpeechInput({
+    onText,
+    onBeforeStart: () => useSeniorAudioStore.getState().stop(),
+  });
 
-  const stop = useCallback(() => {
-    recognitionRef.current?.stop?.();
-    setStatus('idle');
-    setHint('已经暂停。您可以检查文字，或者继续下一步。');
-  }, []);
-
-  const start = useCallback(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setStatus('unsupported');
-      setHint('这个浏览器暂时不能语音识别。没关系，可以直接打字或点选继续。');
-      return;
+  const { status, hint } = useMemo((): { status: SpeechStatus; hint: string } => {
+    switch (input.status) {
+      case 'unsupported':
+        return { status: 'unsupported', hint: `这个浏览器暂时不能语音识别。${DICTATION_TIP}` };
+      case 'listening':
+        return { status: 'listening', hint: '正在听您说话。请慢慢说，说完再按一下。' };
+      case 'recognized':
+        return { status: 'recognized', hint: '已经听完了。看看文字对不对，想接着说就再按一下。' };
+      case 'no-speech':
+        return { status: 'error', hint: input.suggestDictation ? `刚才没有听到声音。${DICTATION_TIP}` : '刚才没有听到声音，可以再按一下试试，也可以打字。' };
+      case 'permission_denied':
+        return { status: 'permission_denied', hint: `麦克风没有打开。请在浏览器设置里允许使用麦克风。${DICTATION_TIP}` };
+      case 'error':
+        return { status: 'error', hint: input.suggestDictation ? `语音识别没有成功。${DICTATION_TIP}` : '刚才没有听清楚，可以再按一下试试，也可以打字。' };
+      case 'idle':
+      default:
+        return { status: 'idle', hint: '可以按一下话筒说话，也可以直接打字。' };
     }
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = speechLang();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.onresult = (event: any) => {
-        const text = Array.from(event.results).map((item: any) => item[0]?.transcript || '').join('');
-        onText(text);
-        setStatus('recognized');
-        setHint('我正在记录您说的话。说完后，可以点“继续”。');
-      };
-      recognition.onerror = (event: any) => {
-        const denied = event?.error === 'not-allowed' || event?.error === 'permission-denied';
-        setStatus(denied ? 'permission_denied' : 'error');
-        setHint(denied ? '麦克风没有打开。没关系，您可以直接打字继续。' : '刚才没有听清楚，可以再试一次，也可以打字。');
-      };
-      recognition.onend = () => {
-        setStatus((prev) => prev === 'listening' ? 'idle' : prev);
-        setHint((prev) => prev.includes('正在听') ? '已经听完。请看看文字是否正确。' : prev);
-      };
-      recognitionRef.current = recognition;
-      setStatus('listening');
-      setHint('正在听您说话。请慢慢说，不用着急。');
-      recognition.start();
-    } catch {
-      setStatus('error');
-      setHint('语音暂时不可用。您可以直接打字继续。');
-    }
-  }, [onText]);
+  }, [input.status, input.suggestDictation]);
 
-  return { status, hint, isListening: status === 'listening', start, stop };
+  return {
+    status,
+    hint,
+    isListening: input.isListening,
+    start: (base = '') => input.start(base),
+    stop: input.stop,
+  };
 }
