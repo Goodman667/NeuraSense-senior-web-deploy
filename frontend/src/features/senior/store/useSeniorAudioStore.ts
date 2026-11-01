@@ -1,6 +1,23 @@
 import { create } from 'zustand';
 import { API_BASE } from '../../../config/api';
 import { cleanForSeniorTTS } from '../services/seniorTextNormalizer';
+import { isAppleTouchDevice } from '../../../lib/useSpeechInput';
+import {
+  BufferPlayer,
+  base64ToArrayBuffer,
+  decodeAudio,
+  ensureRunning,
+  getSharedAudioContext,
+  installAudioUnlock,
+  type PlayableAudio,
+} from '../../../lib/sharedAudio';
+
+// On iPad/iPhone read-aloud plays through the page's one audio context, the same one voice input
+// records with; separate <audio> elements left later recordings silent (see lib/sharedAudio.ts).
+// The slower senior speed is then made on the server, because slowing a buffer down would also
+// lower the voice.
+const APPLE = isAppleTouchDevice();
+if (APPLE) installAudioUnlock();
 
 const VOICE_SPEED_STORAGE = 'neurasense-senior-voice-speed';
 
@@ -9,7 +26,7 @@ interface SeniorAudioState {
   isPlaying: boolean;
   currentText: string;
   error: string | null;
-  audio: HTMLAudioElement | null;
+  audio: PlayableAudio | null;
   fallbackMode: 'none' | 'browser';
   playbackId: number;
   abortController: AbortController | null;
@@ -54,10 +71,12 @@ export const useSeniorAudioStore = create<SeniorAudioState>((set, get) => ({
       fallbackMode: 'none',
     });
     try {
+      const savedSpeed = Number(localStorage.getItem(VOICE_SPEED_STORAGE) || '0.88');
+      const speed = Number.isFinite(savedSpeed) ? Math.min(1, Math.max(0.72, savedSpeed)) : 0.88;
       const response = await fetch(`${API_BASE}/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: speechText, voice: options?.voice || 'xiaoyi', emotion: options?.emotion || 'friendly' }),
+        body: JSON.stringify({ text: speechText, voice: options?.voice || 'xiaoyi', emotion: options?.emotion || 'friendly', ...(APPLE ? { speed } : {}) }),
         signal: abortController.signal,
       });
       if (get().playbackId !== playbackId) return;
@@ -67,10 +86,32 @@ export const useSeniorAudioStore = create<SeniorAudioState>((set, get) => ({
       if (!data.success || !data.audio) throw new Error('TTS audio missing');
       const audioFormat = String(data.format || 'mp3').toLowerCase();
       const mimeType = audioFormat === 'wav' ? 'audio/wav' : 'audio/mp3';
+      if (APPLE) {
+        const ctx = getSharedAudioContext(false);
+        if (ctx && (await ensureRunning(ctx))) {
+          try {
+            const buffer = await decodeAudio(ctx, base64ToArrayBuffer(data.audio));
+            if (get().playbackId !== playbackId) return;
+            const player = new BufferPlayer(ctx, buffer);
+            player.onplay = () => {
+              if (get().playbackId === playbackId) set({ isPlaying: true, isLoading: false, fallbackMode: 'none', error: null });
+            };
+            player.onended = () => {
+              if (get().playbackId === playbackId) set({ isPlaying: false, audio: null, abortController: null });
+            };
+            set({ audio: player });
+            await player.play();
+            return;
+          } catch {
+            if (get().playbackId !== playbackId) return;
+            // fall back to an <audio> element below
+          }
+        }
+      }
       const audio = new Audio(`data:${mimeType};base64,${data.audio}`);
-      const savedSpeed = Number(localStorage.getItem(VOICE_SPEED_STORAGE) || '0.88');
       audio.volume = 1;
-      audio.playbackRate = Number.isFinite(savedSpeed) ? Math.min(1, Math.max(0.72, savedSpeed)) : 0.88;
+      // On iPad/iPhone the server already slowed the speech down.
+      audio.playbackRate = APPLE ? 1 : speed;
       audio.onplay = () => {
         if (get().playbackId === playbackId) set({ isPlaying: true, isLoading: false, fallbackMode: 'none', error: null });
       };

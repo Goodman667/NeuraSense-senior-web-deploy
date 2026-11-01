@@ -681,6 +681,7 @@ class TTSRequest(BaseModel):
     text: str
     voice: str = "xiaoxiao"  # xiaoxiao, xiaoyi, yunjian, yunxi
     emotion: str = "gentle"  # calm, cheerful, sad, gentle, empathetic, friendly
+    speed: Optional[float] = None  # 0.5-1.5; iPad/iPhone ask the server to slow speech down
 
 
 @router.post("/tts")
@@ -699,6 +700,7 @@ async def text_to_speech(request: TTSRequest):
             text=request.text,
             voice=request.voice,
             emotion=request.emotion,
+            speed=request.speed,
         )
         
         # 返回 base64 编码的音频

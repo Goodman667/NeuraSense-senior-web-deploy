@@ -186,6 +186,7 @@ class TTSService:
         text: str,
         emotion: str = "gentle",
         voice: str = "xiaoxiao",
+        speed: float | None = None,
     ) -> bytes:
         """
         带情感的语音合成
@@ -203,11 +204,16 @@ class TTSService:
         }
         
         params = emotion_params.get(emotion, {"rate": "+0%", "pitch": "+0Hz"})
+        rate = params["rate"]
+        if speed is not None:
+            # e.g. speed 0.88 slows the emotion's own rate down by 12 percentage points
+            percent = int(rate.rstrip("%")) + round((max(0.5, min(1.5, float(speed))) - 1) * 100)
+            rate = f"{max(-50, min(50, percent)):+d}%"
         
         return await self.synthesize(
             text=text,
             voice=voice,
-            rate=params["rate"],
+            rate=rate,
             pitch=params["pitch"],
         )
     
@@ -225,10 +231,12 @@ async def get_speech(
     text: str,
     voice: str = "xiaoxiao",
     emotion: str = "gentle",
+    speed: float | None = None,
 ) -> bytes:
-    """获取语音合成结果的便捷函数"""
+    """获取语音合成结果的便捷函数（speed 例如 0.88 表示放慢 12%）"""
     return await tts_service.synthesize_with_emotion(
         text=text,
         emotion=emotion,
         voice=voice,
+        speed=speed,
     )

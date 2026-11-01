@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config/api';
 import { speechLang } from '../i18n/autoTranslate';
+import { installAudioUnlock, voiceDebug, wakeSharedAudio } from './sharedAudio';
 
 export type SpeechInputStatus =
     | 'idle'
@@ -183,6 +184,8 @@ type Recording = {
     chunks: Float32Array[];
     heard: boolean;
     finishing: boolean;
+    maxRms: number;
+    dead: boolean;
 };
 
 export interface SpeechInputOptions {
@@ -196,6 +199,8 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
     const [status, setStatus] = useState<SpeechInputStatus>(() => (isSpeechInputSupported() ? 'idle' : 'unsupported'));
     const [failures, setFailures] = useState(0);
     const [serverDown, setServerDown] = useState(false);
+    const [micSilent, setMicSilent] = useState(false);
+    const roundRef = useRef(0);
     const recRef = useRef<Recognition | null>(null);
     const recordingRef = useRef<Recording | null>(null);
     const sessionRef = useRef(0);
@@ -214,9 +219,11 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         timersRef.current.push(window.setTimeout(fn, ms));
     };
 
-    // Ask the server early on iPad/iPhone so the first press already knows which way to go.
+    // Ask the server early on iPad/iPhone so the first press already knows which way to go,
+    // and keep the shared audio context awake on every tap.
     useEffect(() => {
         if (wantsRecorder()) void checkServerSpeech();
+        if (isAppleTouchDevice()) installAudioUnlock();
     }, []);
 
     const detachRecognition = (rec: Recognition | null) => {
@@ -229,11 +236,14 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
 
     const releaseRecording = (r: Recording | null) => {
         if (!r) return;
+        if (r.processor) r.processor.onaudioprocess = null;
         try { r.processor?.disconnect(); } catch { /* ignore */ }
         try { r.source?.disconnect(); } catch { /* ignore */ }
-        if (r.processor) r.processor.onaudioprocess = null;
         r.stream?.getTracks().forEach((t) => t.stop());
-        try { void r.ctx.close(); } catch { /* ignore */ }
+        r.processor = null;
+        r.source = null;
+        r.stream = null;
+        // The audio context is shared and stays open (see lib/sharedAudio.ts).
     };
 
     // ---------- recorder engine ----------
@@ -245,8 +255,17 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         releaseRecording(r);
         recordingRef.current = null;
         const seconds = r.chunks.reduce((n, c) => n + c.length, 0) / r.ctx.sampleRate;
-        if (!r.heard && !(manual && seconds >= 0.6)) {
+        voiceDebug({ phase: manual ? 'stopped by tap' : 'stopped by itself', seconds, heard: r.heard, maxRms: r.maxRms, micSilent: r.dead });
+        if (r.dead) {
+            setMicSilent(true);
+            setStatus('error');
+            setFailures((n) => n + 1);
+            return;
+        }
+        // Upload unless the recording is clearly empty; the server decides what was said.
+        if (!r.heard && r.maxRms < 0.02 && !(manual && seconds >= 0.6)) {
             setStatus('no-speech');
+            if (isAppleTouchDevice()) setFailures((n) => n + 1);
             return;
         }
         setStatus('transcribing');
@@ -257,6 +276,7 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
                 headers: { 'Content-Type': 'audio/wav' },
                 body: wav,
             });
+            voiceDebug({ upload: `HTTP ${res.status}, ${Math.round(wav.size / 1024)} KB` });
             if (sessionRef.current !== session) return;
             if (res.status === 503) {
                 serverState = false;
@@ -268,6 +288,7 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
             if (!res.ok) throw new Error(String(res.status));
             const data = await res.json();
             const said = String(data.text || '').trim();
+            voiceDebug({ textLength: said.length });
             if (!said) {
                 setStatus('no-speech');
                 return;
@@ -275,7 +296,9 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
             onTextRef.current(joinText(base, said));
             setStatus('recognized');
             setFailures(0);
-        } catch {
+            setMicSilent(false);
+        } catch (err) {
+            voiceDebug({ uploadError: String(err) });
             if (sessionRef.current !== session) return;
             setStatus('error');
             setFailures((n) => n + 1);
@@ -283,12 +306,26 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
     }, []);
 
     const startRecording = useCallback((base: string, session: number, ctx: AudioContext) => {
-        const r: Recording = { base, ctx, stream: null, source: null, processor: null, chunks: [], heard: false, finishing: false };
+        const r: Recording = { base, ctx, stream: null, source: null, processor: null, chunks: [], heard: false, finishing: false, maxRms: 0, dead: false };
         recordingRef.current = r;
+        roundRef.current += 1;
         setStatus('listening');
+        voiceDebug({ engine: 'recorder', round: roundRef.current, phase: 'opening mic', ctxRate: ctx.sampleRate, heard: false, maxRms: 0, upload: '-', textLength: '-', uploadError: '-' });
         later(() => void finishRecording(session, base, false), MAX_RECORD_MS);
 
-        navigator.mediaDevices
+        const fail = (err: unknown) => {
+            if (sessionRef.current !== session) return;
+            clearTimers();
+            releaseRecording(r);
+            recordingRef.current = null;
+            const name = (err as { name?: string })?.name;
+            voiceDebug({ phase: `mic error ${name || err}` });
+            setStatus(name === 'NotAllowedError' || name === 'SecurityError' ? 'permission_denied' : 'error');
+            setFailures((n) => n + 1);
+        };
+
+        let reopened = false;
+        const openMic = () => navigator.mediaDevices
             .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
             .then((stream) => {
                 if (sessionRef.current !== session || r.finishing) {
@@ -296,7 +333,11 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
                     return;
                 }
                 r.stream = stream;
-                try { void ctx.resume(); } catch { /* ignore */ }
+                const track = stream.getAudioTracks()[0];
+                voiceDebug({ phase: 'recording', track: track ? `${track.readyState}, muted=${track.muted}, enabled=${track.enabled}` : 'none' });
+                if (ctx.state !== 'running') {
+                    try { void ctx.resume(); } catch { /* ignore */ }
+                }
                 const source = ctx.createMediaStreamSource(stream);
                 const processor = ctx.createScriptProcessor(4096, 1, 1);
                 r.source = source;
@@ -304,21 +345,42 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
                 let elapsed = 0;
                 let quietFor = 0;
                 let loudFor = 0;
-                let noise = 0;
+                let noiseMin = Infinity;
+                let peak = 0;
+                let blocks = 0;
                 processor.onaudioprocess = (event) => {
-                    if (r.finishing) return;
+                    if (r.finishing || r.processor !== processor) return;
                     const data = event.inputBuffer.getChannelData(0);
                     r.chunks.push(new Float32Array(data));
                     let sum = 0;
-                    for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+                    for (let i = 0; i < data.length; i++) {
+                        const v = data[i];
+                        sum += v * v;
+                        const a = v < 0 ? -v : v;
+                        if (a > peak) peak = a;
+                    }
                     const rms = Math.sqrt(sum / data.length);
                     const ms = (data.length / ctx.sampleRate) * 1000;
                     elapsed += ms;
-                    if (elapsed < 400) {
-                        noise = Math.max(noise, rms); // room level in the first moment
+                    blocks += 1;
+                    if (rms > r.maxRms) r.maxRms = rms;
+                    // Nothing but digital silence: the microphone is not delivering sound. Reopen it once.
+                    if (elapsed >= 1500 && peak < 1e-6) {
+                        if (!reopened) {
+                            reopened = true;
+                            voiceDebug({ phase: 'mic gave only silence, reopening' });
+                            releaseRecording(r);
+                            r.chunks = [];
+                            openMic().catch(fail);
+                        } else {
+                            r.dead = true;
+                            void finishRecording(session, base, false);
+                        }
                         return;
                     }
-                    const threshold = Math.max(0.012, noise * 2.5);
+                    // Speech detection against the quietest moment heard so far.
+                    if (elapsed > 300 && rms > 0) noiseMin = Math.min(noiseMin, rms);
+                    const threshold = Math.max(0.006, (noiseMin === Infinity ? 0.004 : noiseMin) * 3);
                     if (rms > threshold) {
                         loudFor += ms;
                         quietFor = 0;
@@ -326,21 +388,14 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
                     } else {
                         quietFor += ms;
                     }
+                    if (blocks % 6 === 0) voiceDebug({ seconds: elapsed / 1000, rms, maxRms: r.maxRms, threshold, heard: r.heard });
                     if (r.heard && quietFor >= PAUSE_END_MS) void finishRecording(session, base, false);
                     else if (!r.heard && elapsed >= NO_SPEECH_MS) void finishRecording(session, base, false);
                 };
                 source.connect(processor);
                 processor.connect(ctx.destination); // the processor only runs when connected; it outputs silence
-            })
-            .catch((err: unknown) => {
-                if (sessionRef.current !== session) return;
-                clearTimers();
-                releaseRecording(r);
-                recordingRef.current = null;
-                const name = (err as { name?: string })?.name;
-                setStatus(name === 'NotAllowedError' || name === 'SecurityError' ? 'permission_denied' : 'error');
-                setFailures((n) => n + 1);
             });
+        openMic().catch(fail);
     }, [finishRecording]);
 
     // ---------- browser engine ----------
@@ -384,6 +439,7 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         rec.onerror = (event: any) => {
             if (sessionRef.current !== session) return;
             const code = event?.error;
+            voiceDebug({ phase: `browser error ${code}` });
             if (code === 'aborted') return;
             clearTimers();
             if (code === 'service-not-allowed' && isAppleTouchDevice()) setStatus('unsupported');
@@ -404,6 +460,7 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
 
         recRef.current = rec;
         setStatus('listening');
+        voiceDebug({ engine: 'browser', phase: 'listening' });
         armSilence();
         try {
             rec.start();
@@ -472,10 +529,12 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
             startRecognition(base, session);
             return;
         }
-        // The audio context must be created inside the tap, or iPad keeps it suspended.
-        const AC = getAudioContextClass()!;
-        const ctx = new AC();
-        try { void ctx.resume(); } catch { /* ignore */ }
+        // One audio context for the page, woken inside the tap (iPad keeps it suspended otherwise).
+        const ctx = wakeSharedAudio();
+        if (!ctx) {
+            startRecognition(base, session);
+            return;
+        }
         const begin = () => startRecording(base, session, ctx);
         if (serverState === true) {
             begin();
@@ -483,13 +542,9 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         }
         setStatus('listening');
         void checkServerSpeech().then((ok) => {
-            if (sessionRef.current !== session) {
-                try { void ctx.close(); } catch { /* ignore */ }
-                return;
-            }
+            if (sessionRef.current !== session) return;
             if (ok) begin();
             else {
-                try { void ctx.close(); } catch { /* ignore */ }
                 setServerDown(true);
                 startRecognition(base, session);
             }
@@ -513,7 +568,7 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         isBusy: status === 'transcribing',
         supported: status !== 'unsupported',
         /** suggest the keyboard's own dictation instead */
-        suggestDictation: status === 'unsupported' || failures >= 2 || (serverDown && isAppleTouchDevice() && failures >= 1),
+        suggestDictation: status === 'unsupported' || failures >= 2 || micSilent || (serverDown && isAppleTouchDevice() && failures >= 1),
         start,
         stop,
     };
