@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { isAppleTouchDevice, useSpeechInput } from '../../../lib/useSpeechInput';
 import { useSeniorAudioStore } from '../store/useSeniorAudioStore';
 
-export type SpeechStatus = 'idle' | 'unsupported' | 'listening' | 'recognized' | 'error' | 'permission_denied';
+export type SpeechStatus = 'idle' | 'unsupported' | 'listening' | 'transcribing' | 'recognized' | 'error' | 'permission_denied';
 
 const DICTATION_TIP = isAppleTouchDevice()
   ? '也可以点屏幕键盘上的小话筒，用 iPad 自带的听写说话（普通话、粤语都可以）。'
@@ -10,7 +10,8 @@ const DICTATION_TIP = isAppleTouchDevice()
 
 /**
  * Companion-mode voice input. `start(base)` adds what is said after `base` (what is already in
- * the box). See lib/useSpeechInput.ts for why the second press used to fail on tablets.
+ * the box). See lib/useSpeechInput.ts for how iPad/iPhone record the voice and let the server
+ * turn it into text.
  */
 export function useSeniorSpeechRecognition(onText: (text: string) => void) {
   const input = useSpeechInput({
@@ -23,7 +24,9 @@ export function useSeniorSpeechRecognition(onText: (text: string) => void) {
       case 'unsupported':
         return { status: 'unsupported', hint: `这个浏览器暂时不能语音识别。${DICTATION_TIP}` };
       case 'listening':
-        return { status: 'listening', hint: '正在听您说话。请慢慢说，说完再按一下。' };
+        return { status: 'listening', hint: '正在听您说话。请慢慢说，说完再按一下，停顿一会儿也会自动结束。' };
+      case 'transcribing':
+        return { status: 'transcribing', hint: '正在把您说的话变成文字，请稍等几秒。' };
       case 'recognized':
         return { status: 'recognized', hint: '已经听完了。看看文字对不对，想接着说就再按一下。' };
       case 'no-speech':
@@ -42,6 +45,7 @@ export function useSeniorSpeechRecognition(onText: (text: string) => void) {
     status,
     hint,
     isListening: input.isListening,
+    isBusy: input.isBusy,
     start: (base = '') => input.start(base),
     stop: input.stop,
   };

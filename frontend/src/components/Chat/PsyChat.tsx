@@ -1418,7 +1418,7 @@ export const PsyChat = ({
     }, [messages]);
 
     // Voice input: one recognition at a time; what is said is added after what is already typed.
-    // (lib/useSpeechInput.ts explains why the second press used to fail on phones and iPads.)
+    // (lib/useSpeechInput.ts: on iPad/iPhone the page records the voice and the server transcribes it.)
     const speech = useSpeechInput({
         onText: setInputText,
         onBeforeStart: () => {
@@ -1428,10 +1428,13 @@ export const PsyChat = ({
     const isListening = speech.isListening;
     const voiceSupported = speech.supported;
     const toggleVoiceInput = useCallback(() => {
+        if (speech.isBusy) return;
         if (speech.isListening) speech.stop();
         else speech.start(inputText);
     }, [speech, inputText]);
-    const voiceHint = speech.status === 'permission_denied'
+    const voiceHint = speech.status === 'unsupported'
+        ? '这个浏览器暂时不能语音识别。'
+        : speech.status === 'permission_denied'
         ? '麦克风没有打开，请在浏览器设置里允许使用麦克风。'
         : speech.status === 'no-speech'
             ? '刚才没有听到声音，可以再点一次「语音输入」。'
@@ -1890,6 +1893,9 @@ export const PsyChat = ({
                                     {voiceHint}{speech.suggestDictation ? ` ${dictationTip}` : ''}
                                 </p>
                             ) : null}
+                            {speech.isBusy && (
+                                <p className="mb-3 text-center text-sm text-slate-500" aria-live="polite">正在把你说的话变成文字…</p>
+                            )}
                             {isListening && (
                                 <div className="mb-3 flex items-center justify-center">
                                     <div className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">
@@ -1912,6 +1918,7 @@ export const PsyChat = ({
                                         {voiceSupported && (
                                             <button
                                                 onClick={toggleVoiceInput}
+                                                disabled={speech.isBusy}
                                                 className={`flex h-10 items-center gap-2 rounded-full px-3 text-sm font-medium transition-all ${isListening
                                                     ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20'
                                                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'

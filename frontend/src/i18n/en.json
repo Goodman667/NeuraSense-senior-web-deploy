@@ -4624,5 +4624,12 @@
 "大约需要 20–30 分钟。中途可以随时停下，下次登录会接着上次的进度。": "It takes about 20–30 minutes. You can stop at any time; next time you log in you'll pick up where you left off.",
 "一共 6 步，跟着页面上亮起来的地方点就好，最后填一份 10 道题的小问卷。大约 20 分钟。": "6 steps in all: just tap where the page lights up, then fill in a short 10-question questionnaire. About 20 minutes.",
 "体验流程 {0}/{1}": "Guided tour {0}/{1}",
-"下面一张一张看，每张讲一件事：为什么会这样，可以怎么做。最要紧的放在第一张。": "Look at them one card at a time. Each card covers one thing: why it happens and what you can do. The most important one comes first."
+"下面一张一张看，每张讲一件事：为什么会这样，可以怎么做。最要紧的放在第一张。": "Look at them one card at a time. Each card covers one thing: why it happens and what you can do. The most important one comes first.",
+"正在听您说话。请慢慢说，说完再按一下，停顿一会儿也会自动结束。": "Listening. Speak slowly and press again when you finish; a short pause also ends it.",
+"正在把您说的话变成文字，请稍等几秒。": "Turning what you said into text. Please wait a few seconds.",
+"正在变成文字": "Turning it into text",
+"正在识别…": "Recognising…",
+"请稍等几秒": "Please wait a few seconds",
+"正在识别，请稍等…": "Recognising, please wait…",
+"正在把你说的话变成文字…": "Turning what you said into text…"
 }

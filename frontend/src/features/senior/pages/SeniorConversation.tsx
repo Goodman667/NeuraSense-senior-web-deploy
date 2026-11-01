@@ -32,6 +32,7 @@ export function SeniorConversation({
   // Voice input: what is said is added after anything already typed (the hook stops read-aloud first).
   const speech = useSeniorSpeechRecognition(setInput);
   const toggleVoice = () => {
+    if (speech.isBusy) return;
     if (speech.isListening) {
       speech.stop();
       return;
@@ -114,7 +115,7 @@ export function SeniorConversation({
           className={`mt-5 flex w-full items-center justify-center gap-3 rounded-[20px] px-6 py-5 text-[1.5rem] text-[#FBF8F3] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3] ${speech.isListening ? 'bg-[var(--sn-help)]' : 'bg-[var(--sn-teal)] hover:bg-[var(--sn-teal-deep)]'}`}
         >
           <SeniorIcon name={speech.isListening ? 'pause' : 'mic'} className="h-8 w-8" />
-          {speech.isListening ? '正在听…说完再按一下' : '按一下，开始说'}
+          {speech.isListening ? '正在听…说完再按一下' : speech.isBusy ? '正在识别，请稍等…' : '按一下，开始说'}
         </button>
         {speech.status !== 'idle' ? <p className="sn-small mt-2 text-center" aria-live="polite">{speech.hint}</p> : null}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">

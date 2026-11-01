@@ -5,6 +5,7 @@ const statusCopy: Record<SpeechStatus, { title: string; tone: string; icon: 'mic
   idle: { title: '说话、打字都可以', tone: 'tone-info', icon: 'keyboard' },
   unsupported: { title: '这个浏览器听不了声音', tone: 'tone-warning', icon: 'warning' },
   listening: { title: '正在听您说话', tone: 'tone-info', icon: 'mic' },
+  transcribing: { title: '正在变成文字', tone: 'tone-info', icon: 'mic' },
   recognized: { title: '已经记成文字了', tone: 'tone-success', icon: 'check' },
   error: { title: '刚才没听清楚', tone: 'tone-warning', icon: 'warning' },
   permission_denied: { title: '麦克风没有打开', tone: 'tone-danger', icon: 'warning' },

@@ -53,6 +53,7 @@ from app.api.notifications_router import router as notifications_router
 from app.api.senior_router import router as senior_router
 # Import SUS (research usability questionnaire) router
 from app.api.sus_router import router as sus_router
+from app.api.speech_router import router as speech_router
 
 router = APIRouter()
 
@@ -92,6 +93,8 @@ router.include_router(notifications_router)
 router.include_router(senior_router)
 # Include SUS sub-router
 router.include_router(sus_router)
+# Include speech-to-text sub-router (voice input on iPad/iPhone)
+router.include_router(speech_router)
 
 # Initialize services
 clock_scorer = ClockDrawingScorer()

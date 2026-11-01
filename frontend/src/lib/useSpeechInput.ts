@@ -1,26 +1,44 @@
 /**
- * Voice input with the browser's own speech recognition (no server).
+ * Voice input.
  *
- * Why the second press used to fail on phones and iPads:
- *  - the button flipped back to "press to speak" as soon as the first words came in, while the
- *    browser was still finishing that round of recognition;
- *  - pressing again then started a second recognition on top of the unfinished one, which
- *    Safari and Chrome on mobile refuse (or silently ignore);
- *  - the chat page reused one recognition object, so start() on it while it was still stopping
- *    threw an error;
- *  - read-aloud audio was still holding the iPad's audio session.
+ * Two ways to turn speech into text:
+ *  - "browser": the browser's own speech recognition. Used on computers and Android, where it is
+ *    fast and reliable.
+ *  - "recorder": the page records the microphone itself (getUserMedia + Web Audio), encodes a short
+ *    16 kHz WAV and the server transcribes it (POST /speech/transcribe). Used on iPad and iPhone in
+ *    every browser, because there the built-in recognition is not dependable:
+ *      · Safari: after the first use, or after the page has played audio (read-aloud), recognition
+ *        stays "deaf" - it starts but never hears anything and never ends (WebKit bug 321436).
+ *      · Chrome / Edge / other iPad browsers: recognition is exposed but refuses to run
+ *        ("service-not-allowed", the host app lacks the speech permission; WebKit bug 239816),
+ *        so it ended the moment the button was pressed.
+ *    Recording with getUserMedia works the same in all of them.
  *
- * So: one recognition at a time, a fresh one for every press, the old one aborted first;
- * "listening" stays on until the browser really ends the round; read-aloud is stopped before
- * listening; 8 seconds without speech ends the round; recognised words are added after what was
- * already in the box instead of replacing it.
+ * If the server cannot transcribe, iPad/iPhone fall back to the built-in recognition and the hint
+ * points to the keyboard's own dictation key, which always works.
+ *
+ * Both ways: what is said is added after what is already in the box; read-aloud is stopped first;
+ * the round ends by itself after a pause, or when the button is pressed again.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { API_BASE } from '../config/api';
 import { speechLang } from '../i18n/autoTranslate';
 
-export type SpeechInputStatus = 'idle' | 'unsupported' | 'listening' | 'recognized' | 'no-speech' | 'error' | 'permission_denied';
+export type SpeechInputStatus =
+    | 'idle'
+    | 'unsupported'
+    | 'listening'
+    | 'transcribing'
+    | 'recognized'
+    | 'no-speech'
+    | 'error'
+    | 'permission_denied';
 
-const SILENCE_MS = 8000;
+const SILENCE_MS = 8000; // browser engine: no words for this long ends the round
+const PAUSE_END_MS = 1800; // recorder: a pause this long after speaking ends the round
+const NO_SPEECH_MS = 9000; // recorder: nothing said at all
+const MAX_RECORD_MS = 60000;
+const TARGET_RATE = 16000;
 
 type Recognition = {
     lang: string;
@@ -40,13 +58,64 @@ function getRecognitionClass(): (new () => Recognition) | null {
     return w.SpeechRecognition || w.webkitSpeechRecognition || null;
 }
 
-export function isSpeechInputSupported() {
-    return !!getRecognitionClass();
+function getAudioContextClass(): typeof AudioContext | null {
+    if (typeof window === 'undefined') return null;
+    const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext };
+    return w.AudioContext || w.webkitAudioContext || null;
 }
 
 export function isAppleTouchDevice() {
     if (typeof navigator === 'undefined') return false;
     return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isRecordingSupported() {
+    return typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && !!getAudioContextClass();
+}
+
+/** ?voice=recorder|browser (remembered) lets testers force one way. */
+function forcedEngine(): 'recorder' | 'browser' | null {
+    try {
+        const fromUrl = new URLSearchParams(window.location.search).get('voice');
+        if (fromUrl === 'recorder' || fromUrl === 'browser') {
+            localStorage.setItem('ns-voice-engine', fromUrl);
+            return fromUrl;
+        }
+        const saved = localStorage.getItem('ns-voice-engine');
+        return saved === 'recorder' || saved === 'browser' ? saved : null;
+    } catch {
+        return null;
+    }
+}
+
+function wantsRecorder() {
+    const forced = forcedEngine();
+    if (forced) return forced === 'recorder' && isRecordingSupported();
+    return isRecordingSupported() && (isAppleTouchDevice() || !getRecognitionClass());
+}
+
+export function isSpeechInputSupported() {
+    return !!getRecognitionClass() || isRecordingSupported();
+}
+
+// Whether the server can transcribe. Only a definite answer is remembered.
+let serverState: boolean | null = null;
+let serverCheck: Promise<boolean> | null = null;
+function checkServerSpeech(): Promise<boolean> {
+    if (serverState !== null) return Promise.resolve(serverState);
+    if (!serverCheck) {
+        serverCheck = fetch(`${API_BASE}/speech/status`)
+            .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+            .then((j) => {
+                serverState = !!j.available;
+                return serverState;
+            })
+            .catch(() => false)
+            .finally(() => {
+                serverCheck = null;
+            });
+    }
+    return serverCheck;
 }
 
 function joinText(base: string, said: string) {
@@ -59,6 +128,63 @@ function joinText(base: string, said: string) {
     return `${b}${needsSpace ? ' ' : ''}${s}`;
 }
 
+function encodeWav(chunks: Float32Array[], inputRate: number): Blob {
+    const total = chunks.reduce((n, c) => n + c.length, 0);
+    const ratio = inputRate / TARGET_RATE;
+    const outLength = Math.max(1, Math.floor(total / ratio));
+    const pcm = new Int16Array(outLength);
+    // Average each block of input samples into one output sample (simple low-pass + decimation).
+    let chunkIndex = 0;
+    let offset = 0;
+    let consumed = 0;
+    for (let i = 0; i < outLength; i++) {
+        const end = Math.min(total, Math.round((i + 1) * ratio));
+        let sum = 0;
+        let count = 0;
+        while (consumed < end && chunkIndex < chunks.length) {
+            sum += chunks[chunkIndex][offset];
+            count++;
+            consumed++;
+            offset++;
+            if (offset >= chunks[chunkIndex].length) {
+                chunkIndex++;
+                offset = 0;
+            }
+        }
+        const v = count ? sum / count : 0;
+        pcm[i] = Math.max(-1, Math.min(1, v)) * 0x7fff;
+    }
+    const buffer = new ArrayBuffer(44 + pcm.length * 2);
+    const view = new DataView(buffer);
+    const writeStr = (pos: number, s: string) => { for (let i = 0; i < s.length; i++) view.setUint8(pos + i, s.charCodeAt(i)); };
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + pcm.length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, TARGET_RATE, true);
+    view.setUint32(28, TARGET_RATE * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, pcm.length * 2, true);
+    new Int16Array(buffer, 44).set(pcm);
+    return new Blob([buffer], { type: 'audio/wav' });
+}
+
+type Recording = {
+    base: string;
+    ctx: AudioContext;
+    stream: MediaStream | null;
+    source: MediaStreamAudioSourceNode | null;
+    processor: ScriptProcessorNode | null;
+    chunks: Float32Array[];
+    heard: boolean;
+    finishing: boolean;
+};
+
 export interface SpeechInputOptions {
     /** called with the full text (what was there before + what has been said so far) */
     onText: (text: string) => void;
@@ -69,21 +195,31 @@ export interface SpeechInputOptions {
 export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
     const [status, setStatus] = useState<SpeechInputStatus>(() => (isSpeechInputSupported() ? 'idle' : 'unsupported'));
     const [failures, setFailures] = useState(0);
+    const [serverDown, setServerDown] = useState(false);
     const recRef = useRef<Recognition | null>(null);
+    const recordingRef = useRef<Recording | null>(null);
     const sessionRef = useRef(0);
     const heardRef = useRef(false);
-    const silenceRef = useRef<number | null>(null);
+    const timersRef = useRef<number[]>([]);
     const onTextRef = useRef(onText);
     const beforeRef = useRef(onBeforeStart);
     onTextRef.current = onText;
     beforeRef.current = onBeforeStart;
 
-    const clearSilence = () => {
-        if (silenceRef.current !== null) window.clearTimeout(silenceRef.current);
-        silenceRef.current = null;
+    const clearTimers = () => {
+        timersRef.current.forEach((t) => window.clearTimeout(t));
+        timersRef.current = [];
+    };
+    const later = (fn: () => void, ms: number) => {
+        timersRef.current.push(window.setTimeout(fn, ms));
     };
 
-    const detach = (rec: Recognition | null) => {
+    // Ask the server early on iPad/iPhone so the first press already knows which way to go.
+    useEffect(() => {
+        if (wantsRecorder()) void checkServerSpeech();
+    }, []);
+
+    const detachRecognition = (rec: Recognition | null) => {
         if (!rec) return;
         rec.onresult = null;
         rec.onerror = null;
@@ -91,47 +227,150 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         try { rec.abort(); } catch { /* already ended */ }
     };
 
-    const stop = useCallback(() => {
-        clearSilence();
-        const rec = recRef.current;
-        if (!rec) {
-            setStatus((s) => (s === 'listening' ? 'idle' : s));
+    const releaseRecording = (r: Recording | null) => {
+        if (!r) return;
+        try { r.processor?.disconnect(); } catch { /* ignore */ }
+        try { r.source?.disconnect(); } catch { /* ignore */ }
+        if (r.processor) r.processor.onaudioprocess = null;
+        r.stream?.getTracks().forEach((t) => t.stop());
+        try { void r.ctx.close(); } catch { /* ignore */ }
+    };
+
+    // ---------- recorder engine ----------
+    const finishRecording = useCallback(async (session: number, base: string, manual: boolean) => {
+        const r = recordingRef.current;
+        if (!r || r.finishing || sessionRef.current !== session) return;
+        r.finishing = true;
+        clearTimers();
+        releaseRecording(r);
+        recordingRef.current = null;
+        const seconds = r.chunks.reduce((n, c) => n + c.length, 0) / r.ctx.sampleRate;
+        if (!r.heard && !(manual && seconds >= 0.6)) {
+            setStatus('no-speech');
             return;
         }
-        // stop() (not abort) lets the browser deliver the last words. The button flips back right
-        // away, so pressing again at once starts a new round (start() drops this one first).
-        try { rec.stop(); } catch { /* ignore */ }
-        setStatus(heardRef.current ? 'recognized' : 'idle');
+        setStatus('transcribing');
+        try {
+            const wav = encodeWav(r.chunks, r.ctx.sampleRate);
+            const res = await fetch(`${API_BASE}/speech/transcribe?lang=${encodeURIComponent(speechLang())}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'audio/wav' },
+                body: wav,
+            });
+            if (sessionRef.current !== session) return;
+            if (res.status === 503) {
+                serverState = false;
+                setServerDown(true);
+                setStatus('error');
+                setFailures((n) => n + 1);
+                return;
+            }
+            if (!res.ok) throw new Error(String(res.status));
+            const data = await res.json();
+            const said = String(data.text || '').trim();
+            if (!said) {
+                setStatus('no-speech');
+                return;
+            }
+            onTextRef.current(joinText(base, said));
+            setStatus('recognized');
+            setFailures(0);
+        } catch {
+            if (sessionRef.current !== session) return;
+            setStatus('error');
+            setFailures((n) => n + 1);
+        }
     }, []);
 
-    const start = useCallback((base = '') => {
+    const startRecording = useCallback((base: string, session: number, ctx: AudioContext) => {
+        const r: Recording = { base, ctx, stream: null, source: null, processor: null, chunks: [], heard: false, finishing: false };
+        recordingRef.current = r;
+        setStatus('listening');
+        later(() => void finishRecording(session, base, false), MAX_RECORD_MS);
+
+        navigator.mediaDevices
+            .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+            .then((stream) => {
+                if (sessionRef.current !== session || r.finishing) {
+                    stream.getTracks().forEach((t) => t.stop());
+                    return;
+                }
+                r.stream = stream;
+                try { void ctx.resume(); } catch { /* ignore */ }
+                const source = ctx.createMediaStreamSource(stream);
+                const processor = ctx.createScriptProcessor(4096, 1, 1);
+                r.source = source;
+                r.processor = processor;
+                let elapsed = 0;
+                let quietFor = 0;
+                let loudFor = 0;
+                let noise = 0;
+                processor.onaudioprocess = (event) => {
+                    if (r.finishing) return;
+                    const data = event.inputBuffer.getChannelData(0);
+                    r.chunks.push(new Float32Array(data));
+                    let sum = 0;
+                    for (let i = 0; i < data.length; i++) sum += data[i] * data[i];
+                    const rms = Math.sqrt(sum / data.length);
+                    const ms = (data.length / ctx.sampleRate) * 1000;
+                    elapsed += ms;
+                    if (elapsed < 400) {
+                        noise = Math.max(noise, rms); // room level in the first moment
+                        return;
+                    }
+                    const threshold = Math.max(0.012, noise * 2.5);
+                    if (rms > threshold) {
+                        loudFor += ms;
+                        quietFor = 0;
+                        if (loudFor >= 200) r.heard = true;
+                    } else {
+                        quietFor += ms;
+                    }
+                    if (r.heard && quietFor >= PAUSE_END_MS) void finishRecording(session, base, false);
+                    else if (!r.heard && elapsed >= NO_SPEECH_MS) void finishRecording(session, base, false);
+                };
+                source.connect(processor);
+                processor.connect(ctx.destination); // the processor only runs when connected; it outputs silence
+            })
+            .catch((err: unknown) => {
+                if (sessionRef.current !== session) return;
+                clearTimers();
+                releaseRecording(r);
+                recordingRef.current = null;
+                const name = (err as { name?: string })?.name;
+                setStatus(name === 'NotAllowedError' || name === 'SecurityError' ? 'permission_denied' : 'error');
+                setFailures((n) => n + 1);
+            });
+    }, [finishRecording]);
+
+    // ---------- browser engine ----------
+    const startRecognition = useCallback((base: string, session: number) => {
         const Rec = getRecognitionClass();
         if (!Rec) {
             setStatus('unsupported');
             return;
         }
-        beforeRef.current?.();
-        try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
-
-        // One recognition at a time: drop any unfinished one first.
-        detach(recRef.current);
-        recRef.current = null;
-        clearSilence();
-
-        const session = sessionRef.current + 1;
-        sessionRef.current = session;
         heardRef.current = false;
         const rec = new Rec();
         rec.lang = speechLang();
         rec.continuous = false;
         rec.interimResults = true;
 
+        // If the round never reports back (a known iPad Safari failure), close it ourselves.
+        const giveUp = () => {
+            if (sessionRef.current !== session || recRef.current !== rec) return;
+            detachRecognition(rec);
+            recRef.current = null;
+            clearTimers();
+            setStatus(heardRef.current ? 'recognized' : 'no-speech');
+            if (!heardRef.current) setFailures((n) => n + 1);
+        };
         const armSilence = () => {
-            clearSilence();
-            silenceRef.current = window.setTimeout(() => {
-                if (sessionRef.current === session) {
-                    try { rec.stop(); } catch { /* ignore */ }
-                }
+            clearTimers();
+            later(() => {
+                if (sessionRef.current !== session) return;
+                try { rec.stop(); } catch { /* ignore */ }
+                later(giveUp, 2000);
             }, SILENCE_MS);
         };
 
@@ -146,18 +385,21 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
             if (sessionRef.current !== session) return;
             const code = event?.error;
             if (code === 'aborted') return;
-            clearSilence();
-            if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'permission-denied') setStatus('permission_denied');
+            clearTimers();
+            if (code === 'service-not-allowed' && isAppleTouchDevice()) setStatus('unsupported');
+            else if (code === 'not-allowed' || code === 'service-not-allowed' || code === 'permission-denied') setStatus('permission_denied');
             else if (code === 'no-speech') setStatus('no-speech');
             else setStatus('error');
             if (code !== 'no-speech') setFailures((n) => n + 1);
         };
         rec.onend = () => {
             if (sessionRef.current !== session) return;
-            clearSilence();
+            clearTimers();
             recRef.current = null;
             setStatus((s) => (s === 'listening' ? (heardRef.current ? 'recognized' : 'no-speech') : s));
             if (heardRef.current) setFailures(0);
+            // On iPad/iPhone "heard nothing" is how the built-in recognition fails, so count it.
+            else if (isAppleTouchDevice()) setFailures((n) => n + 1);
         };
 
         recRef.current = rec;
@@ -167,13 +409,13 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
             rec.start();
         } catch {
             // The browser still thinks an older round is running: try once more a moment later.
-            window.setTimeout(() => {
+            later(() => {
                 if (sessionRef.current !== session) return;
                 try {
                     rec.start();
                 } catch {
                     recRef.current = null;
-                    clearSilence();
+                    clearTimers();
                     setStatus('error');
                     setFailures((n) => n + 1);
                 }
@@ -181,20 +423,97 @@ export function useSpeechInput({ onText, onBeforeStart }: SpeechInputOptions) {
         }
     }, []);
 
+    // After a manual stop, let the browser deliver the last words, then drop the round.
+    const detachLater = (rec: Recognition, session: number) => {
+        window.setTimeout(() => {
+            if (recRef.current === rec && sessionRef.current === session) {
+                detachRecognition(rec);
+                recRef.current = null;
+            }
+        }, 1500);
+    };
+
+    const stop = useCallback(() => {
+        const session = sessionRef.current;
+        if (recordingRef.current) {
+            void finishRecording(session, recordingRef.current.base, true);
+            return;
+        }
+        const rec = recRef.current;
+        if (!rec) {
+            // Nothing running yet (e.g. still asking the server): cancel the pending start.
+            sessionRef.current += 1;
+            clearTimers();
+            setStatus((s) => (s === 'listening' ? 'idle' : s));
+            return;
+        }
+        clearTimers();
+        // stop() (not abort) lets the browser deliver the last words. The button flips back right
+        // away, so pressing again at once starts a new round (start() drops this one first).
+        try { rec.stop(); } catch { /* ignore */ }
+        detachLater(rec, session);
+        setStatus(heardRef.current ? 'recognized' : 'idle');
+    }, [finishRecording]);
+
+    const start = useCallback((base = '') => {
+        beforeRef.current?.();
+        try { window.speechSynthesis?.cancel(); } catch { /* ignore */ }
+
+        // One round at a time: drop any unfinished one first.
+        sessionRef.current += 1;
+        const session = sessionRef.current;
+        clearTimers();
+        detachRecognition(recRef.current);
+        recRef.current = null;
+        releaseRecording(recordingRef.current);
+        recordingRef.current = null;
+
+        if (!wantsRecorder() || serverState === false) {
+            startRecognition(base, session);
+            return;
+        }
+        // The audio context must be created inside the tap, or iPad keeps it suspended.
+        const AC = getAudioContextClass()!;
+        const ctx = new AC();
+        try { void ctx.resume(); } catch { /* ignore */ }
+        const begin = () => startRecording(base, session, ctx);
+        if (serverState === true) {
+            begin();
+            return;
+        }
+        setStatus('listening');
+        void checkServerSpeech().then((ok) => {
+            if (sessionRef.current !== session) {
+                try { void ctx.close(); } catch { /* ignore */ }
+                return;
+            }
+            if (ok) begin();
+            else {
+                try { void ctx.close(); } catch { /* ignore */ }
+                setServerDown(true);
+                startRecognition(base, session);
+            }
+        });
+    }, [startRecognition, startRecording]);
+
     // Close the microphone when the page goes away.
     useEffect(() => () => {
         sessionRef.current += 1;
-        clearSilence();
-        detach(recRef.current);
+        clearTimers();
+        detachRecognition(recRef.current);
         recRef.current = null;
+        releaseRecording(recordingRef.current);
+        recordingRef.current = null;
     }, []);
 
     return {
         status,
         isListening: status === 'listening',
+        /** the recording is being turned into text */
+        isBusy: status === 'transcribing',
         supported: status !== 'unsupported',
-        /** two failed rounds in a row: suggest the keyboard's own dictation instead */
-        suggestDictation: status === 'unsupported' || failures >= 2,
+        /** suggest the keyboard's own dictation instead */
+        suggestDictation: status === 'unsupported' || failures >= 2 || (serverDown && isAppleTouchDevice() && failures >= 1),
         start,
         stop,
     };

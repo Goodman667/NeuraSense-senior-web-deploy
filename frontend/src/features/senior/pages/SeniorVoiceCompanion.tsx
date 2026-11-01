@@ -173,13 +173,14 @@ export function SeniorVoiceCompanion({ userId, onNavigate, onSummary }: { userId
         <div className="space-y-4">
           <button
             onClick={speech.isListening ? speech.stop : () => { stopAndClearAudio(); speech.start(answer); }}
-            className={`flex w-full flex-col items-center justify-center gap-3 rounded-[24px] px-6 py-8 text-[#FBF8F3] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3] ${speech.isListening ? 'bg-[var(--sn-help)]' : 'bg-[var(--sn-teal)] hover:bg-[var(--sn-teal-deep)]'}`}
+            disabled={speech.isBusy}
+            className={`flex w-full disabled:opacity-80 flex-col items-center justify-center gap-3 rounded-[24px] px-6 py-8 text-[#FBF8F3] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#8FB9B3] ${speech.isListening ? 'bg-[var(--sn-help)]' : 'bg-[var(--sn-teal)] hover:bg-[var(--sn-teal-deep)]'}`}
           >
             <span className="flex h-24 w-24 items-center justify-center rounded-full border border-white/30 bg-white/10">
               <SeniorIcon name={speech.isListening ? 'pause' : 'mic'} className="h-12 w-12" />
             </span>
-            <span className="text-[1.7rem] leading-none">{speech.isListening ? '正在听…' : '按一下，开始说'}</span>
-            <span className="text-[1.05rem] text-white/80">{speech.isListening ? '说完再按一下' : '不方便说话，也可以打字'}</span>
+            <span className="text-[1.7rem] leading-none">{speech.isListening ? '正在听…' : speech.isBusy ? '正在识别…' : '按一下，开始说'}</span>
+            <span className="text-[1.05rem] text-white/80">{speech.isListening ? '说完再按一下' : speech.isBusy ? '请稍等几秒' : '不方便说话，也可以打字'}</span>
           </button>
           <SeniorVoiceStatusCard status={speech.status} hint={speech.hint} />
         </div>
