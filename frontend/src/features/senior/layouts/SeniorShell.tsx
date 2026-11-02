@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { SeniorPage } from '../types/senior';
 import { SeniorPlaybackBar } from '../components/SeniorPlaybackBar';
 import { SeniorIcon, type SeniorIconName } from '../components/SeniorIcon';
+import { useSeniorSusStatus } from '../hooks/useSeniorSusStatus';
 
 const FONT_SCALE_STORAGE = 'neurasense-senior-font-scale';
 
@@ -10,6 +11,7 @@ const navItems: Array<{ page: SeniorPage; label: string; icon: SeniorIconName }>
   { page: 'chat', label: '聊聊', icon: 'chat' },
   { page: 'relax', label: '放松', icon: 'leaf' },
   { page: 'checkup', label: '小测', icon: 'clipboard' },
+  { page: 'sus', label: '问卷', icon: 'edit' },
   { page: 'help', label: '帮助', icon: 'help' },
   { page: 'settings', label: '设置', icon: 'settings' },
   { page: 'profile', label: '我的', icon: 'user' },
@@ -57,6 +59,7 @@ export function SeniorShell({
 }) {
   const [fontScale, setFontScale] = useState(() => localStorage.getItem(FONT_SCALE_STORAGE) || 'large');
   const [navNotice, setNavNotice] = useState('');
+  const susDone = useSeniorSusStatus();
   const date = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
 
   useEffect(() => {
@@ -114,7 +117,7 @@ export function SeniorShell({
 
       <div className="mx-auto grid max-w-[1440px] gap-6 px-5 py-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8 lg:px-8">
         <aside className="lg:sticky lg:top-28 lg:self-start">
-          <nav className="grid grid-cols-4 gap-1.5 sm:grid-cols-7 lg:grid-cols-1" aria-label="陪伴版导航">
+          <nav className="grid grid-cols-4 gap-1.5 sm:grid-cols-8 lg:grid-cols-1" aria-label="陪伴版导航">
             {navItems.map((item) => {
               const locked = contactRequired && item.page !== 'settings' && item.page !== 'help' && item.page !== 'profile';
               return (
@@ -128,6 +131,9 @@ export function SeniorShell({
                 >
                   <SeniorIcon name={item.icon} />
                   <span>{item.label}</span>
+                  {item.page === 'sus' && susDone === false ? (
+                    <span className="sn-nav-badge" aria-label="还没填写">待填</span>
+                  ) : null}
                 </button>
               );
             })}

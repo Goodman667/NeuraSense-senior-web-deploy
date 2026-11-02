@@ -103,6 +103,18 @@ export async function submitSus(token: string, mode: SusMode, ageGroup: string, 
     return data.sus_score as number;
 }
 
+/** Whether this account has already answered, per version. Null when it cannot be checked. */
+export async function fetchMySusStatus(token: string): Promise<Record<SusMode, boolean> | null> {
+    try {
+        const res = await fetch(`${API_BASE}/sus/mine?token=${encodeURIComponent(token)}`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return { standard: !!data?.submitted?.standard, companion: !!data?.submitted?.companion };
+    } catch {
+        return null;
+    }
+}
+
 /** Tell the guided study tour that a SUS response was saved. */
 export function announceSusSubmitted(mode: SusMode) {
     emitStudyEvent('sus-submitted', { mode });

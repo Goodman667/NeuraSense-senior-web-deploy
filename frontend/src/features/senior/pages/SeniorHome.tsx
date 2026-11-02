@@ -9,6 +9,7 @@ import { useSeniorOnlineStatus } from '../hooks/useSeniorOnlineStatus';
 import { useSeniorDailyProgress } from '../hooks/useSeniorDailyProgress';
 import { seniorAssets } from '../lib/seniorAssets';
 import { useStudyTourStore } from '../../studyTour/useStudyTourStore';
+import { useSeniorSusStatus } from '../hooks/useSeniorSusStatus';
 
 /** Start (or resume) the guided study tour of the companion version. */
 function TourStartCard() {
@@ -25,6 +26,25 @@ function TourStartCard() {
       </div>
       <button onClick={() => start('companion')} className="sn-btn sn-btn-primary sn-btn-lg" data-tour="senior-tour-start">
         开始体验流程<SeniorIcon name="arrow" />
+      </button>
+    </section>
+  );
+}
+
+/** Reminder to fill in the usability questionnaire; disappears once this account has answered. */
+function SusCard({ onOpen }: { onOpen: () => void }) {
+  const done = useSeniorSusStatus();
+  const tourActive = useStudyTourStore((s) => s.active);
+  if (done !== false || tourActive) return null;
+  return (
+    <section className="sn-sheet sn-rise flex flex-wrap items-center justify-between gap-4 border-l-[6px] border-l-[#C77B3F] p-5 md:p-6" data-tour="senior-sus-card">
+      <div>
+        <p className="sn-kicker"><SeniorIcon name="edit" className="h-5 w-5" />使用感受问卷</p>
+        <h2 className="sn-h2 mt-1">说说您用起来的感受</h2>
+        <p className="sn-body mt-1">10 道题，大约 3 分钟。没有对错，按真实感受选就好，帮助我们把页面改得更好用。</p>
+      </div>
+      <button onClick={onOpen} className="sn-btn sn-btn-primary sn-btn-lg">
+        填写问卷<SeniorIcon name="arrow" />
       </button>
     </section>
   );
@@ -159,6 +179,8 @@ export function SeniorHome({
           </div>
         </div>
       </section>
+
+      <SusCard onOpen={() => onNavigate('sus')} />
 
       {!isOnline || summaryError ? (
         <div className="space-y-3">

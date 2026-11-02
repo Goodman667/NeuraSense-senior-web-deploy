@@ -152,6 +152,34 @@ def _all_rows() -> list[dict]:
     return sorted(rows.values(), key=lambda r: str(r.get("created_at", "")))
 
 
+def _user_rows(user_id: str) -> list[dict]:
+    rows: dict[str, dict] = {}
+    if is_supabase_available():
+        try:
+            res = get_supabase_client().table(TABLE).select("id,mode,created_at").eq("user_id", user_id).execute()
+            for r in res.data or []:
+                rows[str(r["id"])] = r
+        except Exception as exc:
+            print(f"[sus] Supabase lookup skipped: {exc}")
+    for r in _read_local():
+        if str(r.get("user_id")) == str(user_id):
+            rows.setdefault(str(r["id"]), r)
+    return list(rows.values())
+
+
+@router.get("/mine")
+async def my_status(token: str):
+    """Whether the signed-in user has already answered, per version (used to show or hide the reminder)."""
+    user = auth_service.validate_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="请先登录")
+    counts = {mode: 0 for mode in MODES}
+    for r in _user_rows(user["id"]):
+        if r.get("mode") in counts:
+            counts[r["mode"]] += 1
+    return {"submitted": {mode: n > 0 for mode, n in counts.items()}, "counts": counts}
+
+
 def _researcher(token: str) -> dict:
     user = auth_service.validate_token(token)
     if not user:

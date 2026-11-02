@@ -133,6 +133,9 @@
 .sn-nav-item:hover { background: var(--sn-sheet); color: var(--sn-ink); }
 .sn-nav-item[aria-current="page"] { background: var(--sn-sheet); color: var(--sn-teal-deep); border-color: var(--sn-line); }
 .sn-nav-item[data-locked="true"] { color: #A3ABA9; }
+.sn-nav-item { position: relative; }
+.sn-nav-badge { margin-left: auto; padding: .3rem .6rem; border-radius: 999px; background: #F3E2D4; color: #8A4A1F; font-size: .9rem; line-height: 1; white-space: nowrap; }
+@media (max-width: 1023.98px) { .sn-nav-badge { position: absolute; top: .3rem; right: .3rem; margin: 0; padding: .15rem .4rem; font-size: .72rem; } }
 .sn-nav-item:focus-visible { outline: 3px solid #8FB9B3; outline-offset: 2px; }
 
 /* notices */
